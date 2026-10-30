@@ -1,0 +1,300 @@
+### CUSTOM ###
+# Project-specific ignores go here first so they override the generic rules below.
+application-local.yml
+application-*-local.yml
+bootstrap-local.yml
+
+# AI coding assistants (local configs, caches, session data)
+.cursor/
+.claude/
+.codex/
+!.codex/hooks.json
+.gemini/
+.aider*
+.continue/
+.windsurf/
+.copilot/
+.codeium/
+.tabnine/
+.ai-cache/
+.ai-context/
+.trae/
+.trae-ai/
+.zcodeignore
+.zcode
+.workbuddy/
+.workbuddy-ai/
+.qoder/
+.qoder-ai/
+.clineignore
+.cursorignore
+.rooignore
+.qoderignore
+.kiroignore
+.cody/
+.cody-cache/
+cody.json
+.zed/
+.junie/
+.ai-assistant/
+.jetbrains-ai/
+github-copilot/
+.amazonq/
+.amazonq-ignore
+.codeiumignore
+.tabnineignore
+CLAUDE.md
+GEMINI.md
+.cursorrules
+.windsurfrules
+
+# ===== Operating Systems =====
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+
+# ===== Editors / IDEs =====
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.history/
+*.vsix
+
+# JetBrains (IntelliJ, PyCharm, WebStorm, GoLand, ...)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+
+# Vim
+*.swp
+*.swo
+.vim/
+
+# Emacs
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+.metadata/
+
+# NetBeans
+nbproject/private/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# ===== Logs / Temporary Files =====
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.tmp
+*.temp
+*.bak
+*.cache
+.cache/
+tmp/
+temp/
+
+# ===== Environment Variables / Secrets =====
+.env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+*.secret
+
+# ===== Node.js =====
+node_modules/
+dist/
+dist-ssr/
+build/
+.npm/
+.npmrc
+.yarn/
+.yarnrc
+.pnp.*
+coverage/
+.nyc_output/
+coverage.xml
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.next/
+.nuxt/
+.output/
+.svelte-kit/
+.vercel/
+.turbo/
+.vite/
+*.local
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv/
+venv/
+ENV/
+env/
+.python-version
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ===== Java / JVM =====
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+target/
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.mvn/
+
+# ===== Go =====
+*.exe
+*.exe~
+*.dll
+*.dylib
+*.test
+*.out
+vendor/
+go.work
+go.work.sum
+
+# ===== Rust =====
+/target/
+**/*.rs.bk
+*.pdb
+# NOTE: Cargo.lock is intentionally NOT ignored — commit it for applications.
+
+# ===== C / C++ =====
+*.o
+*.obj
+*.a
+*.lib
+*.dylib
+*.dll
+*.exe
+*.app
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+*.make
+
+# ===== Ruby =====
+*.gem
+*.rbc
+.bundle/
+vendor/bundle/
+.ruby-version
+.rspec
+.rubocop_cache/
+# NOTE: Gemfile.lock should be committed for applications.
+
+# ===== PHP =====
+vendor/
+.phpunit.result.cache
+.php-cs-fixer.cache
+# NOTE: composer.lock should be committed for applications.
+
+# ===== Swift / Xcode =====
+*.xcuserstate
+xcuserdata/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+Pods/
+.swiftpm/
+.build/
+
+# ===== Databases =====
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+
+# ===== Documentation / Build Output =====
+_docusaurus/
+.site/
+
+# ===== Container / Deployment =====
+docker-compose.override.yml
+
+# ===== Miscellaneous =====
+*.orig
+*.rej
+*.pid
+*.seed
+*.pid.lock
