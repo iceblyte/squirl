@@ -1,0 +1,8 @@
+{
+  "name": "squirl-b3-fixture",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node server.js"
+  }
+}
