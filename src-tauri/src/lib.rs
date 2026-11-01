@@ -4,5 +4,6 @@
 //! 危险链路的生产模块（engine / db / error / paths），
 //! Tauri 装配层在 Phase 1 S1 引入（见 docs/进度与验证记录.md ADR-1）。
 
+pub mod engine;
 pub mod error;
 pub mod paths;
