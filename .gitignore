@@ -4,6 +4,11 @@ application-local.yml
 application-*-local.yml
 bootstrap-local.yml
 
+# Prototyping / browser automation artifacts
+.playwright-mcp/
+.screenshots/
+.trae-html-share-packages/
+
 # AI coding assistants (local configs, caches, session data)
 .cursor/
 .claude/
