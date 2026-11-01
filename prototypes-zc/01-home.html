@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squirl · 01 主窗口（MVP 核心流程）</title>
+<link rel="stylesheet" href="./assets/proto.css">
+<style>
+  .window{position:relative}
+  .win-overlay{position:absolute;inset:0;background:rgba(6,7,9,.58);backdrop-filter:blur(1.5px);z-index:10;
+    display:flex;align-items:flex-start;justify-content:center;padding:64px 20px 24px}
+  .wf-label .cnt-chip{font-size:11px;color:var(--text-3)}
+  .scanline{display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text-2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="doc-badge">01 · Home — 主窗口（MVP · F1/F2/F8）</span>
+    <h1>同页两分区：已登记网格 + 本次发现</h1>
+    <p class="doc-sub">点击顶部场景切换条查看不同状态。已登记区可全局搜索（名称/路径/备注/命令名）、命令快启、按最近使用排序；
+      本次发现区为瞬时扫描结果，仅本地名称过滤、不入全局搜索、未登记不可运行。</p>
+  </header>
+
+  <div class="scene-bar" data-scene-group>
+    <span class="sb-title">Scenarios</span>
+    <button class="pill" data-scene="empty">首次启动 · 空状态</button>
+    <button class="pill" data-scene="scanning">扫描进行中</button>
+    <button class="pill act" data-scene="normal">常态 · 两分区</button>
+    <button class="pill" data-scene="search">全局搜索</button>
+    <button class="pill" data-scene="paused">500 条暂停</button>
+    <button class="pill" data-scene="register">登记发现项</button>
+    <button class="pill" data-scene="manual">手动注册</button>
+    <button class="pill" data-scene="missing">路径失效</button>
+  </div>
+
+  <!-- ============ 场景：空状态 ============ -->
+  <section class="scene" data-key="empty">
+    <div class="window">
+      <div class="titlebar">
+        <div class="app-title"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 4C7.5 4 4.8 6.1 4.2 9h15.6C19.2 6.1 16.5 4 12 4Z" fill="#a16207"/><rect x="10.7" y="1.8" width="2.6" height="3.2" rx="1.2" fill="#a16207"/><path d="M5.5 10.5c0 5.4 3 9 6.5 11 3.5-2 6.5-5.6 6.5-11Z" fill="#f0a832"/></svg>Squirl</div>
+        <div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div>
+      </div>
+      <div class="wf-body" style="padding:0">
+        <div class="empty-state" style="padding-top:72px;padding-bottom:76px">
+          <svg width="52" height="52" viewBox="0 0 24 24"><path d="M12 4C7.5 4 4.8 6.1 4.2 9h15.6C19.2 6.1 16.5 4 12 4Z" fill="#a16207"/><rect x="10.7" y="1.8" width="2.6" height="3.2" rx="1.2" fill="#a16207"/><path d="M5.5 10.5c0 5.4 3 9 6.5 11 3.5-2 6.5-5.6 6.5-11Z" fill="#f0a832"/></svg>
+          <h3><span class="ann" style="margin-right:6px">1</span>Welcome to Squirl</h3>
+          <p>The squirrel that remembers where your projects are buried. Add a root folder — every subfolder inside becomes a searchable card in your registry.</p>
+          <div class="steps">
+            <span class="step"><span class="n">1</span>Add a root folder</span>
+            <span class="step"><span class="n">2</span>Squirl scans it instantly</span>
+            <span class="step"><span class="n">3</span>Register &amp; run with one click</span>
+          </div>
+          <button class="btn btn-primary">＋ Add your first root</button>
+          <span style="font-size:11px;color:var(--text-3)">or drag &amp; drop any folder anywhere in this window</span>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>首启引导</b>：无任何根目录时全屏空状态；三步引导 + 拖拽注册双入口；本页面对应 EmptyGuide 组件</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：扫描中 ============ -->
+  <section class="scene" data-key="scanning">
+    <div class="window">
+      <div class="titlebar">
+        <div class="app-title"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 4C7.5 4 4.8 6.1 4.2 9h15.6C19.2 6.1 16.5 4 12 4Z" fill="#a16207"/><rect x="10.7" y="1.8" width="2.6" height="3.2" rx="1.2" fill="#a16207"/><path d="M5.5 10.5c0 5.4 3 9 6.5 11 3.5-2 6.5-5.6 6.5-11Z" fill="#f0a832"/></svg>Squirl</div>
+        <div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-topbar">
+          <span class="logo">Squirl</span>
+          <div class="search-grow"><span class="s-ic">⌕</span><input class="input" placeholder="Search projects, paths, notes, commands…"></div>
+          <button class="btn btn-secondary btn-sm" disabled>＋ Add Root</button>
+          <button class="btn btn-secondary btn-sm">⌂ Register Folder</button>
+          <button class="btn btn-ghost btn-sm">⚙</button>
+        </div>
+        <div class="wf-label"><h3><span class="ann ghost">1</span>Registered · 6</h3><span class="cnt-chip mono">scan in progress — results below</span></div>
+        <div class="pgrid">
+          <div class="pcard"><div class="pcard-top"><span class="dot dot-running"></span><span class="pcard-name">squirl</span><button class="btn btn-primary btn-sm">▶ dev</button></div>
+            <div class="pcard-path">D:\Code\AICreate\ZCode\squirl</div><div class="pcard-note">Local project registry &amp; launcher hub</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">package.json</span><span class="spacer"></span><span class="ago">2m ago</span></div></div>
+          <div class="pcard"><div class="pcard-top"><span class="dot dot-exited"></span><span class="pcard-name">avante.nvim</span><button class="btn btn-secondary btn-sm">▶ make test</button></div>
+            <div class="pcard-path">D:\GitHub\avante.nvim</div><div class="pcard-note">Neovim AI assistant plugin</div>
+            <div class="pcard-meta"><span class="chip chip-mute">Makefile</span><span class="spacer"></span><span class="ago">1d ago</span></div></div>
+          <div class="pcard"><div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">dotfiles</span><button class="btn btn-ghost btn-sm">＋ command</button></div>
+            <div class="pcard-path">D:\Projects\dotfiles</div><div class="pcard-note">zsh + starship + ghostty config</div>
+            <div class="pcard-meta"><span class="chip chip-mute">.git</span><span class="spacer"></span><span class="ago">3d ago</span></div></div>
+          <div class="pcard"><div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">my-portfolio</span><button class="btn btn-secondary btn-sm">▶ dev</button></div>
+            <div class="pcard-path">D:\Projects\my-portfolio</div><div class="pcard-note">Personal site built with Astro</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">package.json</span><span class="spacer"></span><span class="ago">1w ago</span></div></div>
+        </div>
+
+        <div class="dsec">
+          <div class="dsec-head">
+            <span class="chev">▾</span>
+            <h4><span class="ann ghost">2</span>Scanning… <span class="cnt">root 2 of 2 · D:\GitHub</span></h4>
+            <button class="btn btn-ghost btn-sm" disabled>↻ Refresh</button>
+          </div>
+          <div class="scanline"><div class="progress"><i></i></div><span class="mono" style="font-size:11px">47 folders · 0.3s · async, UI never blocked</span></div>
+          <div class="drow"><span class="rp">GitHub/yetone/<b>magpie</b></span><span class="chip chip-flag mono">go.mod</span><button class="btn btn-secondary btn-sm" disabled>Register</button></div>
+          <div class="drow"><span class="rp">GitHub/Y-ASLant/<b>ElegantClipboard</b></span><span class="chip chip-flag mono">package.json</span><button class="btn btn-secondary btn-sm" disabled>Register</button></div>
+          <div class="drow"><span class="rp">GitHub/tailwindlabs/<b>tailwindcss</b></span><span class="chip chip-flag mono">package.json</span><button class="btn btn-secondary btn-sm" disabled>Register</button></div>
+          <div class="dsec-foot">Excluded: node_modules · .venv · target · dist … &nbsp;·&nbsp; depth 1 &nbsp;·&nbsp; entries stream in as they are found</div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>扫描异步进行</b>：已登记区照常可用；添加根目录按钮禁用防止并发（单飞协议 E_SCAN_IN_PROGRESS）</span></li>
+      <li><span class="ann">2</span><span><b>发现区进度</b>：显示当前根与计数，条目流式追加；事件源 scan://progress，完成后 invalidate 台账与发现缓存</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：常态 ============ -->
+  <section class="scene act" data-key="normal">
+    <div class="window wide">
+      <div class="titlebar">
+        <div class="app-title"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 4C7.5 4 4.8 6.1 4.2 9h15.6C19.2 6.1 16.5 4 12 4Z" fill="#a16207"/><rect x="10.7" y="1.8" width="2.6" height="3.2" rx="1.2" fill="#a16207"/><path d="M5.5 10.5c0 5.4 3 9 6.5 11 3.5-2 6.5-5.6 6.5-11Z" fill="#f0a832"/></svg>Squirl</div>
+        <div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-topbar">
+          <span class="logo">Squirl</span>
+          <div class="search-grow"><span class="s-ic">⌕</span><input class="input" placeholder="Search projects, paths, notes, commands…"><span class="kbd" style="position:absolute;right:9px;top:50%;transform:translateY(-50%)">Ctrl K</span></div>
+          <button class="btn btn-secondary btn-sm">＋ Add Root</button>
+          <button class="btn btn-secondary btn-sm">⌂ Register Folder</button>
+          <button class="btn btn-ghost btn-sm">⚙</button>
+          <span class="ann" style="transform:translateY(2px)">1</span>
+        </div>
+        <div class="wf-label"><h3><span class="ann ghost">2</span>Registered · 9</h3><span class="mono">sorted by last_run_at</span></div>
+        <div class="pgrid">
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-running"></span><span class="pcard-name">squirl</span><button class="btn btn-primary btn-sm">▶ dev <span style="opacity:.65">▾</span></button></div>
+            <div class="pcard-path">D:\Code\AICreate\ZCode\squirl</div>
+            <div class="pcard-note">Local project registry &amp; one-click launcher hub</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">package.json</span><span class="spacer"></span><span class="ago">2m ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-running"></span><span class="pcard-name">api-gateway</span><button class="btn btn-primary btn-sm">▶ serve <span style="opacity:.65">▾</span></button></div>
+            <div class="pcard-path">D:\Projects\api-gateway</div>
+            <div class="pcard-note">Go microservice gateway for side projects</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">go.mod</span><span class="spacer"></span><span class="ago">18m ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-failed"></span><span class="pcard-name">openai-translator</span><button class="btn btn-secondary btn-sm">▶ build</button></div>
+            <div class="pcard-path">D:\GitHub\openai-translator</div>
+            <div class="pcard-note">Tauri rewrite in progress · failed last run</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">package.json</span><span class="spacer"></span><span class="ago">1h ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-exited"></span><span class="pcard-name">avante.nvim</span><button class="btn btn-secondary btn-sm">▶ make test <span style="opacity:.65">▾</span></button></div>
+            <div class="pcard-path">D:\GitHub\avante.nvim</div>
+            <div class="pcard-note">Neovim AI assistant plugin · exploring upstream</div>
+            <div class="pcard-meta"><span class="chip chip-mute">Makefile</span><span class="spacer"></span><span class="ago">yesterday</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">my-portfolio</span><button class="btn btn-secondary btn-sm">▶ dev</button></div>
+            <div class="pcard-path">D:\Projects\my-portfolio</div>
+            <div class="pcard-note">Personal site built with Astro + Tailwind</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">package.json</span><span class="spacer"></span><span class="ago">3d ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">dotfiles</span><button class="btn btn-ghost btn-sm">＋ command</button></div>
+            <div class="pcard-path">D:\Projects\dotfiles</div>
+            <div class="pcard-note">zsh + starship + ghostty config, no commands yet</div>
+            <div class="pcard-meta"><span class="chip chip-mute">.git</span><span class="spacer"></span><span class="ago">4d ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-killed"></span><span class="pcard-name">rust-playground</span><button class="btn btn-secondary btn-sm">▶ cargo watch</button></div>
+            <div class="pcard-path">D:\Projects\rust-playground</div>
+            <div class="pcard-note">Exercises from the Rust book</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">Cargo.toml</span><span class="spacer"></span><span class="ago">5d ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">notes-vault</span><button class="btn btn-ghost btn-sm">＋ command</button></div>
+            <div class="pcard-path">E:\Vault\notes-vault <span class="chip chip-mute" style="font-size:9px">no root</span></div>
+            <div class="pcard-note">Manually registered · outside any scan root</div>
+            <div class="pcard-meta"><span class="chip chip-mute">manual</span><span class="spacer"></span><span class="ago">2w ago</span></div>
+          </div>
+          <div class="pcard is-missing">
+            <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">old-scraper</span><button class="btn btn-ghost btn-sm" disabled>Relocate</button></div>
+            <div class="pcard-path">E:\Temp\old-scraper</div>
+            <div class="pcard-note">Path missing — commands visible but cannot run</div>
+            <div class="pcard-meta"><span class="chip chip-yellow">⚠ Path missing</span><span class="spacer"></span><span class="ago">2w ago</span></div>
+          </div>
+        </div>
+
+        <div class="dsec" id="discovery">
+          <div class="dsec-head" data-collapse="#discovery">
+            <span class="chev">▾</span>
+            <h4><span class="ann ghost">3</span>Discovered this scan <span class="cnt">128 folders · depth 1 · 2 roots · just now</span></h4>
+            <button class="btn btn-ghost btn-sm">↻ Refresh</button>
+          </div>
+          <div class="dsec-filter">
+            <input class="input" placeholder="Filter by name (local only)…">
+            <span class="chip chip-mute">ephemeral · never written to config</span>
+          </div>
+          <div class="drow"><span class="rp">GitHub/yetone/<b>magpie</b></span><span class="chip chip-flag mono">go.mod</span><button class="btn btn-secondary btn-sm" data-open="dlg-register">Register</button></div>
+          <div class="drow"><span class="rp">GitHub/Y-ASLant/<b>ElegantClipboard</b></span><span class="chip chip-flag mono">package.json</span><button class="btn btn-secondary btn-sm" data-open="dlg-register">Register</button></div>
+          <div class="drow"><span class="rp">GitHub/tailwindlabs/<b>tailwindcss</b></span><span class="chip chip-flag mono">package.json</span><button class="btn btn-secondary btn-sm" data-open="dlg-register">Register</button></div>
+          <div class="drow"><span class="rp">GitHub/rust-lang/<b>rustlings</b></span><span class="chip chip-flag mono">Cargo.toml</span><button class="btn btn-secondary btn-sm" data-open="dlg-register">Register</button></div>
+          <div class="drow"><span class="rp">Projects/scratch/<b>temp-notebook</b></span><span class="chip chip-mute">no flags</span><button class="btn btn-ghost btn-sm" data-open="dlg-register">Register</button></div>
+          <div class="dsec-foot">Not in global search · cannot run until registered · cleared on next scan or app restart</div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>顶栏</b>：全局搜索（后端 SQL 四字段 + 150ms debounce）· 添加根目录 · 手动注册 · 设置</span></li>
+      <li><span class="ann">2</span><span><b>已登记网格</b>：卡片按 last_run_at 排序；单命令直启，多命令 = 最近使用 + ▾ 下拉（G3）；无命令时给「＋ command」引导；无归属条目带「no root」角标</span></li>
+      <li><span class="ann">3</span><span><b>发现区</b>：可点击标题折叠（试试）；本地名称过滤；标志文件高亮；Register 弹出登记对话框</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：全局搜索 ============ -->
+  <section class="scene" data-key="search">
+    <div class="window">
+      <div class="titlebar">
+        <div class="app-title"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 4C7.5 4 4.8 6.1 4.2 9h15.6C19.2 6.1 16.5 4 12 4Z" fill="#a16207"/><rect x="10.7" y="1.8" width="2.6" height="3.2" rx="1.2" fill="#a16207"/><path d="M5.5 10.5c0 5.4 3 9 6.5 11 3.5-2 6.5-5.6 6.5-11Z" fill="#f0a832"/></svg>Squirl</div>
+        <div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-topbar">
+          <span class="logo">Squirl</span>
+          <div class="search-grow"><span class="s-ic">⌕</span><input class="input" value="vite" style="border-color:rgba(240,168,50,.55);box-shadow:0 0 0 3px rgba(240,168,50,.12)"></div>
+          <button class="btn btn-ghost btn-sm">✕ Clear</button>
+        </div>
+        <div class="wf-label"><h3><span class="ann ghost">1</span>Search results <span class="cnt mono">2 projects matched "vite" · name / path / note / commands · 3 chars typed · &lt;200ms</span></h3></div>
+        <div class="pgrid">
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-running"></span><span class="pcard-name">squirl</span><button class="btn btn-primary btn-sm">▶ dev</button></div>
+            <div class="pcard-path">D:\Code\AICreate\ZCode\squirl</div>
+            <div class="pcard-note">matched command: <b class="mono" style="color:var(--accent)">vite</b> (npm run dev)</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">package.json</span><span class="spacer"></span><span class="ago">2m ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">my-portfolio</span><button class="btn btn-secondary btn-sm">▶ dev</button></div>
+            <div class="pcard-path">D:\Projects\my-portfolio</div>
+            <div class="pcard-note">Astro on <b class="mono" style="color:var(--accent)">vite</b> · note matched</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">package.json</span><span class="spacer"></span><span class="ago">3d ago</span></div>
+          </div>
+        </div>
+        <div class="dsec collapsed" id="discovery-search">
+          <div class="dsec-head" data-collapse="#discovery-search">
+            <span class="chev">▾</span>
+            <h4>Discovered this scan <span class="cnt">128 folders · excluded from search</span></h4>
+          </div>
+          <div class="dsec-foot">Discovery items never enter global search (F2)</div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>搜索命中标注</b>：结果卡注明命中来源（命令名/备注/路径/名称）；AC6 口径 ≤3 字符定位、&lt;200ms；发现区自动折叠并提示不入搜索</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：500 暂停 ============ -->
+  <section class="scene" data-key="paused">
+    <div class="window">
+      <div class="titlebar">
+        <div class="app-title"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 4C7.5 4 4.8 6.1 4.2 9h15.6C19.2 6.1 16.5 4 12 4Z" fill="#a16207"/><rect x="10.7" y="1.8" width="2.6" height="3.2" rx="1.2" fill="#a16207"/><path d="M5.5 10.5c0 5.4 3 9 6.5 11 3.5-2 6.5-5.6 6.5-11Z" fill="#f0a832"/></svg>Squirl</div>
+        <div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-topbar">
+          <span class="logo">Squirl</span>
+          <div class="search-grow"><span class="s-ic">⌕</span><input class="input" placeholder="Search projects, paths, notes, commands…"></div>
+          <button class="btn btn-secondary btn-sm" disabled>＋ Add Root</button>
+          <button class="btn btn-secondary btn-sm">⌂ Register Folder</button>
+          <button class="btn btn-ghost btn-sm">⚙</button>
+        </div>
+        <div class="dsec">
+          <div class="dsec-head"><span class="chev">▾</span><h4>Scanning… <span class="cnt">paused at 500 entries</span></h4></div>
+          <div class="drow"><span class="rp">GitHub/…/<b>project-498</b></span><span class="chip chip-mute">no flags</span><button class="btn btn-ghost btn-sm" disabled>Register</button></div>
+          <div class="drow"><span class="rp">GitHub/…/<b>project-499</b></span><span class="chip chip-mute">no flags</span><button class="btn btn-ghost btn-sm" disabled>Register</button></div>
+        </div>
+      </div>
+      <div class="win-overlay">
+        <div class="inline-dialog">
+          <div class="dlg-body">
+            <h4><span class="ann" style="margin-right:8px">1</span>Scan paused — 500 items found</h4>
+            <p>All roots together reached the 500-entry limit at depth 3. 500 entries are already listed below; nothing has been written to config yet.</p>
+            <p style="margin-top:8px"><span class="chip chip-yellow">deep folders ahead</span>&nbsp; lowering depth to 1 resumes with only first-level folders (already-scanned entries are kept).</p>
+          </div>
+          <div class="dlg-actions">
+            <button class="btn btn-ghost" data-close>Cancel scan</button>
+            <button class="btn btn-secondary">Lower depth to 1</button>
+            <button class="btn btn-primary">Continue scanning</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>500 上限暂停</b>（F1）：暂停而非截断；三选一「继续 / 降深度到 1 / 取消」，降深度只影响剩余根；对应 resolve_scan_pause 协议</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：登记发现项 ============ -->
+  <section class="scene" data-key="register">
+    <div class="window">
+      <div class="titlebar">
+        <div class="app-title"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 4C7.5 4 4.8 6.1 4.2 9h15.6C19.2 6.1 16.5 4 12 4Z" fill="#a16207"/><rect x="10.7" y="1.8" width="2.6" height="3.2" rx="1.2" fill="#a16207"/><path d="M5.5 10.5c0 5.4 3 9 6.5 11 3.5-2 6.5-5.6 6.5-11Z" fill="#f0a832"/></svg>Squirl</div>
+        <div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div>
+      </div>
+      <div class="wf-body">
+        <div class="dsec" style="margin-top:2px">
+          <div class="dsec-head"><span class="chev">▾</span><h4>Discovered this scan <span class="cnt">128 folders</span></h4></div>
+          <div class="drow"><span class="rp">GitHub/yetone/<b>magpie</b></span><span class="chip chip-flag mono">go.mod</span><button class="btn btn-secondary btn-sm" disabled>Register…</button></div>
+          <div class="drow"><span class="rp">GitHub/Y-ASLant/<b>ElegantClipboard</b></span><span class="chip chip-flag mono">package.json</span><button class="btn btn-secondary btn-sm" disabled>Register…</button></div>
+        </div>
+      </div>
+      <div class="win-overlay">
+        <div class="inline-dialog">
+          <div class="dlg-body">
+            <h4><span class="ann" style="margin-right:8px">1</span>Register project</h4>
+            <div class="field" style="margin-top:12px">
+              <label>Folder</label>
+              <input class="input mono" value="D:\GitHub\Y-ASLant\ElegantClipboard" readonly>
+              <span class="hint">flags found: package.json · will be highlighted on the card</span>
+            </div>
+            <div class="field">
+              <label>Note <span style="color:var(--text-3);font-weight:400">(optional — why did you clone it?)</span></label>
+              <input class="input" placeholder="e.g. same Tauri stack as Squirl, reference for UI patterns">
+            </div>
+            <p style="font-size:11.5px;color:var(--text-3)">Registering creates a ledger entry only. Commands are added afterwards on the project page.</p>
+          </div>
+          <div class="dlg-actions">
+            <button class="btn btn-ghost" data-close>Cancel</button>
+            <button class="btn btn-primary">Register</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>登记</b>：可当场写一句备注（解决「当初为什么克隆它」）；登记 ≠ 录命令，命令在详情页添加；归属根按最长前缀自动派生</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：手动注册 ============ -->
+  <section class="scene" data-key="manual">
+    <div class="window slim">
+      <div class="titlebar">
+        <div class="app-title"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 4C7.5 4 4.8 6.1 4.2 9h15.6C19.2 6.1 16.5 4 12 4Z" fill="#a16207"/><rect x="10.7" y="1.8" width="2.6" height="3.2" rx="1.2" fill="#a16207"/><path d="M5.5 10.5c0 5.4 3 9 6.5 11 3.5-2 6.5-5.6 6.5-11Z" fill="#f0a832"/></svg>Squirl</div>
+        <div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div>
+      </div>
+      <div class="wf-body">
+        <div class="win-overlay" style="position:static;padding:6px 0 2px;background:none;backdrop-filter:none">
+          <div class="inline-dialog" style="max-width:460px">
+            <div class="dlg-body">
+              <h4><span class="ann" style="margin-right:8px">1</span>Register folder manually</h4>
+              <p style="margin-bottom:12px">Import any folder from anywhere on this machine. Manual entries are kept forever and never refreshed by scans (no attribution).</p>
+              <div class="dropzone" data-dropzone style="margin-bottom:12px">
+                <div style="font-size:20px;margin-bottom:4px">⇩</div>
+                Drag &amp; drop a folder here<br>
+                <span style="font-size:11px">or</span>
+              </div>
+              <button class="btn btn-secondary" style="width:100%">▦ Browse for folder…</button>
+              <div class="field" style="margin-top:12px;margin-bottom:0">
+                <label>Recent locations</label>
+                <div class="template-line" style="display:flex;justify-content:space-between;margin-top:0"><span>E:\Vault\notes-vault</span><span class="chip chip-mute" style="font-size:9px">pick</span></div>
+                <div class="template-line" style="display:flex;justify-content:space-between"><span>D:\Setup\tools</span><span class="chip chip-mute" style="font-size:9px">pick</span></div>
+              </div>
+            </div>
+            <div class="dlg-actions">
+              <button class="btn btn-ghost" data-close>Cancel</button>
+              <button class="btn btn-primary" disabled>Register selected</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>手动注册</b>（F2）：拖拽（试把任意文件夹拖进来有高亮反馈）或文件选择器导入任意路径；与发现区 Register 走同一入口 register_project</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：路径失效 ============ -->
+  <section class="scene" data-key="missing">
+    <div class="window">
+      <div class="titlebar">
+        <div class="app-title"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 4C7.5 4 4.8 6.1 4.2 9h15.6C19.2 6.1 16.5 4 12 4Z" fill="#a16207"/><rect x="10.7" y="1.8" width="2.6" height="3.2" rx="1.2" fill="#a16207"/><path d="M5.5 10.5c0 5.4 3 9 6.5 11 3.5-2 6.5-5.6 6.5-11Z" fill="#f0a832"/></svg>Squirl</div>
+        <div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-label"><h3><span class="ann ghost">1</span>Registered · 9 <span class="cnt mono">1 path missing</span></h3></div>
+        <div class="pgrid">
+          <div class="pcard is-missing">
+            <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">old-scraper</span><button class="btn btn-ghost btn-sm" disabled>Relocate…</button></div>
+            <div class="pcard-path">E:\Temp\old-scraper</div>
+            <div class="pcard-note">Python scraper from 2024 · kept for reference</div>
+            <div class="pcard-meta"><span class="chip chip-yellow">⚠ Path missing</span><span class="spacer"></span><span class="ago">2w ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">dotfiles</span><button class="btn btn-ghost btn-sm">＋ command</button></div>
+            <div class="pcard-path">D:\Projects\dotfiles</div>
+            <div class="pcard-note">zsh + starship + ghostty config</div>
+            <div class="pcard-meta"><span class="chip chip-mute">.git</span><span class="spacer"></span><span class="ago">4d ago</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="win-overlay">
+        <div class="inline-dialog">
+          <div class="dlg-body">
+            <h4><span class="ann" style="margin-right:8px">2</span>Relocate "old-scraper"</h4>
+            <p style="margin-bottom:12px">The folder was moved or renamed. Point Squirl at its new location — note and commands are kept.</p>
+            <div class="field">
+              <label>Old path</label>
+              <input class="input mono" value="E:\Temp\old-scraper" readonly>
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>New path</label>
+              <input class="input mono" value="D:\Archive\old-scraper">
+              <span class="hint">name defaults to the new folder name — editable · duplicate paths are rejected (E_DUPLICATE_PATH)</span>
+            </div>
+          </div>
+          <div class="dlg-actions">
+            <button class="btn btn-ghost" data-close>Cancel</button>
+            <button class="btn btn-primary">Relocate</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>失效标记</b>：卡片黄色态；命令仍可见但不可运行（Run 隐藏，仅留 Relocate）</span></li>
+      <li><span class="ann">2</span><span><b>重新定位</b>（G2）：文件选择器选新路径 → 规范化唯一校验 → name 默认取新文件夹名可改</span></li>
+    </ol>
+  </section>
+
+  <div class="doc-footer">
+    <span>Squirl Prototype · 01 Home · MVP F1/F2/F8</span>
+    <span><a href="index.html">← Overview</a> · <a href="02-project-detail.html">Next: Project Detail →</a></span>
+  </div>
+</div>
+
+  <div class="toast-stack">
+    <div class="toast toast-warn"><span class="t-ic">!</span><div><h5>Scan finished — 128 folders found</h5><p>12 look like projects (flag files). 0.4s elapsed.</p></div></div>
+  </div>
+<script src="./assets/proto.js"></script>
+</body>
+</html>

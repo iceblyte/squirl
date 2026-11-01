@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squirl · 03 设置页（MVP · F7）</title>
+<link rel="stylesheet" href="./assets/proto.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="doc-badge">03 · Settings — 设置页（MVP · F7/F1）</span>
+    <h1>执行配置 · 扫描策略 · 根目录管理</h1>
+    <p class="doc-sub">设置页展示「实际探测/解析结果」而不只是选项本身：模拟器显示探测命中，shell 显示解析到的真实路径与支持状态。
+      页内导航可切换 Execution / Scanning / Roots / About。</p>
+  </header>
+
+  <div class="scene-bar" data-scene-group>
+    <span class="sb-title">Scenarios</span>
+    <button class="pill act" data-scene="default">常态（页内导航）</button>
+    <button class="pill" data-scene="shell-warn">PS 5.1 · &amp;&amp; 警告</button>
+    <button class="pill" data-scene="unsupported">未支持 shell 回退</button>
+  </div>
+
+  <!-- ============ 场景：常态 ============ -->
+  <section class="scene act" data-key="default">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="set-grid">
+          <div class="set-nav">
+            <a class="act" data-tab="p-exec">⚡ Execution</a>
+            <a data-tab="p-scan">⊞ Scanning</a>
+            <a data-tab="p-roots">⌂ Roots <span class="chip chip-mute" style="margin-left:auto">2</span></a>
+            <a data-tab="p-about">℗ About</a>
+          </div>
+          <div class="set-body">
+
+            <div class="set-panel act" id="p-exec">
+              <div class="set-item">
+                <div><h5><span class="ann ghost">1</span>&nbsp;Default execution mode</h5><p>External terminal is the safe default — launched processes belong to your terminal, not to Squirl.</p></div>
+                <div class="radio-wrap">
+                  <div class="radio-card sel"><h6><span class="dot" style="width:8px;height:8px;background:var(--accent)"></span>External terminal</h6><p>Opens WT × pwsh at cwd · window stays open</p></div>
+                  <div class="radio-card"><h6>Built-in runner</h6><p>In-app process group · logs · exit codes · stopped on quit</p></div>
+                </div>
+              </div>
+              <div class="set-item">
+                <div><h5><span class="ann ghost">2</span>&nbsp;Terminal emulator <span class="chip chip-blue" style="font-size:9.5px">external mode only</span></h5><p>Detected automatically — first hit wins, can be overridden per project.</p></div>
+                <div>
+                  <span class="select-mock full" style="justify-content:space-between">Windows Terminal <span class="chip chip-green" style="font-size:9.5px">detected</span> <span class="caret">▾</span></span>
+                  <div class="ov-hint">probe order: wt.exe (WindowsApps + PATH) → console host · wt.exe found at %LOCALAPPDATA%\Microsoft\WindowsApps</div>
+                </div>
+              </div>
+              <div class="set-item">
+                <div><h5><span class="ann ghost">3</span>&nbsp;Shell <span class="chip chip-mute" style="font-size:9.5px">shared by both modes</span></h5><p>Resolution: pwsh 7+ → powershell.exe 5.1 → cmd.exe. Unsupported shells (fish / nushell) fall back to zsh → bash on Unix.</p></div>
+                <div>
+                  <span class="select-mock full" style="justify-content:space-between">pwsh 7+ <span class="chip chip-green" style="font-size:9.5px">supported</span> <span class="caret">▾</span></span>
+                  <div class="ov-hint">resolved: C:\Program Files\PowerShell\7\pwsh.exe · args: -Login -NoLogo · profile: loaded</div>
+                </div>
+              </div>
+              <div class="set-item">
+                <div><h5>Load shell profile</h5><p>Login + interactive flags so nvm / conda / brew stay visible. Adds a little startup latency.</p></div>
+                <span class="toggle on" data-toggle></span>
+              </div>
+            </div>
+
+            <div class="set-panel" id="p-scan">
+              <div class="set-item">
+                <div><h5><span class="ann ghost">4</span>&nbsp;Scan depth (global)</h5><p>1 = first-level subfolders only — deliberately restrained. Max 10. Per-root depth arrives in P1.</p></div>
+                <div>
+                  <div class="slider"><div class="fill" style="width:10%"></div><div class="thumb" style="left:10%"></div></div>
+                  <div class="ov-hint" style="display:flex;justify-content:space-between"><span>1 · current</span><span>10 · max</span></div>
+                </div>
+              </div>
+              <div class="set-item">
+                <div><h5>Built-in exclusion list</h5><p>Matched by entry name; excluded subtrees are never walked (AC7). Not editable in MVP — P1 adds a custom list.</p></div>
+                <div class="badge-set">
+                  <span class="chip chip-mute mono">.git</span><span class="chip chip-mute mono">node_modules</span>
+                  <span class="chip chip-mute mono">.venv</span><span class="chip chip-mute mono">venv</span>
+                  <span class="chip chip-mute mono">__pycache__</span><span class="chip chip-mute mono">target</span>
+                  <span class="chip chip-mute mono">dist</span><span class="chip chip-mute mono">build</span>
+                  <span class="chip chip-mute mono">.next</span><span class="chip chip-mute mono">.idea</span>
+                  <span class="chip chip-mute mono">.vscode</span><span class="chip chip-mute">…</span>
+                </div>
+              </div>
+              <div class="set-item">
+                <div><h5>Trigger &amp; limits</h5><p>Scan runs on root add and manual refresh only — no filesystem watching (P2). 500 entries across all roots pauses the scan.</p></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <button class="btn btn-secondary btn-sm">↻ Rescan now</button>
+                  <span class="chip chip-mute">last scan 2m ago · 0.4s</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="set-panel" id="p-roots">
+              <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+                <input class="input mono" style="max-width:380px" placeholder="D:\Path\To\Root">
+                <button class="btn btn-primary btn-sm">＋ Add root</button>
+                <span class="ann" style="transform:translateY(4px)">5</span>
+              </div>
+              <div class="root-row">
+                <span class="rp">D:\GitHub<small>normalized: d:\github · 74 entries · last scan 2m ago</small></span>
+                <span class="switchable"><span class="toggle on" data-toggle></span>enabled</span>
+                <span class="chip chip-blue" style="font-size:9.5px">longest-prefix attribution</span>
+                <button class="btn btn-ghost btn-sm">Remove</button>
+              </div>
+              <div class="root-row">
+                <span class="rp">D:\Projects<small>normalized: d:\projects · 54 entries · last scan 2m ago</small></span>
+                <span class="switchable"><span class="toggle on" data-toggle></span>enabled</span>
+                <button class="btn btn-ghost btn-sm">Remove</button>
+              </div>
+              <div class="callout info" style="margin-top:4px">ℹ Removing a root keeps its registered projects — they lose attribution and are never refreshed by scans again. Nested roots attribute to the deeper one.</div>
+            </div>
+
+            <div class="set-panel" id="p-about">
+              <div class="set-item">
+                <div><h5>Version &amp; data</h5><p>Squirl never writes inside your project folders — everything lives in the platform data directory (AC8).</p></div>
+                <div class="ov-hint" style="line-height:1.9">v0.1.0 · schema_version 1<br>%APPDATA%\squirl\squirl.db (WAL)<br>backups: bak-1 · bak-2 · bak-3 (rolling)</div>
+              </div>
+              <div class="set-item">
+                <div><h5>Single instance</h5><p>Launching Squirl twice just raises the existing window.</p></div>
+                <span class="chip chip-green">active · pid 12840</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>默认执行模式</b>：外部终端为默认（安全默认），内置模式描述「进程归应用、退出回收」</span></li>
+      <li><span class="ann">2</span><span><b>模拟器</b>：显示探测命中与探测顺序（R2 假阳性风险在设置页可手动指定兜底）</span></li>
+      <li><span class="ann">3</span><span><b>Shell</b>：显示解析到的真实路径、逐 shell 参数与 profile 状态；两模式共用（F4 两层配置）</span></li>
+      <li><span class="ann">4</span><span><b>扫描</b>：全局深度克制默认 1；内置排除名单 MVP 不可编辑；无文件监听，手动重扫</span></li>
+      <li><span class="ann">5</span><span><b>根目录</b>：增删/启停；删除根保留条目仅失归属（F2 归属规则）；改路径不提供（G4，删旧加新）</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：PS 5.1 警告 ============ -->
+  <section class="scene" data-key="shell-warn">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="set-grid">
+          <div class="set-nav"><a class="act">⚡ Execution</a><a style="opacity:.4">⊞ Scanning</a><a style="opacity:.4">⌂ Roots</a><a style="opacity:.4">℗ About</a></div>
+          <div class="set-body">
+            <div class="set-item">
+              <div><h5>Default execution mode</h5><p>External terminal is the safe default.</p></div>
+              <div class="radio-wrap">
+                <div class="radio-card sel"><h6>External terminal</h6><p>Opens conhost × PowerShell at cwd</p></div>
+                <div class="radio-card"><h6>Built-in runner</h6><p>In-app process group · logs · exit codes</p></div>
+              </div>
+            </div>
+            <div class="set-item">
+              <div><h5>Terminal emulator</h5><p>Windows Terminal not found in this environment — fell back to console host.</p></div>
+              <div>
+                <span class="select-mock full" style="justify-content:space-between">Console host <span class="chip chip-yellow" style="font-size:9.5px">fallback</span> <span class="caret">▾</span></span>
+                <div class="ov-hint">wt.exe not found in %LOCALAPPDATA%\Microsoft\WindowsApps or PATH → CREATE_NEW_CONSOLE</div>
+              </div>
+            </div>
+            <div class="set-item">
+              <div><h5>Shell</h5><p>pwsh 7+ not installed on this machine — resolved to Windows PowerShell 5.1.</p></div>
+              <div>
+                <span class="select-mock full" style="justify-content:space-between">powershell.exe 5.1 <span class="chip chip-yellow" style="font-size:9.5px">limited</span> <span class="caret">▾</span></span>
+                <div class="ov-hint">resolved: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe · args: -NoLogo -Command</div>
+              </div>
+            </div>
+            <div class="callout warn" style="grid-column:1/-1"><span>⚠</span><span><b>powershell.exe 5.1 does not support <span class="mono">&amp;&amp;</span></b> — commands chaining with it will fail. Squirl shows this warning but never rewrites your commands (R3). Install PowerShell 7 for full support.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend"><li><span class="ann">→</span><span><b>降级链实况</b>：pwsh 缺失 → powershell.exe 5.1；wt.exe 缺失 → 控制台宿主；两类降级都有黄色提示（F4 默认解析/探测优先级的 UI 呈现）</span></li></ol>
+  </section>
+
+  <!-- ============ 场景：未支持 shell 回退 ============ -->
+  <section class="scene" data-key="unsupported">
+    <div class="window slim">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="set-body" style="padding:6px 2px">
+          <div class="set-item" style="grid-template-columns:1fr">
+            <div>
+              <h5><span class="ann ghost">1</span>&nbsp;Shell resolution</h5>
+              <p style="margin-bottom:10px">$SHELL points to an unsupported shell — Squirl fell back to the default chain and will keep working.</p>
+              <div class="callout warn" style="margin-bottom:10px"><span>⚠</span><span><b>fish is not supported in MVP</b> — $SHELL = /usr/bin/fish. Falling back: zsh → bash. Per-shell args <span class="mono">-lic</span> still apply to the fallback.</span></div>
+              <div class="list-row">
+                <div class="lr-main">
+                  <div class="lr-title mono" style="font-size:12px">/usr/bin/fish <span class="chip chip-red" style="font-size:9px">unsupported · ignored</span></div>
+                  <div class="lr-sub">↓ fallback</div>
+                  <div class="lr-title mono" style="font-size:12px">/bin/zsh <span class="chip chip-green" style="font-size:9px">resolved</span></div>
+                  <div class="lr-sub">args: -lic · profile: login + interactive</div>
+                </div>
+              </div>
+              <p style="font-size:11px;color:var(--text-3);margin-top:8px">Decision A #22 — official support: pwsh 7+ / powershell.exe / cmd / bash / zsh.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend"><li><span class="ann">1</span><span><b>未支持 shell 回退</b>（附录 A #22）：探测到 fish/nushell/csh → 回退 zsh → bash 并在设置页明示；不静默吞掉</span></li></ol>
+  </section>
+
+  <div class="doc-footer">
+    <span>Squirl Prototype · 03 Settings · MVP F7/F1</span>
+    <span><a href="02-project-detail.html">← Project Detail</a> · <a href="index.html">Overview</a> · <a href="04-extensions-p1.html">Next: P1 Extensions →</a></span>
+  </div>
+</div>
+<script src="./assets/proto.js"></script>
+</body>
+</html>

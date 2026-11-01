@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squirl · 05 扩展 P2 — 差异化招牌</title>
+<link rel="stylesheet" href="./assets/proto.css">
+<style>
+  .window{position:relative}
+  .win-overlay{position:absolute;inset:0;background:rgba(6,7,9,.58);backdrop-filter:blur(1.5px);z-index:10;
+    display:flex;align-items:flex-start;justify-content:center;padding:64px 20px 24px}
+  .fp-chip{font-family:var(--mono);font-size:9.5px;color:var(--text-3);border:1px dashed var(--border-strong);
+    border-radius:6px;padding:2px 7px;display:inline-flex;gap:5px;align-items:center}
+  .fp-chip b{color:var(--green);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="doc-badge">05 · P2 Extensions — 差异化招牌（探索期四份需求文档的主打卖点）</span>
+    <h1>快填台 · 锁文件流水线 · CLI 词典 · 徽章与初心 · 休眠瘦身</h1>
+    <p class="doc-sub">P2 是 Squirl 与普通启动器拉开差距的一层：README×配置双栏快填解决「跑通开源项目要对照 README 填 .env」的割裂；
+      锁文件指纹让重复 install 静默跳过；全局 CLI 词典解决「忘了工具与长参数」；徽章与初心便签让台账随时间增值；休眠瘦身给旧项目留个体面出口。</p>
+  </header>
+
+  <div class="scene-bar" data-scene-group>
+    <span class="sb-title">P2 · 5 项</span>
+    <button class="pill act" data-scene="quickfill">① README×配置快填台</button>
+    <button class="pill" data-scene="lockfile">② 锁文件指纹流水线</button>
+    <button class="pill" data-scene="cli">③ CLI 词典+参数模板</button>
+    <button class="pill" data-scene="badges">④ 技术栈徽章+Git 元数据</button>
+    <button class="pill" data-scene="hibernate">⑤ 一键休眠瘦身</button>
+  </div>
+
+  <!-- ============ ① 快填台 ============ -->
+  <section class="scene act" data-key="quickfill">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="d-head">
+          <button class="btn btn-ghost btn-sm">← Back</button>
+          <span class="dot dot-idle"></span><span class="name">elegant-clipboard</span>
+          <span class="path">D:\GitHub\Y-ASLant\ElegantClipboard</span>
+          <span class="chip chip-flag" style="cursor:pointer">Quick Fill <span class="kbd" style="margin-left:2px">new</span></span>
+        </div>
+        <div class="split" style="min-height:360px">
+          <div class="qf-pane rd" style="background:var(--card)">
+            <h6><span class="ann ghost">1</span>&nbsp;README.md — rendered (GFM)</h6>
+            <h5>ElegantClipboard</h5>
+            <div class="line" style="width:92%"></div>
+            <div class="line" style="width:78%"></div>
+            <h6 class="rdh">2. Configure environment</h6>
+            <div class="line" style="width:64%"></div>
+            <p style="font-size:10.5px;color:var(--text-2);margin:6px 0 4px;white-space:normal">
+              Copy <span class="inline-var">.env.example</span> to <span class="inline-var">.env</span> and set
+              <span class="inline-var">VITE_CLIP_LIMIT</span>, <span class="hl-scroll"><span class="inline-var">VITE_API_TOKEN</span></span>
+              and <span class="inline-var">SYNC_ENDPOINT</span> before starting the dev server.</p>
+            <div class="codeblock"><span class="lg-dim"># .env.example</span><br>
+VITE_CLIP_LIMIT=<span class="lg-y">500</span><br>
+VITE_API_TOKEN=<span class="lg-y">&lt;your-token-here&gt;</span><br>
+SYNC_ENDPOINT=<span class="lg-y">https://api.example.com</span></div>
+            <h6 class="rdh">3. Run</h6>
+            <div class="line" style="width:52%"></div>
+            <div class="codeblock">pnpm install &amp;&amp; pnpm tauri dev</div>
+            <button class="btn btn-secondary btn-sm" style="margin-top:10px">▶ Set "pnpm tauri dev" as launch command</button>
+          </div>
+          <div class="qf-pane" style="background:var(--card);display:flex;flex-direction:column">
+            <h6 style="display:flex;align-items:center"><span class="ann ghost">2</span>&nbsp;.env — quick fill form
+              <span class="spacer"></span>
+              <span class="chip chip-flag" style="cursor:pointer;font-size:9px">.env.example → .env</span></h6>
+            <div style="flex:1">
+              <div class="kv"><i>VITE_CLIP_LIMIT</i><u class="filled"></u></div>
+              <div class="kv"><i>VITE_API_TOKEN</i><u class="filled"></u></div>
+              <div class="kv"><i>SYNC_ENDPOINT</i><u></u></div>
+              <div style="height:1px;background:var(--border);margin:10px 0"></div>
+              <h6 style="margin-bottom:6px">clipboard.yml</h6>
+              <div class="kv"><i>theme.accent</i><u class="filled"></u></div>
+              <div class="kv"><i>history.max</i><u></u></div>
+            </div>
+            <div class="callout info" style="font-size:10.5px;margin-top:10px"><span>✎</span><span><b>Focusing a field scrolls the README to its variable section</b> (try clicking SYNC_ENDPOINT — the highlighted README span shows the destination). Values are written with format-preserving atomic rewrite: 100% of comments, indentation and key order survive.</span></div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn btn-primary btn-sm">Save &amp; rewrite .env</button>
+              <button class="btn btn-ghost btn-sm">Open file</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>左栏 README 渲染</b>：GFM + 代码高亮；变量名高亮可点；代码块可一键「设为启动命令」</span></li>
+      <li><span class="ann">2</span><span><b>右栏配置表单</b>：自动收集 .env*/yml/toml 键值；聚焦字段联动滚动 README 对应段落（4 份文档共识主打）；magpie 式保格式原子重写，绝不破坏注释与键序</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ② 锁文件流水线 ============ -->
+  <section class="scene" data-key="lockfile">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="d-head">
+          <button class="btn btn-ghost btn-sm">← Back</button>
+          <span class="dot dot-running"></span><span class="name">squirl</span>
+          <span class="path">D:\Code\AICreate\ZCode\squirl</span>
+          <span class="spacer"></span>
+          <span class="chip chip-flag">Lockfile-aware pipeline</span>
+        </div>
+        <div class="pane" style="margin-bottom:12px">
+          <h4><span class="ann ghost">1</span>&nbsp;Run "dev" — three-stage pipeline</h4>
+          <div class="pipe-steps" style="margin:4px 0 10px">
+            <span class="ok">① env inject · .venv detected → activated</span>
+            <span class="skip">② install skipped · lockfile unchanged</span>
+            <span class="run">③ npm run dev · running</span>
+          </div>
+          <div class="logpanel">
+            <div class="log-head"><span class="dot dot-running"></span><span class="t">dev · run #e551</span><span class="spacer"></span><button class="btn btn-danger btn-sm">■ Stop</button></div>
+            <div class="log-body">
+              <div class="lg-dim">──── squirl pipeline ────</div>
+              <div class="lg-c">[1/3] .venv found — injecting activation (pwsh dialect)</div>
+              <div class="lg-c">[2/3] pnpm-lock.yaml sha256 9f21…c4 == recorded · node_modules present</div>
+              <div class="lg-g">[2/3] install skipped (idempotent) — saved ~38s</div>
+              <div class="lg-w">[3/3] npm run dev</div>
+              <div class="lg-dim cursor-blink">&nbsp;</div>
+            </div>
+          </div>
+        </div>
+        <div class="pane">
+          <h4><span class="ann ghost">2</span>&nbsp;Fingerprint state</h4>
+          <div class="list-row">
+            <div class="lr-main">
+              <div class="lr-title mono" style="font-size:12px">pnpm-lock.yaml <span class="fp-chip">sha256 <b>9f21…c4</b></span> <span class="fp-chip">node_modules <b>present</b></span></div>
+              <div class="lr-desc">Last verified 2h ago via install run #d102 · lockfile edit or missing node_modules triggers automatic re-install; force re-run always available.</div>
+            </div>
+            <button class="btn btn-secondary btn-sm">↻ Force re-run install</button>
+          </div>
+          <p style="font-size:11px;color:var(--text-3);margin-top:8px">Boundary: Squirl only <b>detects and assembles commands</b> (env activation dialect, skip/restore decision) — it never installs runtimes or touches lockfiles (环境自治, 附录 A #17).</p>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>三段式流水线</b>（argon 系头号亮点）：会话前置环境注入 → 幂等初始化（锁文件 SHA-256 未变自动跳过）→ 主运行命令；每段在日志中可见</span></li>
+      <li><span class="ann">2</span><span><b>指纹状态卡</b>：记录锁文件哈希与依赖目录存在性；变更/缺失自动恢复执行 install；支持强制重跑</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ③ CLI 词典 ============ -->
+  <section class="scene" data-key="cli">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="wf-label"><h3><span class="ann ghost">1</span>Global commands — dictionary view</h3><span class="mono">global · type: global · cwd ~</span></div>
+        <div class="list-row">
+          <span class="dot dot-idle"></span>
+          <div class="lr-main">
+            <div class="lr-title">dsh <span class="chip chip-mute">ops</span> <span class="chip chip-flag">template · 2 slots</span></div>
+            <div class="lr-sub">dsh deploy {{service}} --env={{env:dev|prod}}</div>
+            <div class="lr-desc">"一键部署脚本——忘了参数组合就打开 Squirl 填空"</div>
+          </div>
+          <button class="btn btn-primary btn-sm" data-open="dlg-fill">⧉ Fill &amp; Run</button>
+          <a class="btn btn-ghost btn-sm" style="text-decoration:none">docs ↗</a>
+        </div>
+        <div class="list-row">
+          <span class="dot dot-idle"></span>
+          <div class="lr-main">
+            <div class="lr-title">pi <span class="chip chip-mute">assistant</span></div>
+            <div class="lr-sub">pi chat --model claude-opus-4</div>
+            <div class="lr-desc">No template — direct run</div>
+          </div>
+          <button class="btn btn-primary btn-sm">▶ Run</button>
+        </div>
+        <div class="list-row">
+          <span class="dot dot-idle"></span>
+          <div class="lr-main">
+            <div class="lr-title">gh pr <span class="chip chip-mute">git</span> <span class="chip chip-flag">template · 1 slot</span></div>
+            <div class="lr-sub">gh pr checkout {{pr}}</div>
+          </div>
+          <button class="btn btn-primary btn-sm">⧉ Fill &amp; Run</button>
+        </div>
+      </div>
+      <div class="win-overlay" id="dlg-fill" style="display:none">
+        <div class="inline-dialog">
+          <div class="dlg-body">
+            <h4><span class="ann" style="margin-right:8px">2</span>Fill parameters — dsh</h4>
+            <p style="margin-bottom:12px">Slot values are substituted at launch; the stored template stays untouched.</p>
+            <div class="field">
+              <label class="mono" style="color:var(--accent)">{{service}}</label>
+              <input class="input mono" value="api-gateway">
+            </div>
+            <div class="field">
+              <label class="mono" style="color:var(--accent)">{{env:dev|prod}}</label>
+              <div class="radio-wrap">
+                <div class="radio-card sel"><h6 class="mono" style="font-size:11.5px">dev</h6></div>
+                <div class="radio-card"><h6 class="mono" style="font-size:11.5px">prod</h6></div>
+              </div>
+            </div>
+            <div class="template-line" style="margin-top:2px">dsh deploy api-gateway --env=<b style="color:var(--green)">dev</b></div>
+          </div>
+          <div class="dlg-actions">
+            <button class="btn btn-ghost" data-close>Cancel</button>
+            <button class="btn btn-secondary" data-close>Save values as defaults</button>
+            <button class="btn btn-primary">▶ Run</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>CLI 词典升级</b>（P2 #9）：用途备忘、分类、文档链接；<span class="mono">{{param}}</span> 命令升级为可填空模板（含枚举槽 <span class="mono">{{env:dev|prod}}</span>）</span></li>
+      <li><span class="ann">2</span><span><b>填空执行</b>：实时预览拼装结果；可存为槽位默认值；模板本体永不改写</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ④ 徽章+Git 元数据 ============ -->
+  <section class="scene" data-key="badges">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="wf-label"><h3><span class="ann ghost">1</span>Registered · card enrichment</h3><span class="mono">tech badges + git metadata</span></div>
+        <div class="pgrid">
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">squirl</span><button class="btn btn-primary btn-sm">▶ dev</button></div>
+            <div class="pcard-path">D:\Code\AICreate\ZCode\squirl</div>
+            <div class="pcard-note">Local project registry &amp; one-click launcher hub</div>
+            <div class="badge-set">
+              <span class="techb" style="background:rgba(240,168,50,.12);color:var(--accent)"><i style="background:var(--accent)"></i>TypeScript</span>
+              <span class="techb" style="background:rgba(90,162,255,.12);color:var(--blue)"><i style="background:var(--blue)"></i>React</span>
+              <span class="techb" style="background:rgba(240,101,95,.12);color:var(--red)"><i style="background:var(--red)"></i>Rust</span>
+              <span class="techb" style="background:rgba(62,207,142,.12);color:var(--green)"><i style="background:var(--green)"></i>pnpm</span>
+            </div>
+            <div class="pcard-meta"><a class="chip chip-blue mono" style="font-size:9.5px;cursor:pointer">↗ github.com/…/squirl</a><span class="spacer"></span><span class="ago">commit 2h ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">magpie</span><button class="btn btn-secondary btn-sm">▶ gateway</button></div>
+            <div class="pcard-path">D:\GitHub\yetone\magpie</div>
+            <div class="pcard-note"><span style="color:var(--text-3)">official:</span> Every agent's model. One place.</div>
+            <div class="badge-set">
+              <span class="techb" style="background:rgba(90,162,255,.12);color:var(--blue)"><i style="background:var(--blue)"></i>Go</span>
+              <span class="techb" style="background:rgba(240,168,50,.12);color:var(--accent)"><i style="background:var(--accent)"></i>Bun</span>
+            </div>
+            <div class="pcard-meta"><a class="chip chip-blue mono" style="font-size:9.5px;cursor:pointer">↗ github.com/yetone/magpie</a><span class="spacer"></span><span class="ago">commit 1d ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">avante.nvim</span><button class="btn btn-secondary btn-sm">▶ make test</button></div>
+            <div class="pcard-path">D:\GitHub\avante.nvim</div>
+            <div class="pcard-note"><span style="color:var(--text-3)">official:</span> Use your favourite LLM in Neovim</div>
+            <div class="badge-set">
+              <span class="techb" style="background:rgba(62,207,142,.12);color:var(--green)"><i style="background:var(--green)"></i>Lua</span>
+              <span class="techb" style="background:rgba(255,255,255,.06);color:var(--text-3)"><i style="background:var(--text-3)"></i>+3</span>
+            </div>
+            <div class="pcard-meta"><a class="chip chip-blue mono" style="font-size:9.5px;cursor:pointer">↗ github.com/…/avante.nvim</a><span class="spacer"></span><span class="ago">commit 3h ago</span></div>
+          </div>
+        </div>
+        <div class="callout info" style="margin-top:14px">ℹ Badges are pure display (零核心价值故不进 MVP)；"official:" 一行由 GitHub 描述/Topics 回填——「我忘了它当初是干嘛的」的直接答案；remote URL 与最后 commit 时间让台账随时间增值（初心便签增强）。</div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>卡片增强</b>（P2 #10/#11）：oh-my-posh 风技术栈徽章（语言/框架/包管理器细分）；remote 直达、commit 时间、官方简介回填</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ⑤ 休眠瘦身 ============ -->
+  <section class="scene" data-key="hibernate">
+    <div class="window">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="d-head">
+          <button class="btn btn-ghost btn-sm">← Back</button>
+          <span class="dot dot-idle"></span><span class="name">rust-playground</span>
+          <span class="path">D:\Projects\rust-playground</span>
+          <span class="spacer"></span>
+          <span class="chip chip-yellow">dormant 3 months · 1.2 GB of build artifacts</span>
+        </div>
+        <div class="pane" style="margin-bottom:12px">
+          <h4><span class="ann ghost">1</span>&nbsp;Hibernate — slim down, keep the memory</h4>
+          <div class="split">
+            <div class="list-row" style="align-items:flex-start;margin-bottom:0">
+              <div class="lr-main">
+                <div class="lr-title">Will be removed</div>
+                <div class="lr-sub" style="white-space:normal">node_modules (840 MB) · target (361 MB) — regenerated on next run</div>
+              </div>
+            </div>
+            <div class="list-row" style="align-items:flex-start;margin-bottom:0">
+              <div class="lr-main">
+                <div class="lr-title">Will be kept</div>
+                <div class="lr-sub" style="white-space:normal">note · commands · quick-filled config · fingerprints reset to "awaiting init"</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-secondary" data-open="dlg-hib">☾ Hibernate project</button>
+            <span style="font-size:11.5px;color:var(--text-3)">frees <b style="color:var(--green)">1.2 GB</b> — the card dims and status becomes "awaiting init" until the next run rebuilds artifacts</span>
+          </div>
+        </div>
+        <div class="pcard" style="opacity:.62;cursor:default;max-width:300px">
+          <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">rust-playground</span><button class="btn btn-ghost btn-sm">＋ init</button></div>
+          <div class="pcard-path">D:\Projects\rust-playground</div>
+          <div class="pcard-note">Exercises from the Rust book · <b style="color:var(--yellow)">awaiting init</b></div>
+          <div class="pcard-meta"><span class="chip chip-yellow" style="font-size:9px">hibernated</span><span class="spacer"></span><span class="ago">3mo ago</span></div>
+        </div>
+      </div>
+      <div class="win-overlay" id="dlg-hib" style="display:none">
+        <div class="inline-dialog">
+          <div class="dlg-body">
+            <h4>Hibernate "rust-playground"?</h4>
+            <p>Deletes <span class="mono">node_modules</span> and <span class="mono">target</span> to free 1.2 GB. Note, commands and filled config are untouched; fingerprints reset. Next run re-installs from the lockfile automatically.</p>
+          </div>
+          <div class="dlg-actions">
+            <button class="btn btn-ghost" data-close>Cancel</button>
+            <button class="btn btn-secondary">☾ Hibernate</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>一键休眠瘦身</b>（P2 #12）：只清构建产物、不动台账记忆；卡片转入「待初始化」弱化态，下次运行自动重建（与锁文件流水线衔接）</span></li>
+    </ol>
+  </section>
+
+  <div class="doc-footer">
+    <span>Squirl Prototype · 05 P2 Extensions</span>
+    <span><a href="04-extensions-p1.html">← P1</a> · <a href="index.html">Overview</a> · <a href="06-extensions-p3.html">Next: P3 →</a></span>
+  </div>
+</div>
+<script src="./assets/proto.js"></script>
+</body>
+</html>

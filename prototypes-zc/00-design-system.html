@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squirl · 设计规范 v1.0（已定稿）</title>
+<style>
+  /* ============ 设计令牌（Squirl「橡果 Oak」提案） ============ */
+  :root{
+    --bg:#0d0f12;            /* 画布：暖调近黑 */
+    --bg-elev:#13161a;       /* 一级浮面 */
+    --card:#171a20;          /* 卡片面 */
+    --card-hover:#1c2027;
+    --border:rgba(255,255,255,.07);
+    --border-strong:rgba(255,255,255,.13);
+    --text-1:#e9ebef;
+    --text-2:#a4abb8;
+    --text-3:#697080;
+    --accent:#f0a832;        /* 琥珀橡果 · 主强调 */
+    --accent-hover:#f6bb55;
+    --accent-dim:rgba(240,168,50,.14);
+    --green:#3ecf8e;         /* running / exited */
+    --green-dim:rgba(62,207,142,.13);
+    --red:#f0655f;           /* failed / 危险 */
+    --red-dim:rgba(240,101,95,.13);
+    --blue:#5aa2ff;          /* 链接 / 信息 */
+    --blue-dim:rgba(90,162,255,.13);
+    --yellow:#e5c453;        /* 警告 */
+    --yellow-dim:rgba(229,196,83,.12);
+    --mono:ui-monospace,"JetBrains Mono","Cascadia Code",Consolas,"Courier New",monospace;
+    --sans:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    --r-card:12px; --r-ctl:8px; --r-chip:999px;
+    --shadow-pop:0 12px 32px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text-1);font-family:var(--sans);font-size:14px;line-height:1.6;
+    background-image:radial-gradient(1200px 500px at 50% -160px,rgba(240,168,50,.05),transparent 70%);}
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 24px 96px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,.mono{font-family:var(--mono);font-size:.92em}
+
+  /* ============ 文档骨架 ============ */
+  .doc-header{padding:28px 0 8px}
+  .doc-badge{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--accent);
+    background:var(--accent-dim);border:1px solid rgba(240,168,50,.3);border-radius:999px;padding:4px 12px;font-weight:600}
+  h1{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:14px 0 8px}
+  .doc-sub{color:var(--text-2);max-width:760px}
+  h2{font-size:19px;font-weight:700;letter-spacing:-.01em;margin:0 0 4px}
+  h3{font-size:14.5px;font-weight:600;margin:0 0 8px}
+  .section{margin-top:56px}
+  .section-head{margin-bottom:18px}
+  .section-head p{color:var(--text-2);font-size:13px;max-width:820px}
+  .sec-tag{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;display:block;margin-bottom:6px}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card)}
+  .note{background:var(--bg-elev);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:10px;padding:12px 16px;color:var(--text-2);font-size:13px}
+
+  /* ============ 1. 调研参考卡 ============ */
+  .ref-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+  .ref-card{padding:18px}
+  .ref-card .rc-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .rc-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:15px;flex:none}
+  .ref-card h3{margin:0}
+  .ref-card .rc-stack{font-size:11px;color:var(--text-3);font-family:var(--mono)}
+  .ref-card ul{list-style:none;margin-top:4px}
+  .ref-card li{font-size:12.5px;color:var(--text-2);padding:3px 0 3px 16px;position:relative}
+  .ref-card li::before{content:"";position:absolute;left:2px;top:11px;width:6px;height:6px;border-radius:2px;background:var(--accent);opacity:.7}
+  .ref-card li b{color:var(--text-1);font-weight:600}
+
+  /* ============ 2. 色板 ============ */
+  .palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .swatch{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card)}
+  .swatch .sw-color{height:64px}
+  .swatch .sw-info{padding:10px 12px}
+  .swatch .sw-name{font-size:12.5px;font-weight:600}
+  .swatch .sw-hex{font-size:11px;color:var(--text-3);font-family:var(--mono)}
+  .light-preview{margin-top:14px;border:1px solid var(--border);border-radius:12px;padding:18px;
+    background:#f5f6f8;color:#191c20}
+  .light-preview .lp-inner{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .light-preview .lp-card{background:#fff;border:1px solid #e3e5ea;border-radius:10px;padding:12px 16px;font-size:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+
+  /* ============ 3. 字体 ============ */
+  .type-row{display:flex;align-items:baseline;gap:18px;padding:13px 16px;border-bottom:1px solid var(--border)}
+  .type-row:last-child{border-bottom:none}
+  .type-meta{width:190px;flex:none;font-size:11px;color:var(--text-3);font-family:var(--mono)}
+  .t-display{font-size:20px;font-weight:700;letter-spacing:-.02em}
+  .t-title{font-size:15px;font-weight:600}
+  .t-body{font-size:13px;color:var(--text-1)}
+  .t-secondary{font-size:13px;color:var(--text-2)}
+  .t-caption{font-size:11.5px;color:var(--text-3)}
+  .t-mono{font-family:var(--mono);font-size:12.5px;color:var(--text-2)}
+
+  /* ============ 4. 组件 ============ */
+  .comp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+  .demo-panel{padding:18px}
+  .demo-panel h3{color:var(--text-2);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .demo-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .demo-col{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+
+  .btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:var(--r-ctl);
+    font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 14px;cursor:pointer;transition:all .15s}
+  .btn-primary{background:var(--accent);color:#201503}
+  .btn-primary:hover{background:var(--accent-hover)}
+  .btn-secondary{background:#232830;color:var(--text-1);border:1px solid var(--border-strong)}
+  .btn-secondary:hover{background:#2a303a}
+  .btn-ghost{background:transparent;color:var(--text-2)}
+  .btn-ghost:hover{background:rgba(255,255,255,.06);color:var(--text-1)}
+  .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(240,101,95,.35)}
+  .btn-danger:hover{background:rgba(240,101,95,.22)}
+  .btn-sm{padding:4px 10px;font-size:11.5px;border-radius:7px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+
+  .input{background:#101318;border:1px solid var(--border-strong);border-radius:var(--r-ctl);
+    color:var(--text-1);font-size:13px;padding:7px 12px;font-family:var(--sans);min-width:200px;outline:none}
+  .input:focus{border-color:rgba(240,168,50,.55);box-shadow:0 0 0 3px rgba(240,168,50,.12)}
+  .input.mono{font-family:var(--mono);font-size:12.5px}
+
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+    border-radius:var(--r-chip);padding:2.5px 9px;border:1px solid transparent}
+  .chip-flag{background:var(--accent-dim);color:var(--accent);border-color:rgba(240,168,50,.3)}
+  .chip-mute{background:rgba(255,255,255,.05);color:var(--text-3);border-color:var(--border)}
+  .chip-green{background:var(--green-dim);color:var(--green)}
+  .chip-red{background:var(--red-dim);color:var(--red)}
+  .chip-blue{background:var(--blue-dim);color:var(--blue)}
+  .chip-yellow{background:var(--yellow-dim);color:var(--yellow)}
+  .chip .mono{font-size:10.5px}
+
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+  .dot-idle{background:transparent;border:2px solid var(--text-3)}
+  .dot-starting{background:var(--yellow);animation:pulse 1.2s infinite}
+  .dot-running{background:var(--green);animation:pulse 1.6s infinite}
+  .dot-exited{background:var(--green)}
+  .dot-failed{background:var(--red)}
+  .dot-killed{background:var(--text-3)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(62,207,142,.4)}70%{box-shadow:0 0 0 6px rgba(62,207,142,0)}100%{box-shadow:0 0 0 0 rgba(62,207,142,0)}}
+  .dot-starting{animation-name:pulseY}
+  @keyframes pulseY{0%{box-shadow:0 0 0 0 rgba(229,196,83,.4)}70%{box-shadow:0 0 0 6px rgba(229,196,83,0)}100%{box-shadow:0 0 0 0 rgba(229,196,83,0)}}
+  .state-list{display:flex;flex-direction:column;gap:9px}
+  .state-item{display:flex;align-items:center;gap:9px;font-size:12.5px}
+  .state-item .mono{color:var(--text-3);font-size:11px}
+
+  .toggle{width:34px;height:19px;border-radius:999px;background:#2b313b;position:relative;cursor:pointer;transition:.15s;flex:none}
+  .toggle::after{content:"";position:absolute;top:2.5px;left:3px;width:14px;height:14px;border-radius:50%;background:#8b93a3;transition:.15s}
+  .toggle.on{background:var(--accent)}
+  .toggle.on::after{left:17px;background:#201503}
+
+  .select-mock{display:inline-flex;align-items:center;gap:8px;background:#101318;border:1px solid var(--border-strong);
+    border-radius:var(--r-ctl);padding:7px 12px;font-size:12.5px;color:var(--text-1);cursor:pointer}
+  .select-mock .caret{color:var(--text-3);font-size:10px}
+
+  .toast{display:flex;align-items:flex-start;gap:10px;background:var(--bg-elev);border:1px solid var(--border-strong);
+    border-radius:10px;padding:11px 14px;box-shadow:var(--shadow-pop);max-width:420px}
+  .toast .t-ic{width:18px;height:18px;border-radius:50%;flex:none;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
+  .toast h4{font-size:12.5px;font-weight:600}
+  .toast p{font-size:11.5px;color:var(--text-2)}
+  .toast-ok .t-ic{background:var(--green-dim);color:var(--green)}
+  .toast-warn .t-ic{background:var(--yellow-dim);color:var(--yellow)}
+  .toast-err .t-ic{background:var(--red-dim);color:var(--red)}
+
+  /* ============ 窗口线框 ============ */
+  .window{border:1px solid var(--border-strong);border-radius:14px;overflow:hidden;background:var(--bg);
+    box-shadow:0 24px 60px rgba(0,0,0,.45);margin-top:16px}
+  .titlebar{display:flex;align-items:center;height:36px;background:var(--bg-elev);border-bottom:1px solid var(--border);padding-left:12px}
+  .titlebar .app-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text-2)}
+  .caption{margin-left:auto;display:flex;height:100%}
+  .caption span{width:44px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:11px}
+  .caption span.close:hover{background:#e5484d;color:#fff}
+  .wf-body{padding:14px 16px 18px}
+  .wf-label{display:flex;align-items:center;justify-content:space-between;margin:6px 2px 12px}
+  .wf-label h3{margin:0;display:flex;align-items:center;gap:8px}
+  .wf-label .mono{font-size:11px;color:var(--text-3)}
+
+  .ann{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
+    background:var(--accent);color:#201503;font-size:10px;font-weight:800;flex:none;font-family:var(--sans)}
+  .ann.ghost{background:transparent;border:1px dashed rgba(240,168,50,.6);color:var(--accent)}
+  .legend{margin:12px 2px 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:4px 24px}
+  .legend li{font-size:12px;color:var(--text-2);display:flex;gap:9px;align-items:baseline;padding:3px 0}
+  .legend .ann{transform:translateY(2px)}
+  .legend b{color:var(--text-1);font-weight:600}
+
+  /* 主窗口顶栏 */
+  .wf-topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;letter-spacing:-.01em}
+  .search-grow{flex:1;min-width:180px;position:relative}
+  .search-grow .input{width:100%;padding-left:30px}
+  .search-grow .s-ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:12px}
+  .kbd{font-family:var(--mono);font-size:10px;border:1px solid var(--border-strong);border-radius:4px;padding:1px 5px;color:var(--text-3)}
+
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:11px}
+  .pcard{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:12px 13px;
+    display:flex;flex-direction:column;gap:7px;transition:.15s;cursor:pointer}
+  .pcard:hover{border-color:var(--border-strong);background:var(--card-hover)}
+  .pcard-top{display:flex;align-items:center;gap:8px}
+  .pcard-name{font-weight:600;font-size:13.5px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pcard-path{font-family:var(--mono);font-size:10.5px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pcard-note{font-size:11.5px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pcard-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .pcard-meta .spacer{flex:1}
+  .pcard-meta .ago{font-size:10.5px;color:var(--text-3)}
+  .pcard.is-missing{border-color:rgba(229,196,83,.35);background:linear-gradient(180deg,rgba(229,196,83,.05),transparent)}
+
+  .dsec{border:1px solid var(--border);border-radius:12px;background:var(--bg-elev);margin-top:14px;overflow:hidden}
+  .dsec-head{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer}
+  .dsec-head h4{font-size:12.5px;font-weight:600;flex:1;display:flex;gap:8px;align-items:center}
+  .dsec-head .cnt{font-size:11px;color:var(--text-3);font-family:var(--mono)}
+  .dsec-filter{padding:0 14px 10px;display:flex;gap:10px;align-items:center}
+  .dsec-filter .input{min-width:150px;padding:5px 10px;font-size:12px}
+  .drow{display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid var(--border)}
+  .drow .rp{font-family:var(--mono);font-size:11.5px;color:var(--text-2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .drow .rp b{color:var(--text-1);font-weight:600}
+  .dsec-foot{padding:8px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3)}
+
+  /* 详情页 */
+  .detail-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;align-items:start}
+  .pane{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+  .pane h4{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px}
+  .cmd-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--border);border-radius:9px;margin-bottom:8px;background:var(--bg-elev)}
+  .cmd-row:last-child{margin-bottom:0}
+  .cmd-info{flex:1;min-width:0}
+  .cmd-name{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .cmd-line{font-family:var(--mono);font-size:11px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .temp-run{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .temp-run .input{flex:1;min-width:140px}
+  .override-grid{display:grid;gap:10px}
+  .ov-row{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center;font-size:12.5px;color:var(--text-2)}
+  .ov-hint{font-size:10.5px;color:var(--text-3);font-family:var(--mono);margin-top:3px}
+  .danger-zone{border:1px solid rgba(240,101,95,.3);border-radius:12px;padding:12px 14px;margin-top:14px;display:flex;align-items:center;gap:12px}
+  .danger-zone p{flex:1;font-size:12px;color:var(--text-2)}
+
+  .logpanel{background:#0a0c0f;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .log-head{display:flex;align-items:center;gap:9px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--bg-elev)}
+  .log-head .t{font-family:var(--mono);font-size:11.5px;font-weight:600}
+  .log-head .spacer{flex:1}
+  .log-body{padding:10px 12px;font-family:var(--mono);font-size:11.5px;line-height:1.75;height:196px;overflow:hidden;position:relative}
+  .log-body::after{content:"";position:absolute;left:0;right:0;bottom:0;height:34px;background:linear-gradient(transparent,#0a0c0f)}
+  .lg-dim{color:#565d6b} .lg-g{color:var(--green)} .lg-c{color:#56c8d8} .lg-y{color:var(--yellow)} .lg-r{color:var(--red)} .lg-w{color:var(--text-2)}
+  .profile-fold{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;color:var(--text-3);
+    border:1px dashed var(--border-strong);border-radius:6px;padding:1px 8px;margin-bottom:4px}
+
+  /* 设置页 */
+  .set-grid{display:grid;grid-template-columns:180px 1fr;gap:0}
+  .set-nav{border-right:1px solid var(--border);padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+  .set-nav a{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--text-2);padding:7px 11px;border-radius:8px}
+  .set-nav a.act{background:var(--accent-dim);color:var(--accent);font-weight:600}
+  .set-body{padding:14px 16px;display:flex;flex-direction:column;gap:16px}
+  .set-item{display:grid;grid-template-columns:1fr 240px;gap:16px;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--border)}
+  .set-item:last-child{border-bottom:none;padding-bottom:0}
+  .set-item h5{font-size:13px;font-weight:600}
+  .set-item p{font-size:11.5px;color:var(--text-3)}
+  .radio-card{border:1px solid var(--border-strong);border-radius:10px;padding:9px 12px;cursor:pointer}
+  .radio-card.sel{border-color:var(--accent);background:var(--accent-dim)}
+  .radio-card h6{font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px}
+  .radio-card p{font-size:10.5px;color:var(--text-3)}
+  .radio-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .slider{height:4px;border-radius:2px;background:#2b313b;position:relative;width:100%}
+  .slider .fill{position:absolute;left:0;top:0;bottom:0;width:10%;background:var(--accent);border-radius:2px}
+  .slider .thumb{position:absolute;left:10%;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:var(--accent);border:3px solid #201503;box-shadow:0 0 0 1px var(--accent)}
+  .callout{border:1px solid var(--border);border-radius:9px;padding:9px 12px;font-size:11.5px;display:flex;gap:9px;align-items:flex-start}
+  .callout.warn{background:var(--yellow-dim);border-color:rgba(229,196,83,.3);color:var(--yellow)}
+  .callout.info{background:var(--blue-dim);border-color:rgba(90,162,255,.3);color:var(--blue)}
+
+  /* 对话框与空状态 */
+  .dlg-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;align-items:start}
+  .dialog{background:var(--bg-elev);border:1px solid var(--border-strong);border-radius:14px;box-shadow:var(--shadow-pop);overflow:hidden}
+  .dialog .dlg-body{padding:18px}
+  .dialog h4{font-size:14.5px;font-weight:650;margin-bottom:6px}
+  .dialog p{font-size:12.5px;color:var(--text-2)}
+  .dialog .dlg-actions{display:flex;justify-content:flex-end;gap:9px;padding:12px 18px;border-top:1px solid var(--border)}
+  .dialog.danger h4{color:var(--red)}
+  .empty-state{padding:52px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .empty-state h3{font-size:17px;margin:2px 0 0}
+  .empty-state p{font-size:13px;color:var(--text-2);max-width:380px}
+  .steps{display:flex;gap:10px;margin:14px 0 18px;flex-wrap:wrap;justify-content:center}
+  .step{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);border:1px solid var(--border);border-radius:999px;padding:6px 14px}
+  .step .n{width:18px;height:18px;border-radius:50%;background:var(--accent-dim);color:var(--accent);font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+  /* 扩展缩略 */
+  .ext-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+  .ext-col{padding:16px}
+  .ext-col .prio{font-size:11px;font-weight:800;letter-spacing:.1em;padding:3px 10px;border-radius:999px;display:inline-block;margin-bottom:6px}
+  .prio.p1{background:var(--blue-dim);color:var(--blue)} .prio.p2{background:var(--accent-dim);color:var(--accent)} .prio.p3{background:var(--green-dim);color:var(--green)}
+  .ext-item{border:1px solid var(--border);border-radius:10px;padding:11px 12px;margin-top:10px;background:var(--bg-elev)}
+  .ext-item h5{font-size:12.5px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .ext-item p{font-size:11px;color:var(--text-3)}
+  .mini-menu{background:var(--bg-elev);border:1px solid var(--border-strong);border-radius:10px;box-shadow:var(--shadow-pop);padding:5px;margin-top:8px;font-size:12px}
+  .mini-menu div{padding:5px 10px;border-radius:6px;color:var(--text-2)}
+  .mini-menu div.sep{height:1px;padding:0;background:var(--border);margin:4px 6px;border-radius:0}
+  .mini-menu div.red{color:var(--red)}
+  .mini-menu .runrow{display:flex;justify-content:space-between;align-items:center;color:var(--text-1)}
+  .template-line{font-family:var(--mono);font-size:11px;background:#101318;border:1px solid var(--border);border-radius:7px;padding:6px 9px;margin-top:7px}
+  .template-line .pv{color:var(--accent);border:1px dashed rgba(240,168,50,.5);border-radius:4px;padding:0 4px}
+  .qf-panes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .qf-pane{border:1px solid var(--border);border-radius:9px;padding:9px;font-size:10.5px;color:var(--text-3);background:#101318;min-height:88px}
+  .qf-pane h6{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px}
+  .qf-pane .line{height:5px;border-radius:3px;background:rgba(255,255,255,.08);margin-bottom:5px}
+  .qf-pane .kv{display:flex;gap:5px;margin-bottom:5px;align-items:center}
+  .qf-pane .kv i{font-style:normal;font-family:var(--mono);font-size:9.5px;color:var(--accent);width:64px;flex:none}
+  .qf-pane .kv u{text-decoration:none;flex:1;height:14px;border:1px solid var(--border-strong);border-radius:4px;display:block}
+  .pipe-steps{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+  .pipe-steps span{font-size:10px;font-weight:600;border-radius:999px;padding:3px 9px;border:1px solid var(--border-strong);color:var(--text-2)}
+  .pipe-steps span.ok{background:var(--green-dim);color:var(--green);border-color:transparent}
+  .pipe-steps span.skip{background:rgba(255,255,255,.05);color:var(--text-3)}
+  .pipe-steps span.run{background:var(--accent-dim);color:var(--accent);border-color:transparent}
+  .logtabs{display:flex;gap:5px;margin-top:8px}
+  .logtabs span{font-family:var(--mono);font-size:10.5px;padding:4px 10px;border-radius:7px;border:1px solid var(--border);color:var(--text-2)}
+  .logtabs span.act{background:var(--card);border-color:var(--border-strong);color:var(--text-1)}
+  .badge-set{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+  .techb{font-size:10px;font-weight:700;border-radius:6px;padding:2.5px 8px;display:inline-flex;align-items:center;gap:4px}
+  .techb i{width:7px;height:7px;border-radius:2px;display:inline-block}
+  .palette-mock{margin-top:8px;background:rgba(10,12,15,.92);border:1px solid var(--border-strong);border-radius:12px;box-shadow:var(--shadow-pop);overflow:hidden}
+  .palette-mock .pm-in{padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-2)}
+  .palette-mock .pm-row{display:flex;justify-content:space-between;padding:7px 12px;font-size:11.5px;color:var(--text-2);border-bottom:1px solid var(--border)}
+  .palette-mock .pm-row:last-child{border-bottom:none}
+  .palette-mock .pm-row.act{background:var(--accent-dim);color:var(--text-1)}
+
+  .filelist{background:#0a0c0f;border:1px solid var(--border);border-radius:12px;padding:18px 22px;
+    font-family:var(--mono);font-size:12.5px;line-height:2;color:var(--text-2);overflow-x:auto}
+  .filelist b{color:var(--accent);font-weight:600}
+  .filelist i{color:var(--text-3);font-style:normal}
+  .filelist .dir{color:var(--text-1)}
+
+  footer{margin-top:64px;border-top:1px solid var(--border);padding-top:20px;color:var(--text-3);font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+  @media (max-width:760px){
+    .detail-grid{grid-template-columns:1fr}
+    .set-grid{grid-template-columns:1fr}
+    .set-nav{flex-direction:row;border-right:none;border-bottom:1px solid var(--border);overflow-x:auto}
+    .set-item{grid-template-columns:1fr}
+    .ov-row{grid-template-columns:1fr}
+    .type-meta{width:120px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ================= 头部 ================= -->
+  <header class="doc-header">
+    <span class="doc-badge">● 设计规范 v1.0 · 已确认定稿（2026-11-01）</span>
+    <h1>Squirl — UI 设计风格与原型草图</h1>
+    <p class="doc-sub">本地项目台账与一键启动中枢 · Tauri 2 + React + Tailwind + shadcn/ui。
+      本页是<b>风格提案与线框草图</b>（非最终原型），包含：调研结论、设计令牌、组件样式、核心页面线框与扩展功能缩略。
+      UI 文案按需求 F8 使用英文，标注说明用中文。</p>
+  </header>
+
+  <div class="note" style="margin-top:20px">
+    <b>风格定位一句话：</b>「暗色橡木工作台」——近黑暖灰画布 + 细边框卡片 + 琥珀橡果点缀，
+    像 Raycast 一样克制，像 Win11 原生应用一样安分；路径、命令、日志一律等宽字体，让「命令行事实」成为视觉主角。
+  </div>
+
+  <!-- ================= 1 调研 ================= -->
+  <section class="section">
+    <div class="section-head">
+      <span class="sec-tag">01 · Research</span>
+      <h2>调研结论：同类产品设计语言</h2>
+      <p>按你的注意事项联网调研了两个指定产品与市面主流同类产品，提炼可借鉴点如下。</p>
+    </div>
+    <div class="ref-grid">
+      <div class="card ref-card">
+        <div class="rc-top">
+          <div class="rc-logo" style="background:linear-gradient(135deg,#2d6a4f,#40916c);color:#fff">EC</div>
+          <div><h3>ElegantClipboard</h3><div class="rc-stack">Tauri 2 + React 19 + shadcn/ui + Tailwind 4</div></div>
+        </div>
+        <ul>
+          <li><b>同技术栈直接参考</b>：与 Squirl 选型完全一致，组件做法可平移</li>
+          <li>Win11 现代 Fluent 气质：<b>圆角卡片、柔和主题色、状态徽章</b></li>
+          <li>Mica/Acrylic 窗口材质 + 明暗跟随系统（<b>材质列为可选增强</b>，三端 WebView 渲染有差异）</li>
+          <li>列表卡片 + 来源图标 + 「已失效」类状态标识的心智模型</li>
+        </ul>
+      </div>
+      <div class="card ref-card">
+        <div class="rc-top">
+          <div class="rc-logo" style="background:linear-gradient(135deg,#1f2430,#3a4256);color:#f0a832">M</div>
+          <div><h3>magpie (usemagpie.ai)</h3><div class="rc-stack">Go · 菜单栏应用 + Web UI + TUI</div></div>
+        </div>
+        <ul>
+          <li>Linear/Vercel 式开发者美学：<b>单色底、1px 低对比细边框、大量留白</b></li>
+          <li><b>等宽字体点缀</b>（CLI/路径），克制的单一点缀色</li>
+          <li>「Small, careful, out of the way」——与 Squirl 轻量定位同气质</li>
+          <li>明暗双主题、点击弹出可搜索列表的交互范式</li>
+        </ul>
+      </div>
+      <div class="card ref-card">
+        <div class="rc-top">
+          <div class="rc-logo" style="background:linear-gradient(135deg,#07080a,#1a1d24);color:#ff6363">R</div>
+          <div><h3>Raycast</h3><div class="rc-stack">启动器 · 键盘优先</div></div>
+        </div>
+        <ul>
+          <li><b>近黑深色画布</b>（#07080a 蓝调）为开发者工具默认底色</li>
+          <li>命令面板 + 可搜索下拉是「项目/命令快启」的成熟交互</li>
+          <li>状态点、快捷键提示（kbd 徽章）等微细节</li>
+        </ul>
+      </div>
+      <div class="card ref-card">
+        <div class="rc-top">
+          <div class="rc-logo" style="background:linear-gradient(135deg,#081c24,#0e3a47);color:#3ecf8e">JT</div>
+          <div><h3>JetBrains Toolbox / Dev Home</h3><div class="rc-stack">项目启动器/管理器同品类</div></div>
+        </div>
+        <ul>
+          <li><b>项目卡片网格 + 快速搜索</b>的台账主界面范式（Toolbox）</li>
+          <li>工具箱式「最近使用」排序与一键打开</li>
+          <li>Dev Home（已停产）的模块化仪表盘只作布局参考</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 2 色彩 ================= -->
+  <section class="section">
+    <div class="section-head">
+      <span class="sec-tag">02 · Color</span>
+      <h2>色彩系统（暗色优先 + 亮色变体）</h2>
+      <p>开发者工具惯例暗色优先；亮色作为 Tauri 设置中的主题切换项。主强调色提议「琥珀橡果」——呼应松鼠埋坚果的品牌隐喻，
+      在一片蓝紫色调的开发者工具中辨识度更高；运行状态色独立于品牌色，保证语义清晰。</p>
+    </div>
+    <div class="palette">
+      <div class="swatch"><div class="sw-color" style="background:#0d0f12;border-bottom:1px solid var(--border)"></div><div class="sw-info"><div class="sw-name">Canvas 画布</div><div class="sw-hex">#0D0F12</div></div></div>
+      <div class="swatch"><div class="sw-color" style="background:#13161a"></div><div class="sw-info"><div class="sw-name">Surface 浮面</div><div class="sw-hex">#13161A</div></div></div>
+      <div class="swatch"><div class="sw-color" style="background:#171a20"></div><div class="sw-info"><div class="sw-name">Card 卡片</div><div class="sw-hex">#171A20</div></div></div>
+      <div class="swatch"><div class="sw-color" style="background:#f0a832"></div><div class="sw-info"><div class="sw-name">Accent 橡果琥珀</div><div class="sw-hex">#F0A832</div></div></div>
+      <div class="swatch"><div class="sw-color" style="background:#3ecf8e"></div><div class="sw-info"><div class="sw-name">Running 成功</div><div class="sw-hex">#3ECF8E</div></div></div>
+      <div class="swatch"><div class="sw-color" style="background:#f0655f"></div><div class="sw-info"><div class="sw-name">Failed / 危险</div><div class="sw-hex">#F0655F</div></div></div>
+      <div class="swatch"><div class="sw-color" style="background:#e5c453"></div><div class="sw-info"><div class="sw-name">Warning 警告</div><div class="sw-hex">#E5C453</div></div></div>
+      <div class="swatch"><div class="sw-color" style="background:#5aa2ff"></div><div class="sw-info"><div class="sw-name">Info / 链接</div><div class="sw-hex">#5AA2FF</div></div></div>
+      <div class="swatch"><div class="sw-color" style="background:linear-gradient(90deg,#e9ebef 50%,#a4abb8 50%)"></div><div class="sw-info"><div class="sw-name">Text 1 / 2</div><div class="sw-hex">#E9EBEF · #A4ABB8</div></div></div>
+      <div class="swatch"><div class="sw-color" style="background:linear-gradient(90deg,rgba(255,255,255,.07),rgba(255,255,255,.13))"></div><div class="sw-info"><div class="sw-name">Border 边框</div><div class="sw-hex">white 7% → 13%</div></div></div>
+    </div>
+    <div class="light-preview">
+      <div style="font-size:12px;font-weight:600;color:#5b6472;margin-bottom:10px">亮色主题变体（示意）</div>
+      <div class="lp-inner">
+        <div class="lp-card">🟠 <b style="color:#b45309">Accent #B45309</b>（暗琥珀保证对比度）</div>
+        <div class="lp-card">Canvas <b>#F5F6F8</b> · Card <b>#FFFFFF</b> · Border <b>#E3E5EA</b></div>
+        <div class="lp-card">Text <b>#191C20</b> · Secondary <b>#5B6472</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 3 字体 ================= -->
+  <section class="section">
+    <div class="section-head">
+      <span class="sec-tag">03 · Type</span>
+      <h2>字体与排版</h2>
+      <p>UI 用 Inter / Segoe UI 系统栈；路径、命令原文、日志一律等宽（JetBrains Mono / Cascadia）——
+      命令原文是本产品的「事实记录」，视觉上让它独占一类字型。桌面密度：正文 13px、行高 1.6。</p>
+    </div>
+    <div class="card">
+      <div class="type-row"><span class="type-meta">Display · 20/700 · -2%</span><span class="t-display">Projects</span></div>
+      <div class="type-row"><span class="type-meta">Title · 15/600</span><span class="t-title">squirl — local project registry &amp; launcher</span></div>
+      <div class="type-row"><span class="type-meta">Body · 13/400</span><span class="t-body">Register any folder as a project, save how to run it, launch with one click.</span></div>
+      <div class="type-row"><span class="type-meta">Secondary · 13</span><span class="t-secondary">Discovered items are ephemeral and never written to config.</span></div>
+      <div class="type-row"><span class="type-meta">Caption · 11.5</span><span class="t-caption">Last run 2 minutes ago · depth 1 · 128 folders</span></div>
+      <div class="type-row"><span class="type-meta">Mono · 12.5</span><span class="t-mono">D:\Code\AICreate\ZCode\squirl&nbsp;&nbsp;·&nbsp;&nbsp;npm run dev&nbsp;&nbsp;·&nbsp;&nbsp;pwsh -Login -NoLogo -Command</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 4 组件 ================= -->
+  <section class="section">
+    <div class="section-head">
+      <span class="sec-tag">04 · Components</span>
+      <h2>核心组件样式</h2>
+      <p>对应 shadcn/ui 基础上的定制层；圆角 12px 卡片 / 8px 控件，阴影只给浮动层（弹窗、菜单、toast），
+      平面层级靠 1px 边框与面色差区分——跨三端 WebView 渲染一致（规避设计文档 R5 风险）。</p>
+    </div>
+    <div class="comp-grid">
+      <div class="card demo-panel">
+        <h3>Buttons 按钮</h3>
+        <div class="demo-row">
+          <button class="btn btn-primary">▶ Run</button>
+          <button class="btn btn-secondary">Add Root</button>
+          <button class="btn btn-ghost">Cancel</button>
+          <button class="btn btn-danger">Delete Project</button>
+          <button class="btn btn-primary btn-sm">Register</button>
+          <button class="btn btn-secondary btn-sm" disabled>Stop</button>
+        </div>
+      </div>
+      <div class="card demo-panel">
+        <h3>Inputs &amp; Select 输入</h3>
+        <div class="demo-col">
+          <input class="input" placeholder="Search projects, paths, notes, commands…" style="width:100%">
+          <input class="input mono" value="npm run dev" style="width:100%">
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <span class="select-mock">Windows Terminal <span class="caret">▾</span></span>
+            <span class="select-mock">pwsh 7+ <span class="caret">▾</span></span>
+            <span class="toggle on"></span><span style="font-size:12px;color:var(--text-2)">Load shell profile</span>
+          </div>
+        </div>
+      </div>
+      <div class="card demo-panel">
+        <h3>Chips 徽章</h3>
+        <div class="demo-row">
+          <span class="chip chip-flag"><span class="mono">package.json</span></span>
+          <span class="chip chip-mute">Cargo.toml</span>
+          <span class="chip chip-green">● Running</span>
+          <span class="chip chip-red">✕ Exit 1</span>
+          <span class="chip chip-yellow">⚠ Path missing</span>
+          <span class="chip chip-blue">↗ External</span>
+          <span class="chip chip-mute">Follow global</span>
+        </div>
+      </div>
+      <div class="card demo-panel">
+        <h3>Run States 命令状态机六态（永远可见）</h3>
+        <div class="demo-col">
+          <div class="state-item"><span class="dot dot-idle"></span>idle <span class="mono">— 未运行</span></div>
+          <div class="state-item"><span class="dot dot-starting"></span>starting <span class="mono">— 拉起中</span></div>
+          <div class="state-item"><span class="dot dot-running"></span>running <span class="mono">— 运行中（呼吸灯）</span></div>
+          <div class="state-item"><span class="dot dot-exited"></span>exited(0) <span class="mono">— 正常退出</span></div>
+          <div class="state-item"><span class="dot dot-failed"></span>failed <span class="mono">— 非零退出</span></div>
+          <div class="state-item"><span class="dot dot-killed"></span>killed <span class="mono">— 被停止/回收</span></div>
+        </div>
+      </div>
+      <div class="card demo-panel">
+        <h3>Toasts 轻提示（三通道之一）</h3>
+        <div class="demo-col">
+          <div class="toast toast-warn"><span class="t-ic">!</span><div><h4>Scan paused at 500 items</h4><p>Continue scanning, lower depth to 1, or cancel.</p></div></div>
+          <div class="toast toast-err"><span class="t-ic">✕</span><div><h4>Command not found: pnpm</h4><p>Exit code 127 · check shell PATH visibility.</p></div></div>
+          <div class="toast toast-ok"><span class="t-ic">✓</span><div><h4>Database restored from backup</h4><p>Previous snapshot reloaded after integrity check failure.</p></div></div>
+        </div>
+      </div>
+      <div class="card demo-panel">
+        <h3>Project Card 解剖（最重要组件）</h3>
+        <div class="demo-col" style="margin-top:14px">
+          <div class="pcard" style="cursor:default">
+            <div class="pcard-top"><span class="dot dot-running"></span><span class="pcard-name">squirl</span><button class="btn btn-primary btn-sm">▶ dev <span style="opacity:.6">▾</span></button></div>
+            <div class="pcard-path">D:\Code\AICreate\ZCode\squirl</div>
+            <div class="pcard-note">Local project registry &amp; one-click launcher hub</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">package.json</span><span class="spacer"></span><span class="ago">2m ago</span></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-3);display:grid;gap:3px">
+            <span>① 状态点（六态）② 名称 ③ 快启按钮（单命令直启 / 多命令 = 最近使用 + ▾ 下拉，G3）</span>
+            <span>④ 路径（等宽）⑤ 备注摘要（一行截断）⑥ 标志文件徽章 + 最近使用时间（lastRunAt 排序依据）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 5 线框图 ================= -->
+  <section class="section">
+    <div class="section-head">
+      <span class="sec-tag">05 · Wireframes · MVP 核心流程</span>
+      <h2>核心页面线框草图</h2>
+      <p>四个 MVP 界面 + 关键弹窗。正式原型将做成可点击的完整状态（空状态/扫描中/错误态均覆盖），此处为布局与信息架构确认用。</p>
+    </div>
+
+    <!-- 5.1 主窗口 -->
+    <div class="window">
+      <div class="titlebar">
+        <div class="app-title">
+          <svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 4C7.5 4 4.8 6.1 4.2 9h15.6C19.2 6.1 16.5 4 12 4Z" fill="#a16207"/><rect x="10.7" y="1.8" width="2.6" height="3.2" rx="1.2" fill="#a16207"/><path d="M5.5 10.5c0 5.4 3 9 6.5 11 3.5-2 6.5-5.6 6.5-11Z" fill="#f0a832"/></svg>
+          Squirl
+        </div>
+        <div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-topbar">
+          <span class="logo">Squirl</span>
+          <div class="search-grow"><span class="s-ic">⌕</span><input class="input" placeholder="Search projects, paths, notes, commands…"></div>
+          <button class="btn btn-secondary btn-sm">＋ Add Root</button>
+          <button class="btn btn-secondary btn-sm">⌂ Register Folder</button>
+          <button class="btn btn-ghost btn-sm">⚙</button>
+          <span class="ann">1</span>
+        </div>
+        <div class="wf-label"><h3><span class="ann ghost">2</span>Registered · 10</h3><span class="mono">sorted by last_run_at</span></div>
+        <div class="pgrid">
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-running"></span><span class="pcard-name">squirl</span><button class="btn btn-primary btn-sm">▶ dev <span style="opacity:.6">▾</span></button></div>
+            <div class="pcard-path">D:\Code\AICreate\ZCode\squirl</div>
+            <div class="pcard-note">Local project registry &amp; one-click launcher hub</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">package.json</span><span class="spacer"></span><span class="ago">2m ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-failed"></span><span class="pcard-name">openai-translator</span><button class="btn btn-secondary btn-sm">▶ build</button></div>
+            <div class="pcard-path">D:\GitHub\openai-translator</div>
+            <div class="pcard-note">Tauri rewrite in progress · failed last run</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">package.json</span><span class="spacer"></span><span class="ago">1h ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-exited"></span><span class="pcard-name">avante.nvim</span><button class="btn btn-secondary btn-sm">▶ make test <span style="opacity:.6">▾</span></button></div>
+            <div class="pcard-path">D:\GitHub\avante.nvim</div>
+            <div class="pcard-note">Neovim AI assistant plugin · exploring</div>
+            <div class="pcard-meta"><span class="chip chip-mute">Makefile</span><span class="spacer"></span><span class="ago">yesterday</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">dotfiles</span><button class="btn btn-ghost btn-sm">＋ command</button></div>
+            <div class="pcard-path">D:\Projects\dotfiles</div>
+            <div class="pcard-note">zsh + starship + ghostty config, no commands saved yet</div>
+            <div class="pcard-meta"><span class="chip chip-mute">.git</span><span class="spacer"></span><span class="ago">3d ago</span></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-top"><span class="dot dot-killed"></span><span class="pcard-name">rust-playground</span><button class="btn btn-secondary btn-sm">▶ cargo watch</button></div>
+            <div class="pcard-path">D:\Projects\rust-playground</div>
+            <div class="pcard-note">Exercises from the Rust book</div>
+            <div class="pcard-meta"><span class="chip chip-flag mono">Cargo.toml</span><span class="spacer"></span><span class="ago">5d ago</span></div>
+          </div>
+          <div class="pcard is-missing">
+            <div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">old-scraper</span><button class="btn btn-ghost btn-sm" disabled>Relocate</button></div>
+            <div class="pcard-path">E:\Temp\old-scraper</div>
+            <div class="pcard-note">Path missing — commands visible but cannot run</div>
+            <div class="pcard-meta"><span class="chip chip-yellow">⚠ Path missing</span><span class="spacer"></span><span class="ago">2w ago</span></div>
+          </div>
+        </div>
+
+        <div class="dsec">
+          <div class="dsec-head">
+            <span style="color:var(--text-3);font-size:10px">▾</span>
+            <h4><span class="ann ghost">3</span>Discovered this scan <span class="cnt">128 folders · depth 1 · 2 roots</span></h4>
+            <button class="btn btn-ghost btn-sm">↻ Refresh</button>
+          </div>
+          <div class="dsec-filter">
+            <input class="input" placeholder="Filter by name (local only)…">
+            <span class="chip chip-mute">ephemeral · not saved to config</span>
+          </div>
+          <div class="drow"><span class="rp">GitHub/yetone/<b>magpie</b></span><span class="chip chip-flag mono">go.mod</span><button class="btn btn-secondary btn-sm">Register</button></div>
+          <div class="drow"><span class="rp">GitHub/Y-ASLant/<b>ElegantClipboard</b></span><span class="chip chip-flag mono">package.json</span><button class="btn btn-secondary btn-sm">Register</button></div>
+          <div class="drow"><span class="rp">Projects/scratch/<b>temp-notebook</b></span><span class="chip chip-mute">no flags</span><button class="btn btn-ghost btn-sm">Register</button></div>
+          <div class="dsec-foot">Not included in global search · cannot run until registered · cleared on next scan or app restart</div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>顶栏</b>：全局搜索（覆盖名称/路径/备注/命令名，150ms debounce）+ 添加根目录 + 手动注册 + 设置入口</span></li>
+      <li><span class="ann">2</span><span><b>已登记区</b>：卡片网格按 lastRunAt 排序；快启按钮多命令时带 ▾ 下拉；路径失效卡片黄色高亮且不可运行</span></li>
+      <li><span class="ann">3</span><span><b>本次发现区</b>：可折叠、瞬时数据；仅本地名称过滤、不入全局搜索；标志文件命中高亮；每项提供 Register；未登记不可运行</span></li>
+    </ol>
+
+    <!-- 5.2 项目详情 -->
+    <div class="window" style="margin-top:36px">
+      <div class="titlebar">
+        <div class="app-title">Squirl</div>
+        <div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div>
+      </div>
+      <div class="wf-body">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm">← Back</button>
+          <span class="dot dot-running"></span>
+          <span style="font-size:16px;font-weight:700">squirl</span>
+          <span class="mono" style="font-size:11px;color:var(--text-3)">D:\Code\AICreate\ZCode\squirl</span>
+          <span class="chip chip-flag mono">package.json</span>
+          <span class="spacer" style="flex:1"></span>
+          <span class="chip chip-mute">last run 2m ago · 14 runs</span>
+        </div>
+        <div class="detail-grid">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="pane">
+              <h4><span class="ann ghost">1</span>&nbsp;Note 备注</h4>
+              <textarea class="input" style="width:100%;min-height:52px;resize:vertical;font-family:var(--sans)">Local project registry &amp; one-click launcher hub. The squirrel that remembers where the nuts are buried.</textarea>
+            </div>
+            <div class="pane">
+              <h4><span class="ann ghost">2</span>&nbsp;Commands 命令（每项目多条）</h4>
+              <div class="cmd-row">
+                <span class="dot dot-running"></span>
+                <div class="cmd-info"><div class="cmd-name">dev <span class="chip chip-green">running</span></div><div class="cmd-line">npm run dev · cwd: project root</div></div>
+                <button class="btn btn-danger btn-sm">■ Stop</button>
+                <button class="btn btn-ghost btn-sm">Edit</button>
+              </div>
+              <div class="cmd-row">
+                <span class="dot dot-failed"></span>
+                <div class="cmd-info"><div class="cmd-name">build <span class="chip chip-red">exit 1</span></div><div class="cmd-line">npm run build · cwd: project root</div></div>
+                <button class="btn btn-primary btn-sm">▶ Run</button>
+                <button class="btn btn-ghost btn-sm">Edit</button>
+              </div>
+              <div class="cmd-row">
+                <span class="dot dot-idle"></span>
+                <div class="cmd-info"><div class="cmd-name">test</div><div class="cmd-line">vitest run --coverage · cwd: project root</div></div>
+                <button class="btn btn-primary btn-sm">▶ Run</button>
+                <button class="btn btn-ghost btn-sm">Edit</button>
+              </div>
+              <div class="temp-run">
+                <input class="input mono" placeholder="One-off command, e.g. pnpm install">
+                <button class="btn btn-secondary">▶ Run</button>
+                <span class="ann">3</span>
+                <button class="btn btn-secondary">💾 Save</button>
+              </div>
+            </div>
+            <div class="pane">
+              <h4><span class="ann ghost">4</span>&nbsp;Execution Override 执行覆盖（三值可空 = 跟随全局）</h4>
+              <div class="override-grid">
+                <div class="ov-row"><span>Mode</span><span class="select-mock">Follow global <span style="color:var(--text-3)">(External terminal)</span> <span class="caret">▾</span></span></div>
+                <div class="ov-row"><span>Emulator</span><span class="select-mock">Follow global <span style="color:var(--text-3)">(Windows Terminal)</span> <span class="caret">▾</span></span></div>
+                <div class="ov-row"><span>Shell</span><span class="select-mock">Follow global <span style="color:var(--text-3)">(pwsh 7+)</span> <span class="caret">▾</span></span></div>
+              </div>
+              <div class="ov-hint">effective: external · wt.exe × pwsh -Login -NoLogo · cwd D:\Code\AICreate\ZCode\squirl</div>
+            </div>
+            <div class="danger-zone">
+              <p><b style="color:var(--red)">Danger zone</b> · Delete project removes 3 saved commands. Running (built-in) commands block deletion.</p>
+              <button class="btn btn-danger btn-sm">Delete Project</button>
+            </div>
+          </div>
+          <div class="pane">
+            <h4><span class="ann ghost">5</span>&nbsp;Logs 日志面板（仅内置模式）</h4>
+            <div class="logpanel">
+              <div class="log-head">
+                <span class="dot dot-running"></span><span class="t">dev · run #a3f2</span>
+                <span class="spacer"></span>
+                <span class="chip chip-mute" style="font-size:10px">auto-scroll ✓</span>
+                <button class="btn btn-danger btn-sm">■ Stop</button>
+              </div>
+              <div class="log-body">
+                <div class="profile-fold">▸ profile output · 12 lines</div>
+                <div class="lg-dim">──── squirl command output ────</div>
+                <div class="lg-w">$ npm run dev</div>
+                <div class="lg-g">&gt; squirl@0.1.0 dev</div>
+                <div class="lg-g">&gt; vite</div>
+                <div class="lg-w">&nbsp;</div>
+                <div class="lg-c">&nbsp;&nbsp;VITE v8.3.5&nbsp;&nbsp;ready in 412 ms</div>
+                <div class="lg-w">&nbsp;</div>
+                <div class="lg-g">&nbsp;&nbsp;➜&nbsp;&nbsp;Local:&nbsp;&nbsp;<u style="text-decoration-color:#3ecf8e88">http://localhost:5173/</u></div>
+                <div class="lg-g">&nbsp;&nbsp;➜&nbsp;&nbsp;press h + enter to show help</div>
+                <div class="lg-y">[run] watching for changes…</div>
+                <div class="lg-dim">▌</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:10px;display:grid;gap:3px">
+              <span>· ANSI 归一化渲染 · 环形缓冲 5,000 行 / 2MB，超出丢最早</span>
+              <span>· profile 输出与命令输出以分隔线分折叠区</span>
+              <span>· 疑似等待输入（30s 无输出）→ 横幅提示 + 强制停止</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>备注</b>：台账的核心增值字段，随手可编辑</span></li>
+      <li><span class="ann">2</span><span><b>命令列表</b>：六态状态点 + 运行/停止/编辑；内置模式运行中禁止删除</span></li>
+      <li><span class="ann">3</span><span><b>临时命令</b>：常驻「Save」按钮随时可存（需确认命名）；内置模式下运行结束提示一次「是否保存」</span></li>
+      <li><span class="ann">4</span><span><b>执行覆盖</b>：Mode / Emulator / Shell 三项均可「跟随全局」或指定，底部实时显示合并后的生效配置</span></li>
+      <li><span class="ann">5</span><span><b>日志面板</b>：按 run_id 归属；profile 折叠、自动滚动开关、Stop 整组回收</span></li>
+    </ol>
+
+    <!-- 5.3 设置页 -->
+    <div class="window" style="margin-top:36px">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="set-grid">
+          <div class="set-nav">
+            <a class="act">⚡ Execution</a>
+            <a>⊞ Scanning</a>
+            <a>℗ Roots <span class="chip chip-mute" style="margin-left:auto">2</span></a>
+            <a> About</a>
+          </div>
+          <div class="set-body">
+            <div class="set-item">
+              <div><h5>Default execution mode</h5><p>External terminal is the safe default — processes belong to your terminal.</p></div>
+              <div class="radio-wrap">
+                <div class="radio-card sel"><h6><span class="dot" style="background:var(--accent);width:8px;height:8px"></span>External terminal</h6><p>Opens in WT × pwsh, window stays open</p></div>
+                <div class="radio-card"><h6>Built-in runner</h6><p>In-app with logs &amp; exit codes</p></div>
+              </div>
+            </div>
+            <div class="set-item">
+              <div><h5>Terminal emulator</h5><p>Used by external mode. Detected automatically, can be overridden.</p></div>
+              <span class="select-mock">Windows Terminal <span class="chip chip-green" style="font-size:9.5px">detected</span> <span class="caret">▾</span></span>
+            </div>
+            <div class="set-item">
+              <div><h5>Shell</h5><p>Shared by both modes. Resolution: pwsh 7+ → powershell.exe → cmd.exe.</p></div>
+              <div>
+                <span class="select-mock" style="width:100%;justify-content:space-between">pwsh 7+ <span class="caret">▾</span></span>
+                <div class="ov-hint">resolved: C:\Program Files\PowerShell\7\pwsh.exe</div>
+              </div>
+            </div>
+            <div class="set-item">
+              <div><h5>Load shell profile</h5><p>Login + interactive flags so nvm / conda / brew are available.</p></div>
+              <span class="toggle on"></span>
+            </div>
+            <div class="callout warn" style="grid-column:1/-1">⚠ powershell.exe 5.1 selected — <b>&amp;&amp;</b> is not supported in this shell; commands using it will fail. MVP will not rewrite your commands.</div>
+            <div class="callout info" style="grid-column:1/-1">ℹ fish / nushell are not supported in MVP — if $SHELL points to them, Squirl falls back to zsh → bash and shows this notice.</div>
+            <div class="set-item">
+              <div><h5>Scan depth</h5><p>1 = first-level subfolders only (default). Global for all roots, max 10.</p></div>
+              <div><div class="slider"><div class="fill"></div><div class="thumb"></div></div>
+                <div class="ov-hint" style="display:flex;justify-content:space-between"><span>1 · current</span><span>10 · max</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5.4 弹窗与空状态 -->
+    <div class="dlg-row" style="margin-top:36px">
+      <div class="dialog">
+        <div class="dlg-body">
+          <h4><span class="ann" style="margin-right:6px">A</span>Scan paused — 500 items</h4>
+          <p>All roots reached the 500-entry limit at depth 3. What would you like to do?</p>
+        </div>
+        <div class="dlg-actions">
+          <button class="btn btn-ghost">Cancel</button>
+          <button class="btn btn-secondary">Lower depth to 1</button>
+          <button class="btn btn-primary">Continue scanning</button>
+        </div>
+      </div>
+      <div class="dialog">
+        <div class="dlg-body">
+          <h4><span class="ann" style="margin-right:6px">B</span>Save command</h4>
+          <p style="margin-bottom:10px">Name this command before saving. <span class="mono" style="font-size:11px">npm run dev</span> · cwd: project root</p>
+          <input class="input" value="dev-server" style="width:100%">
+        </div>
+        <div class="dlg-actions">
+          <button class="btn btn-ghost">Cancel</button>
+          <button class="btn btn-primary">Save</button>
+        </div>
+      </div>
+      <div class="dialog danger">
+        <div class="dlg-body">
+          <h4>Delete "squirl"?</h4>
+          <p>This will also remove <b style="color:var(--text-1)">3 saved commands</b>. This cannot be undone. Running built-in commands block deletion.</p>
+        </div>
+        <div class="dlg-actions">
+          <button class="btn btn-ghost">Cancel</button>
+          <button class="btn btn-danger">Delete</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="empty-state">
+          <svg width="44" height="44" viewBox="0 0 24 24"><path d="M12 4C7.5 4 4.8 6.1 4.2 9h15.6C19.2 6.1 16.5 4 12 4Z" fill="#a16207"/><rect x="10.7" y="1.8" width="2.6" height="3.2" rx="1.2" fill="#a16207"/><path d="M5.5 10.5c0 5.4 3 9 6.5 11 3.5-2 6.5-5.6 6.5-11Z" fill="#f0a832"/></svg>
+          <h3>Welcome to Squirl</h3>
+          <p><span class="ann" style="margin-right:6px">C</span>The squirrel that remembers where your projects are buried.</p>
+          <div class="steps">
+            <span class="step"><span class="n">1</span>Add a root folder</span>
+            <span class="step"><span class="n">2</span>Squirl scans it</span>
+            <span class="step"><span class="n">3</span>Register &amp; run</span>
+          </div>
+          <button class="btn btn-primary">＋ Add your first root</button>
+          <span style="font-size:11px;color:var(--text-3)">or drag &amp; drop a folder anywhere</span>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">A</span><span><b>500 条暂停</b>三选一对话框（继续 / 降深度 / 取消）</span></li>
+      <li><span class="ann">B</span><span><b>保存命令命名</b>——「不偷偷记住键入内容」原则的落地</span></li>
+      <li><span class="ann">C</span><span><b>首启空状态</b>引导：添加根目录 → 扫描 → 登记运行；支持拖拽文件夹注册</span></li>
+    </ol>
+  </section>
+
+  <!-- ================= 6 扩展 ================= -->
+  <section class="section">
+    <div class="section-head">
+      <span class="sec-tag">06 · Wireframes · Extensions</span>
+      <h2>扩展功能缩略草图（P1 / P2 / P3）</h2>
+      <p>招牌功能先看信息架构方向，确认后正式原型单独成文件。P1 = 补全核心体验，P2 = 差异化招牌，P3 = 生态远期。</p>
+    </div>
+    <div class="ext-grid">
+      <!-- P1 -->
+      <div class="card ext-col">
+        <span class="prio p1">P1 · 补全核心体验</span>
+        <div class="ext-item">
+          <h5>系统托盘（默认关闭）</h5>
+          <p>关窗 = 隐藏到托盘；托盘「Quit」才真正回收全部进程</p>
+          <div class="mini-menu">
+            <div class="runrow"><span>🐿 Squirl — Show</span></div><div class="sep"></div>
+            <div class="runrow"><span><span class="dot dot-running" style="width:7px;height:7px"></span>&nbsp;squirl · dev</span><span class="mono" style="font-size:10px;color:var(--text-3)">stop</span></div>
+            <div class="sep"></div><div class="red">Quit Squirl</div>
+          </div>
+        </div>
+        <div class="ext-item">
+          <h5>全局命令 <span class="chip chip-mute">type: global</span></h5>
+          <p>不绑定根目录的工具命令台账，cwd 默认主目录</p>
+          <div class="template-line"><b style="color:var(--text-1)">pi</b>&nbsp;&nbsp;pi chat --model <span class="pv">{{model}}</span></div>
+        </div>
+        <div class="ext-item">
+          <h5>多会话管理 UI</h5>
+          <p>日志标签页 + 并行状态一览 + 批量停止</p>
+          <div class="logtabs"><span class="act">dev ●</span><span>test ●</span><span>build</span><span style="border-style:dashed;color:var(--text-3)">＋ stop all</span></div>
+        </div>
+        <div class="ext-item">
+          <h5>每根目录深度 + 自定义排除</h5>
+          <p>根目录行内深度步进器；排除名单可增删</p>
+          <div class="template-line" style="display:flex;justify-content:space-between;align-items:center"><span>D:\GitHub</span><span class="chip chip-mute">depth 2 ▴▾</span></div>
+        </div>
+        <div class="ext-item"><h5>外部 IDE 一键打开</h5><p>详情页/卡片菜单：VS Code · Cursor · 文件管理器</p></div>
+      </div>
+      <!-- P2 -->
+      <div class="card ext-col">
+        <span class="prio p2">P2 · 差异化招牌</span>
+        <div class="ext-item">
+          <h5>README × 配置双栏快填台</h5>
+          <p>左栏渲染 README，右栏 .env/yml/toml 表单；聚焦表单自动滚动 README 到对应段落；保格式原子重写</p>
+          <div class="qf-panes">
+            <div class="qf-pane"><h6>README.md</h6><div class="line" style="width:88%"></div><div class="line" style="width:70%"></div><div class="line" style="width:80%"></div><div class="line" style="width:45%;background:var(--accent-dim)"></div><div class="line" style="width:66%"></div></div>
+            <div class="qf-pane"><h6>.env — quick fill</h6><div class="kv"><i>API_KEY</i><u></u></div><div class="kv"><i>PORT</i><u></u></div><div class="kv"><i>DB_URL</i><u></u></div><span class="chip chip-flag" style="font-size:9px">.env.example → .env</span></div>
+          </div>
+        </div>
+        <div class="ext-item">
+          <h5>锁文件指纹感知流水线</h5>
+          <p>环境注入 → 幂等初始化（锁文件 SHA-256 未变则跳过 install）→ 主命令</p>
+          <div class="pipe-steps"><span class="ok">① .venv detected · injected</span><span class="skip">② install skipped (lockfile unchanged)</span><span class="run">③ npm run dev</span></div>
+        </div>
+        <div class="ext-item">
+          <h5>全局 CLI 词典 + 参数模板</h5>
+          <p>工具用途备忘、分类、文档链接；<span class="mono">{{param}}</span> 填空执行</p>
+          <div class="template-line">dsh deploy <span class="pv">{{service}}</span> --env=<span class="pv">{{env:dev|prod}}</span></div>
+        </div>
+        <div class="ext-item">
+          <h5>技术栈徽章 + Git 元数据</h5>
+          <p>oh-my-posh 风矢量徽章；remote URL 直达、最后 commit 时间、GitHub 简介回填</p>
+          <div class="badge-set">
+            <span class="techb" style="background:rgba(62,207,142,.12);color:#3ecf8e"><i style="background:#3ecf8e"></i>Rust</span>
+            <span class="techb" style="background:rgba(240,168,50,.12);color:var(--accent)"><i style="background:var(--accent)"></i>Node</span>
+            <span class="techb" style="background:rgba(90,162,255,.12);color:var(--blue)"><i style="background:var(--blue)"></i>React</span>
+            <span class="chip chip-mute mono" style="font-size:9.5px">↗ github.com/squirl · 3d ago</span>
+          </div>
+        </div>
+        <div class="ext-item">
+          <h5>一键休眠瘦身</h5>
+          <p>清理 node_modules/.venv/target 释放磁盘；保留备注、命令与配置，状态重置「待初始化」</p>
+          <div class="template-line" style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--text-3)">node_modules + target</span><span class="chip chip-blue"> Hibernate · free 1.2 GB</span></div>
+        </div>
+      </div>
+      <!-- P3 -->
+      <div class="card ext-col">
+        <span class="prio p3">P3 · 生态与平台化</span>
+        <div class="ext-item">
+          <h5>Ctrl+K 命令面板</h5>
+          <p>全库快速跳转与执行（Raycast 式）</p>
+          <div class="palette-mock">
+            <div class="pm-in">⌕ run <span class="kbd">Ctrl K</span></div>
+            <div class="pm-row act"><span>▶ squirl · dev</span><span class="mono" style="font-size:10px">enter</span></div>
+            <div class="pm-row"><span>▶ avante.nvim · make test</span></div>
+            <div class="pm-row"><span>◇ go to project · magpie</span></div>
+          </div>
+        </div>
+        <div class="ext-item">
+          <h5>端口雷达</h5>
+          <p>启动前冲突预检；运行中项目监听端口徽章，一键浏览器跳转</p>
+          <div class="template-line" style="display:flex;gap:6px;align-items:center"><span class="chip chip-green">:5173 open ↗</span><span class="chip chip-yellow">:3000 conflict · kill?</span></div>
+        </div>
+        <div class="ext-item">
+          <h5>Shell Doctor 预检</h5>
+          <p>跨终端 PATH 缺失亚毫秒预检 + 一键修复</p>
+        </div>
+        <div class="ext-item">
+          <h5>插件架构 / 跨设备同步 / MCP Server</h5>
+          <p>manifest + 生命周期钩子；双锚点路径映射同步；供 Claude Code 查询台账</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 7 文件清单 ================= -->
+  <section class="section">
+    <div class="section-head">
+      <span class="sec-tag">07 · Deliverables</span>
+      <h2>确认后的原型交付清单</h2>
+      <p>按「核心业务流程 / 扩展功能」分文件，每份响应式、可点击交互（状态切换、弹窗演示）。</p>
+    </div>
+    <div class="filelist">
+<span class="dir">prototypes/</span>
+├─ <b>index.html</b>                  <i>导航入口：全原型索引 + 设计速览</i>
+├─ <b>00-design-system.html</b>       <i>风格规范（本文件，确认后定稿）</i>
+├─ <b>01-home.html</b>                <i>核心 · 主窗口：空状态引导 / 扫描中 / 已登记网格 / 发现区展开·折叠 / 搜索 / 500 暂停 / 登记 / 手动注册 / 路径失效</i>
+├─ <b>02-project-detail.html</b>      <i>核心 · 详情页：备注 / 命令列表（六态）/ 临时命令+常驻保存 / 执行覆盖 / 日志面板（运行·失败·等待输入）/ 删除确认 / 重新定位</i>
+├─ <b>03-settings.html</b>            <i>核心 · 设置页：默认模式 / 模拟器探测 / shell 解析与回退警告 / profile / 扫描深度</i>
+├─ <b>04-extensions-p1.html</b>       <i>扩展 · P1：托盘 / 全局命令 / 多会话日志标签 / 每根深度+自定义排除 / IDE 一键打开</i>
+├─ <b>05-extensions-p2.html</b>       <i>扩展 · P2：README×配置快填台 / 锁文件流水线 / CLI 词典+参数模板 / 技术栈徽章+Git 元数据 / 休眠瘦身</i>
+└─ <b>06-extensions-p3.html</b>       <i>扩展 · P3（可选）：命令面板 / 端口雷达 / Shell Doctor / 插件·同步·MCP 概念</i>
+    </div>
+  </section>
+
+  <!-- ================= 待确认 ================= -->
+  <section class="section">
+    <div class="section-head">
+      <span class="sec-tag">08 · Decisions</span>
+      <h2>已确认决议（2026-11-01，产品负责人拍板）</h2>
+    </div>
+    <div class="comp-grid">
+      <div class="card demo-panel"><h3>D1 · 整体方案</h3><p style="font-size:13px;color:var(--text-2);margin-top:8px">✅ 草图与文件清单确认，按清单开工正式原型（index + 核心 3 屏 + P1/P2/P3 扩展）。</p></div>
+      <div class="card demo-panel"><h3>D2 · 主色</h3><p style="font-size:13px;color:var(--text-2);margin-top:8px">✅ 琥珀橡果 <span class="mono" style="color:var(--accent)">#F0A832</span>（亮色主题用暗琥珀 #B45309 保对比度）。</p></div>
+      <div class="card demo-panel"><h3>D3 · 质感</h3><p style="font-size:13px;color:var(--text-2);margin-top:8px">✅ 纯色 + 细边框（Linear/Raycast 式），三端 WebView 渲染一致性优先；Mica 材质不采用。</p></div>
+      <div class="card demo-panel"><h3>D4 · 范围</h3><p style="font-size:13px;color:var(--text-2);margin-top:8px">✅ 全套含 P3：核心 3 屏 + P1 + P2 + P3 扩展 + index 导航，共 8 个文件。</p></div>
+    </div>
+    <div class="note" style="margin-top:14px">
+      <b>已按文档锁定的默认项（不再另行询问）：</b>UI 文案英文（需求 F8）、暗色优先+亮色变体、Windows 优先因此采用 Win11 式自绘标题栏、
+      Lucide 图标体系、单窗口三视图（主页/详情/设置，无路由 DR-4）、命令六态状态在 UI 永远可见。
+    </div>
+  </section>
+
+  <footer>
+    <span>Squirl · Design System v1.0（已定稿） · 2026-11-01</span>
+    <span>调研参考：ElegantClipboard · magpie · Raycast · PasteBar · DevToys · JetBrains Toolbox</span>
+  </footer>
+</div>
+</body>
+</html>

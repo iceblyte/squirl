@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squirl · HTML 原型总览（v1.0）</title>
+<style>
+  :root{--bg:#0d0f12;--bg-elev:#13161a;--card:#171a20;--card-hover:#1c2027;--border:rgba(255,255,255,.07);
+    --border-strong:rgba(255,255,255,.13);--text-1:#e9ebef;--text-2:#a4abb8;--text-3:#697080;
+    --accent:#f0a832;--accent-dim:rgba(240,168,50,.14);--green:#3ecf8e;--green-dim:rgba(62,207,142,.13);
+    --blue:#5aa2ff;--blue-dim:rgba(90,162,255,.13);--red:#f0655f;
+    --mono:ui-monospace,"JetBrains Mono","Cascadia Code",Consolas,monospace;
+    --sans:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text-1);font-family:var(--sans);font-size:14px;line-height:1.6;
+    background-image:radial-gradient(1200px 500px at 50% -160px,rgba(240,168,50,.05),transparent 70%)}
+  .wrap{max-width:1020px;margin:0 auto;padding:44px 24px 90px}
+  .badge{display:inline-flex;gap:8px;font-size:12px;color:var(--accent);background:var(--accent-dim);
+    border:1px solid rgba(240,168,50,.3);border-radius:999px;padding:4px 12px;font-weight:600}
+  h1{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:16px 0 8px;display:flex;align-items:center;gap:12px}
+  .sub{color:var(--text-2);max-width:760px;margin-bottom:8px}
+  h2{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin:44px 0 14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  a.navcard{display:block;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:17px 18px;
+    color:var(--text-1);text-decoration:none;transition:.15s}
+  a.navcard:hover{border-color:rgba(240,168,50,.45);background:var(--card-hover);text-decoration:none;transform:translateY(-2px)}
+  .nc-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .nc-file{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-dim);
+    border-radius:7px;padding:2px 8px}
+  .nc-tag{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.08em;border-radius:999px;padding:2.5px 9px}
+  .tag-core{background:var(--green-dim);color:var(--green)}
+  .tag-p1{background:var(--blue-dim);color:var(--blue)}
+  .tag-p2{background:var(--accent-dim);color:var(--accent)}
+  .tag-p3{background:rgba(255,255,255,.05);color:var(--text-3)}
+  .nc-title{font-size:15px;font-weight:650}
+  .nc-desc{font-size:12.5px;color:var(--text-2);margin-top:3px}
+  .nc-scenes{font-size:11px;color:var(--text-3);margin-top:9px;font-family:var(--mono)}
+  .note{background:var(--bg-elev);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:10px;padding:13px 16px;color:var(--text-2);font-size:13px;margin-top:26px}
+  .note b{color:var(--text-1)}
+  .token-strip{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .tok{width:34px;height:34px;border-radius:9px;border:1px solid var(--border-strong)}
+  footer{margin-top:60px;border-top:1px solid var(--border);padding-top:18px;color:var(--text-3);font-size:12px;
+    display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="badge">● Squirl UI Prototype Suite · v1.0 · 2026-11-01</span>
+  <h1>
+    <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 4C7.5 4 4.8 6.1 4.2 9h15.6C19.2 6.1 16.5 4 12 4Z" fill="#a16207"/><rect x="10.7" y="1.8" width="2.6" height="3.2" rx="1.2" fill="#a16207"/><path d="M5.5 10.5c0 5.4 3 9 6.5 11 3.5-2 6.5-5.6 6.5-11Z" fill="#f0a832"/></svg>
+    Squirl 原型总览
+  </h1>
+  <p class="sub">本地项目台账与一键启动中枢 · Tauri 2 + React + Tailwind + shadcn/ui · 「暗色橡木工作台」设计语言（琥珀橡果 #F0A832 · 纯色细边框）。
+    每页顶部有<b style="color:var(--text-1)">场景切换条</b>，可点击切换同一界面的不同状态；浮层对话框按 Esc 可关闭。</p>
+  <div class="token-strip" title="核心色板">
+    <div class="tok" style="background:#0d0f12"></div><div class="tok" style="background:#13161a"></div>
+    <div class="tok" style="background:#171a20"></div><div class="tok" style="background:#f0a832"></div>
+    <div class="tok" style="background:#3ecf8e"></div><div class="tok" style="background:#f0655f"></div>
+    <div class="tok" style="background:#e5c453"></div><div class="tok" style="background:#5aa2ff"></div>
+  </div>
+
+  <h2>规范与导航</h2>
+  <div class="grid">
+    <a class="navcard" href="00-design-system.html">
+      <div class="nc-top"><span class="nc-file">00-design-system.html</span><span class="nc-tag" style="background:var(--blue-dim);color:var(--blue)">SPEC</span></div>
+      <div class="nc-title">设计规范（自包含）</div>
+      <div class="nc-desc">调研结论 · 色板 · 字体 · 组件样式 · 线框草图 · 已确认决议</div>
+      <div class="nc-scenes">styleguide · tokens · wireframes</div>
+    </a>
+  </div>
+
+  <h2>核心业务流程（MVP）</h2>
+  <div class="grid">
+    <a class="navcard" href="01-home.html">
+      <div class="nc-top"><span class="nc-file">01-home.html</span><span class="nc-tag tag-core">MVP · F1/F2</span></div>
+      <div class="nc-title">主窗口 · 同页两分区</div>
+      <div class="nc-desc">已登记卡片网格（搜索/快启/状态点）+ 本次发现折叠区（登记/标志高亮/本地过滤）</div>
+      <div class="nc-scenes">empty · scanning · normal · search · scan-paused · register · manual-register · missing</div>
+    </a>
+    <a class="navcard" href="02-project-detail.html">
+      <div class="nc-top"><span class="nc-file">02-project-detail.html</span><span class="nc-tag tag-core">MVP · F3~F5</span></div>
+      <div class="nc-title">项目详情页</div>
+      <div class="nc-desc">备注 · 命令列表（六态状态机）· 临时命令+常驻保存 · 执行覆盖 · 日志面板 · 危险区</div>
+      <div class="nc-scenes">overview · log-failed · input-suspected · save-prompt · repeat-run · command-editor · delete · relocate</div>
+    </a>
+    <a class="navcard" href="03-settings.html">
+      <div class="nc-top"><span class="nc-file">03-settings.html</span><span class="nc-tag tag-core">MVP · F7</span></div>
+      <div class="nc-title">设置页</div>
+      <div class="nc-desc">默认执行模式 · 模拟器探测 · shell 解析路径与回退警告 · profile · 扫描深度 · 根目录管理</div>
+      <div class="nc-scenes">execution · scanning · roots · shell-warn · unsupported-shell</div>
+    </a>
+  </div>
+
+  <h2>扩展功能</h2>
+  <div class="grid">
+    <a class="navcard" href="04-extensions-p1.html">
+      <div class="nc-top"><span class="nc-file">04-extensions-p1.html</span><span class="nc-tag tag-p1">P1</span></div>
+      <div class="nc-title">补全核心体验</div>
+      <div class="nc-desc">系统托盘 · 全局命令 · 多会话日志标签 · 每根深度+自定义排除 · IDE 一键打开</div>
+      <div class="nc-scenes">tray · global-commands · multi-session · per-root · ide-open</div>
+    </a>
+    <a class="navcard" href="05-extensions-p2.html">
+      <div class="nc-top"><span class="nc-file">05-extensions-p2.html</span><span class="nc-tag tag-p2">P2 · 招牌</span></div>
+      <div class="nc-title">差异化招牌</div>
+      <div class="nc-desc">README×配置双栏快填台 · 锁文件指纹流水线 · CLI 词典+参数模板 · 技术栈徽章+Git 元数据 · 一键休眠瘦身</div>
+      <div class="nc-scenes">quick-fill · lockfile-pipeline · cli-dictionary · badges · hibernate</div>
+    </a>
+    <a class="navcard" href="06-extensions-p3.html">
+      <div class="nc-top"><span class="nc-file">06-extensions-p3.html</span><span class="nc-tag tag-p3">P3</span></div>
+      <div class="nc-title">生态与平台化</div>
+      <div class="nc-desc">Ctrl+K 命令面板 · 端口雷达 · Shell Doctor · 插件架构 · 跨设备同步 · MCP Server</div>
+      <div class="nc-scenes">palette · port-radar · shell-doctor · plugins · sync · mcp</div>
+    </a>
+  </div>
+
+  <div class="note">
+    <b>阅读方式：</b>推荐 Chrome / Edge 打开（窗口宽 ≥ 820px 体验最佳，页面均响应式）。
+    原型为静态演示 + 轻交互（场景切换、弹窗、折叠、开关），不代表最终动效。
+    共享样式位于 <span class="mono">assets/proto.css</span>、交互位于 <span class="mono">assets/proto.js</span>，请保持目录结构完整。
+    UI 文案为英文（需求 F8），标注说明为中文。
+  </div>
+
+  <footer>
+    <span>Squirl · 本地项目台账与一键启动中枢</span>
+    <span>docs：需求分析文档-汇总版.md · 方案设计文档.md</span>
+  </footer>
+</div>
+</body>
+</html>

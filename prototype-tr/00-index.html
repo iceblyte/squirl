@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Squirl · 原型导览</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="canvas" id="canvas">
+      <div class="page">
+        <div class="idx-hero">
+          <h1>Squirl 原型集</h1>
+          <p>
+            本地项目台账与一键启动中枢的完整 HTML 原型。暖白纸感画布、左侧栏导航、橡果棕强调色，
+            七份页面共用同一套设计变量与外壳；全部离线自包含，可直接用浏览器打开，无需构建与联网。
+          </p>
+          <div class="idx-meta">
+            <span class="tag hot">风格 C · 纸感暖白</span>
+            <span class="tag">左侧栏导航</span>
+            <span class="tag">橡果棕 #9C5A32</span>
+            <span class="tag">浅 / 暗双主题</span>
+            <span class="tag">响应式 1440 / 1140 / 820</span>
+            <span class="tag">零依赖 · file:// 可用</span>
+          </div>
+        </div>
+
+        <div class="sec-head">
+          <h2>页面</h2>
+          <span class="hint">按核心业务流程 → 扩展能力的顺序浏览</span>
+          <span class="sp"></span>
+          <span class="mono" id="idxCount">7 个页面</span>
+        </div>
+
+        <div class="idx-grid" id="idxGrid">
+          <a class="idx-card" href="01-home.html" data-kw="台账 主页 卡片 列表 发现 扫描 登记 搜索 home ledger">
+            <div class="ih"><span class="no">01</span><h3>项目台账主页</h3><span class="arw" data-icon="arrowRight"></span></div>
+            <p>已登记卡片网格 + 本次发现折叠区。含搜索、排序、网格↔列表切换、卡片快启、登记新项目与一键全部登记。</p>
+            <div class="tags"><span class="tag hot">核心</span><span class="tag">F2</span><span class="tag">F3</span><span class="tag">F4</span></div>
+          </a>
+
+          <a class="idx-card" href="02-project.html" data-kw="项目 详情 备注 命令 日志 执行 覆盖 临时 project detail">
+            <div class="ih"><span class="no">02</span><h3>项目详情</h3><span class="arw" data-icon="arrowRight"></span></div>
+            <p>备注即改即存、命令列表、临时命令、执行配置覆盖、底部固定日志面板；内置 ↔ 外部终端模式真实切换。</p>
+            <div class="tags"><span class="tag hot">核心</span><span class="tag">F4</span><span class="tag">F5</span><span class="tag">F6</span></div>
+          </a>
+
+          <a class="idx-card" href="03-run-states.html" data-kw="运行 状态 六状态 停止 重启 失败 killed run states">
+            <div class="ih"><span class="no">03</span><h3>运行状态与六状态机</h3><span class="arw" data-icon="arrowRight"></span></div>
+            <p>idle / starting / running / exited / failed / killed 的界面表达与可执行动作，含疑似等待输入提示与退出回收说明。</p>
+            <div class="tags"><span class="tag hot">核心</span><span class="tag">F6</span><span class="tag">AC6</span></div>
+          </a>
+
+          <a class="idx-card" href="04-settings.html" data-kw="设置 外观 主题 终端 shell 扫描 根目录 数据 备份 settings">
+            <div class="ih"><span class="no">04</span><h3>设置</h3><span class="arw" data-icon="arrowRight"></span></div>
+            <p>外观、常规、终端与 Shell、扫描与根目录、数据与隐私；主题切换真实生效，含扫描暂停与损坏恢复弹层。</p>
+            <div class="tags"><span class="tag">F7</span><span class="tag">F8</span><span class="tag">AC7</span></div>
+          </a>
+
+          <a class="idx-card" href="05-flows.html" data-kw="流程 首启 空状态 启动 停止 回收 flows">
+            <div class="ih"><span class="no">05</span><h3>关键流程串联</h3><span class="arw" data-icon="arrowRight"></span></div>
+            <p>首启→首次扫描→登记、一键双模式启动、运行中停止与退出回收；逐步预览界面，标注对应需求与验收项。</p>
+            <div class="tags"><span class="tag hot">叙事</span><span class="tag">W1</span><span class="tag">AC1</span><span class="tag">AC9</span></div>
+          </a>
+
+          <a class="idx-card" href="06-extended.html" data-kw="扩展 托盘 命令面板 多会话 端口 雷达 P2 P3 extended">
+            <div class="ih"><span class="no">06</span><h3>扩展能力形态</h3><span class="arw" data-icon="arrowRight"></span></div>
+            <p>托盘常驻、全局命令面板、多会话日志标签、README×配置双栏、技术栈徽章、端口雷达——只给形态，不越 MVP 边界。</p>
+            <div class="tags"><span class="tag">P2</span><span class="tag">P3</span><span class="tag">形态预览</span></div>
+          </a>
+
+          <a class="idx-card" href="00-design-proposal.html" data-kw="设计 提案 评审 已确认 token 线框 proposal 决策">
+            <div class="ih"><span class="no">00</span><h3>设计提案（v0.2 已确认）</h3><span class="arw" data-icon="arrowRight"></span></div>
+            <p>三种风格候选与对比、设计 token、组件样例、七组低保真线框，以及 8 项已确认决议——所有页面风格的决策依据。</p>
+            <div class="tags"><span class="tag">决策记录</span><span class="tag">线框</span><span class="tag">Token</span></div>
+          </a>
+        </div>
+
+        <div class="empty hide" id="idxEmpty">
+          <div class="ic" data-icon="search"></div>
+          <h3>没有匹配的页面</h3>
+          <p>换个关键词试试，例如「日志」「设置」「扫描」。</p>
+          <div class="ea"><button class="btn" id="idxClear">清空搜索</button></div>
+        </div>
+
+        <div class="idx-pair mt26">
+          <div class="card">
+            <div class="card-head"><h3>设计基调</h3><span class="sp"></span><span class="mono">tokens.css</span></div>
+            <div class="card-body">
+              <div class="u-col g10">
+                <div class="u-row g8"><span class="dot" style="background:var(--canvas);width:8px;height:8px;box-shadow:inset 0 0 0 1px rgba(23,22,20,.16)"></span><span class="mono lg">画布 #F2F1EE</span><span class="sp"></span><span class="muted" style="font-size:10.5px">暖白纸感，不用纯白铺底</span></div>
+                <div class="u-row g8"><span class="dot" style="background:var(--surface);width:8px;height:8px;box-shadow:inset 0 0 0 1px rgba(23,22,20,.16)"></span><span class="mono lg">卡片 #FFFFFF</span><span class="sp"></span><span class="muted" style="font-size:10.5px">单层细线，阴影只给浮层</span></div>
+                <div class="u-row g8"><span class="dot" style="background:var(--acorn);width:8px;height:8px"></span><span class="mono lg">橡果棕 #9C5A32</span><span class="sp"></span><span class="muted" style="font-size:10.5px">仅选中态 / 主按钮 / 运行点</span></div>
+                <div class="u-row g8"><span class="dot" style="background:var(--line);width:8px;height:8px;box-shadow:inset 0 0 0 1px rgba(23,22,20,.12)"></span><span class="mono lg">细线 #E2DDD3</span><span class="sp"></span><span class="muted" style="font-size:10.5px">1px 分隔，不堆叠投影</span></div>
+                <div class="u-row g8"><span class="dot" style="background:var(--moss);width:8px;height:8px"></span><span class="mono lg">苔绿 #4C7A55</span><span class="sp"></span><span class="muted" style="font-size:10.5px">仅表示成功 / 已退出</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>浏览方式</h3><span class="sp"></span><span class="mono">file:// 直接打开</span></div>
+            <div class="card-body">
+              <div class="u-col g8">
+                <div class="banner info"><span class="bi">外壳统一</span>左侧栏、顶栏、搜索与主题由 <b>shell.js</b> 注入，七个页面结构一致，不会出现导航漂移。</div>
+                <div class="banner"><span class="bi">可交互</span>卡片快启、登记、停止、主题切换、对话框、日志追加均已接通，仅数据为内存 mock。</div>
+                <div class="banner"><span class="bi">快捷键</span><span><b>Ctrl / ⌘ + K</b> 聚焦搜索，<b>Esc</b> 清空；设置页主题即时切换并记住。</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt12">
+          <div class="card-head"><h3>文件清单</h3><span class="sp"></span><span class="mono">statics · no build</span></div>
+          <div class="card-body" style="padding:6px 8px 8px">
+            <table class="table">
+              <thead><tr><th>文件</th><th>职责</th><th>说明</th></tr></thead>
+              <tbody>
+                <tr><td class="k"><code>assets/tokens.css</code></td><td>设计变量 + 基础组件 + 外壳</td><td>明暗双主题；按钮 / 表单 / 状态 / 卡片 / 对话框</td></tr>
+                <tr><td class="k"><code>assets/pages.css</code></td><td>页面专属布局</td><td>主页网格、详情双列、日志面板、设置、流程、扩展</td></tr>
+                <tr><td class="k"><code>assets/icons.js</code></td><td>内联 SVG 图标</td><td>约 40 个描边图标，无 CDN 依赖</td></tr>
+                <tr><td class="k"><code>assets/mock.js</code></td><td>演示数据</td><td>8 个项目 / 6 会话 / 10 条发现 / 日志快照</td></tr>
+                <tr><td class="k"><code>assets/ui.js</code></td><td>复用组件</td><td>卡片、列表行、状态 pill、toast、dialog</td></tr>
+                <tr><td class="k"><code>assets/shell.js</code></td><td>统一外壳</td><td>侧栏 / 顶栏注入、主题、Ctrl K、移动端抽屉</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/icons.js"></script>
+<script src="assets/mock.js"></script>
+<script src="assets/ui.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+  (function () {
+    // 卡片箭头图标
+    document.querySelectorAll('[data-icon]').forEach(function (el) { el.innerHTML = icon(el.dataset.icon); });
+
+    var grid = document.getElementById('idxGrid');
+    var empty = document.getElementById('idxEmpty');
+    var count = document.getElementById('idxCount');
+
+    function filter(q) {
+      var cards = Array.prototype.slice.call(grid.querySelectorAll('.idx-card'));
+      var hit = 0;
+      cards.forEach(function (c) {
+        var kw = (c.dataset.kw || '') + ' ' + c.textContent;
+        var show = !q || kw.toLowerCase().indexOf(q.toLowerCase()) !== -1;
+        c.classList.toggle('hide', !show);
+        if (show) hit++;
+      });
+      empty.classList.toggle('hide', hit > 0);
+      count.textContent = hit + ' / 7 个页面';
+    }
+
+    SqShell.mount({
+      active: 'index',
+      crumb: [{ label: '原型导览' }],
+      search: '搜索页面：台账、日志、扫描、托盘…',
+      actions: '<a class="btn btn-sm" href="00-design-proposal.html">' + icon('eye') + '查看设计提案</a>',
+      onSearch: filter
+    });
+
+    Sq.bind(document.getElementById('idxClear'), 'click', function () {
+      var input = document.getElementById('sqSearch');
+      if (input) input.value = '';
+      filter('');
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Squirl · 原型集总览</title>
+<style>
+  :root{
+    --canvas:#F2F1EE; --canvas-2:#EDEBE7;
+    --surface:#FFFFFF; --surface-2:#FAF9F7;
+    --line:#E4E1DB; --line-soft:#EFEDE8; --win:#DCD8D1;
+    --ink:#171614; --ink-2:#5C5952; --ink-3:#98938A; --ink-4:#C2BDB4;
+    --acorn:#9C5A32; --acorn-wash:#F7EEE7; --acorn-line:rgba(156,90,50,.28);
+    --moss:#4C7A55; --moss-wash:#F1F5F1; --brick:#B0473D; --amber:#B4791F;
+    --r-s:6px; --r-m:10px; --r-l:14px;
+    --shadow-pop:0 16px 40px -14px rgba(23,22,20,.24),0 2px 8px rgba(23,22,20,.06);
+    --font:"Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,Inter,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    --mono:"Cascadia Code","JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--font);font-size:13px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;background-image:radial-gradient(1200px 520px at 50% -220px,rgba(156,90,50,.06),transparent 70%)}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 36px 130px}
+
+  header{padding:76px 0 48px;border-bottom:1px solid var(--line)}
+  .mk{display:flex;align-items:center;gap:10px;margin-bottom:30px}
+  .mk svg{width:26px;height:26px;color:var(--acorn)}
+  .mk b{font-size:14px;font-weight:650}
+  .mk span{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);padding-left:11px;border-left:1px solid var(--line)}
+  h1{font-size:clamp(28px,4vw,42px);line-height:1.15;letter-spacing:-.028em;font-weight:640;margin:0 0 16px;max-width:20em}
+  h1 em{font-style:normal;color:var(--acorn)}
+  .lede{font-size:14.5px;color:var(--ink-2);max-width:44em;margin:0 0 26px}
+  .meta{display:flex;flex-wrap:wrap;gap:7px}
+  .meta span{font-size:11px;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 12px;display:inline-flex;align-items:center;gap:6px}
+  .meta i{width:5px;height:5px;border-radius:50%;background:var(--acorn);display:block}
+
+  section{padding:54px 0 0}
+  .sec-h{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+  .sec-h .n{font-family:var(--mono);font-size:10.5px;color:var(--ink-4);padding-top:4px}
+  .sec-h h2{font-size:18px;font-weight:630;letter-spacing:-.02em;margin:0}
+  .sec-d{font-size:13px;color:var(--ink-2);margin:0 0 24px 36px;max-width:52em}
+
+  /* file cards */
+  .files{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+  a.file{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);
+    padding:18px 18px 16px;text-decoration:none;color:inherit;transition:.16s;position:relative;min-height:176px}
+  a.file:hover{border-color:var(--ink-4);box-shadow:0 14px 34px -24px rgba(23,22,20,.45);transform:translateY(-2px)}
+  a.file .no{font-family:var(--mono);font-size:10px;color:var(--ink-4);margin-bottom:12px}
+  a.file h3{margin:0 0 6px;font-size:14px;font-weight:640;letter-spacing:-.012em;display:flex;align-items:center;gap:8px}
+  a.file h3 .arw{margin-left:auto;color:var(--ink-4);transition:.16s}
+  a.file:hover h3 .arw{color:var(--acorn);transform:translateX(2px)}
+  a.file h3 .arw svg{width:14px;height:14px;display:block}
+  a.file p{margin:0 0 12px;font-size:12px;color:var(--ink-2);line-height:1.65}
+  a.file .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto}
+  .tag{font-family:var(--mono);font-size:9px;color:var(--ink-3);background:var(--canvas-2);border-radius:3px;padding:1px 6px;line-height:15px}
+  .tag.k{color:var(--acorn);background:var(--acorn-wash)}
+  .badge-new{position:absolute;top:16px;right:16px;font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--moss);background:var(--moss-wash);border-radius:999px;padding:2px 8px;font-weight:650}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:12px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--r-m);overflow:hidden}
+  th{text-align:left;font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:650;
+    padding:10px 14px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+  td{padding:9px 14px;border-bottom:1px solid var(--line-soft);color:var(--ink-2);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td:first-child{color:var(--ink);font-weight:560;width:104px;font-family:var(--mono);font-size:11px}
+  td:nth-child(2){width:230px}
+  .ok{color:var(--moss);font-weight:600}
+  .partial{color:var(--amber);font-weight:600}
+  .loc{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+
+  /* principle strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden}
+  .strip div{background:var(--surface);padding:16px 16px 18px}
+  .strip .k{font-family:var(--mono);font-size:9.5px;color:var(--acorn);display:block;margin-bottom:9px}
+  .strip b{display:block;font-size:12px;font-weight:640;margin-bottom:4px}
+  .strip p{margin:0;font-size:11.5px;color:var(--ink-2);line-height:1.6}
+
+  /* next */
+  .next{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);overflow:hidden}
+  .next .row{display:flex;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line-soft)}
+  .next .row:last-child{border-bottom:0}
+  .next .row .i{font-family:var(--mono);font-size:10.5px;color:var(--acorn);flex:none;padding-top:2px}
+  .next .row b{display:block;font-size:12.5px;font-weight:620;margin-bottom:3px}
+  .next .row p{margin:0;font-size:11.5px;color:var(--ink-2);line-height:1.65}
+
+  footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);font-size:11px;color:var(--ink-4);display:flex;flex-wrap:wrap;gap:16px}
+
+  @media(max-width:760px){
+    .wrap{padding:0 18px 80px}
+    header{padding:48px 0 34px}
+    .sec-d{margin-left:0}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="mk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3.2c-4.2 0-7.2 3-7.2 6.9 0 2.4 1.1 3.9 1.9 5.4.6 1.1.9 2 .9 3.3h8.8c0-1.3.3-2.2.9-3.3.8-1.5 1.9-3 1.9-5.4 0-3.9-3-6.9-7.2-6.9Z"/>
+        <path d="M9.4 18.8h5.2M9.9 21h4.2"/>
+        <circle cx="9.6" cy="9.6" r=".9" fill="currentColor" stroke="none"/>
+        <circle cx="14.4" cy="9.6" r=".9" fill="currentColor" stroke="none"/>
+      </svg>
+      <b>Squirl</b><span>原型集 · v1.0</span>
+    </div>
+    <h1>一张安静的台账。<br>信息靠排版分层，动作只留<em>一个</em>。</h1>
+    <p class="lede">
+      本地项目台账与一键启动中枢的界面原型。六个文件，覆盖 MVP 主链路、设置与系统态、两种分区布局的对比，以及 P1/P2 扩展功能的形态验证。
+    </p>
+    <div class="meta">
+      <span><i></i>方向 A · 纸感台账</span>
+      <span><i></i>中文文案（实现走 i18n 英文包）</span>
+      <span><i></i>响应式</span>
+      <span><i></i>可直接点击的原型</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-h"><span class="n">01</span><h2>文件</h2></div>
+    <p class="sec-d">按「设计依据 → 主链路 → 系统态 → 布局决策 → 扩展」的顺序读。</p>
+    <div class="files">
+
+      <a class="file" href="01-design-style.html">
+        <div class="no">01</div>
+        <h3>设计语言 <span class="arw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></h3>
+        <p>五条原则、三个视觉方向、色彩/字体/尺寸、六个核心组件解剖、窗口栅格、动效、暗色映射。</p>
+        <div class="tags"><span class="tag">tokens</span><span class="tag">组件</span><span class="tag">暗色</span></div>
+      </a>
+
+      <a class="file" href="02-wireframes.html">
+        <div class="no">02</div>
+        <h3>结构草图 <span class="arw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></h3>
+        <p>14 屏结构线框，分三条链路。v0.1 的英文样张存档——布局仍有效，文案已被 03 取代。</p>
+        <div class="tags"><span class="tag">14 屏</span><span class="tag">线框</span></div>
+      </a>
+
+      <a class="file" href="03-core-flow.html">
+        <span class="badge-new">主交付</span>
+        <div class="no">03</div>
+        <h3>核心流程 <span class="arw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></h3>
+        <p>11 个场景可点击切换：空状态 → 扫描 → 暂停 → 主界面 → 搜索 → 详情 → 编辑 → 运行 → 失败 → 失效 → 重复启动。</p>
+        <div class="tags"><span class="tag k">可交互</span><span class="tag">11 场景</span></div>
+      </a>
+
+      <a class="file" href="04-settings-system.html">
+        <div class="no">04</div>
+        <h3>设置与系统态 <span class="arw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></h3>
+        <p>执行/扫描/根目录/外观四页设置，加手动登记、删除确认、启动失败、数据恢复、退出回收、启动阻断。</p>
+        <div class="tags"><span class="tag k">可交互</span><span class="tag">10 场景</span></div>
+      </a>
+
+      <a class="file" href="05-layout-variants.html">
+        <span class="badge-new">待决策</span>
+        <div class="no">05</div>
+        <h3>分区布局对比 <span class="arw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></h3>
+        <p>上下堆叠 vs 左右分栏，两版完整界面并排 + 六维对比表 + 我的建议（宽屏自动切换）。</p>
+        <div class="tags"><span class="tag">两版</span><span class="tag">需拍板</span></div>
+      </a>
+
+      <a class="file" href="06-extended.html">
+        <div class="no">06</div>
+        <h3>扩展功能概念稿 <span class="arw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></h3>
+        <p>托盘面板、全局命令、多会话日志、README × 配置双栏快填台、参数模板填空、端口雷达。</p>
+        <div class="tags"><span class="tag">P1</span><span class="tag">P2</span><span class="tag">P3</span></div>
+      </a>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="n">02</span><h2>设计要点</h2></div>
+    <p class="sec-d">这些是整套原型里反复出现的决策，改动它们会牵连所有页面。</p>
+    <div class="strip">
+      <div><span class="k">01</span><b>一个强调色</b><p>橡果褐只表示「活着 / 正在发生」，其余全部中性灰。</p></div>
+      <div><span class="k">02</span><b>分裂式运行按钮</b><p>左侧跑最近使用的命令，右侧下拉列全部。</p></div>
+      <div><span class="k">03</span><b>状态常驻可见</b><p>六种状态用 5px 圆点 + 微标签，不弹窗打断。</p></div>
+      <div><span class="k">04</span><b>路径是主角</b><p>等宽字体、可读、可复制，截断只在尾部。</p></div>
+      <div><span class="k">05</span><b>日志坞</b><p>从底部升起，profile 噪音折叠成一行。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="n">03</span><h2>需求覆盖对照</h2></div>
+    <p class="sec-d">按需求文档 F1~F8 逐条对照，标出原型落在哪个文件。空着的是有意留给实现阶段的部分。</p>
+    <table>
+      <thead><tr><th>功能点</th><th>内容</th><th>状态</th><th>位置</th></tr></thead>
+      <tbody>
+        <tr><td>F1</td><td>多根目录与扫描</td><td class="ok">已覆盖</td><td class="loc">03 · 扫描中 / 暂停　04 · 扫描页 / 根目录页</td></tr>
+        <tr><td>F2</td><td>台账与发现视图</td><td class="ok">已覆盖</td><td class="loc">03 · 主界面 / 搜索 / 路径失效</td></tr>
+        <tr><td>F3</td><td>命令记录与显式保存</td><td class="ok">已覆盖</td><td class="loc">03 · 命令编辑</td></tr>
+        <tr><td>F4</td><td>双模式执行引擎</td><td class="ok">已覆盖</td><td class="loc">04 · 执行页　03 · 重复启动</td></tr>
+        <tr><td>F5</td><td>日志面板与停止</td><td class="ok">已覆盖</td><td class="loc">03 · 运行中 / 运行失败</td></tr>
+        <tr><td>F6</td><td>生命周期与进程回收</td><td class="ok">已覆盖</td><td class="loc">04 · 退出回收确认</td></tr>
+        <tr><td>F7</td><td>最小设置页</td><td class="ok">已覆盖</td><td class="loc">04 · 执行 / 扫描 / 根目录</td></tr>
+        <tr><td>F8</td><td>界面布局与文案</td><td class="ok">已覆盖</td><td class="loc">03 · 主界面（两分区）　05 · 布局对比</td></tr>
+        <tr><td>G1</td><td>项目删除</td><td class="ok">已覆盖</td><td class="loc">04 · 删除确认</td></tr>
+        <tr><td>G2</td><td>重新定位交互</td><td class="ok">已覆盖</td><td class="loc">03 · 路径失效</td></tr>
+        <tr><td>G3</td><td>多命令快启</td><td class="ok">已覆盖</td><td class="loc">03 · 重复启动（命令选择器）</td></tr>
+        <tr><td>G4</td><td>根目录改路径</td><td class="partial">不做</td><td class="loc">04 · 根目录页（删旧加新）</td></tr>
+        <tr><td>G5</td><td>重启后发现区为空</td><td class="ok">已覆盖</td><td class="loc">03 · 主界面（引导重新扫描）</td></tr>
+        <tr><td>AC9</td><td>数据库恢复提示</td><td class="ok">已覆盖</td><td class="loc">04 · 数据恢复 / 启动阻断</td></tr>
+        <tr><td>—</td><td>E_LAUNCH_FAILED 诊断展示</td><td class="ok">已覆盖</td><td class="loc">04 · 启动失败</td></tr>
+        <tr><td>—</td><td>键盘导航与快捷键</td><td class="partial">未画</td><td class="loc">Ctrl+K 焦点、下拉键盘选择留待实现</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="n">04</span><h2>还差什么</h2></div>
+    <p class="sec-d">如果这一版方向通过，下一步可以做这些。</p>
+    <div class="next">
+      <div class="row"><span class="i">01</span><div><b>确认 05 的布局选择</b><p>我建议 A 作默认、B 作宽屏自动变体。定了之后我把 03 的主界面固化成最终版。</p></div></div>
+      <div class="row"><span class="i">02</span><div><b>补键盘路径</b><p>Ctrl+K 聚焦搜索、↑↓ 选卡片、Enter 运行、Esc 返回。桌面工具没有键盘路径会显得业余。</p></div></div>
+      <div class="row"><span class="i">03</span><div><b>暗色全套</b><p>01 里给了暗色色阶和一个卡片样例，但没有完整的暗色页面。要的话按同一套结构再出一份。</p></div></div>
+      <div class="row"><span class="i">04</span><div><b>接进工程</b><p>把 tokens 落成 Tailwind 主题变量，组件按 shadcn 基线实现。原型里的尺寸和间距可以直接抄。</p></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Squirl 原型集 v1.0</span>
+    <span>方向 A · 纸感台账</span>
+    <span>2026-11-01</span>
+    <span>纯静态 HTML，无外部依赖</span>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squirl · 04 扩展 P1 — 补全核心体验</title>
+<link rel="stylesheet" href="./assets/proto.css">
+<style>
+  .window{position:relative}
+  .tray-anchor{position:relative;display:inline-block}
+  .tray-pop{position:absolute;bottom:calc(100% + 10px);left:0;z-index:5}
+  .tray-bar{display:flex;align-items:center;justify-content:flex-end;gap:14px;background:var(--bg-elev);
+    border:1px solid var(--border);border-radius:9px;padding:6px 12px;font-size:11px;color:var(--text-3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="doc-badge" style="color:var(--blue);background:var(--blue-dim);border-color:rgba(90,162,255,.3)">04 · P1 Extensions — 补全核心体验（MVP 后第一批）</span>
+    <h1>托盘 · 全局命令 · 多会话 · 扫描细控 · IDE 直达</h1>
+    <p class="doc-sub">P1 五项都建立在 MVP 数据模型之上：托盘改变关闭语义；全局命令是 <span class="mono">type: global</span> 的同一数据实体；
+      多会话 UI 只补引擎已支持的并行能力；每根深度与自定义排除扩展扫描器；IDE 打开是最省的外科手术式增强。</p>
+  </header>
+
+  <div class="scene-bar" data-scene-group>
+    <span class="sb-title">P1 · 5 项</span>
+    <button class="pill act" data-scene="tray">① 系统托盘</button>
+    <button class="pill" data-scene="global">② 全局命令</button>
+    <button class="pill" data-scene="multi">③ 多会话管理</button>
+    <button class="pill" data-scene="perroot">④ 每根深度+排除</button>
+    <button class="pill" data-scene="ide">⑤ IDE 一键打开</button>
+  </div>
+
+  <!-- ============ ① 托盘 ============ -->
+  <section class="scene act" data-key="tray">
+    <div class="window slim">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="d-head">
+          <span class="dot dot-running"></span><span class="name" style="font-size:14px">2 running</span>
+          <span class="spacer"></span><span class="chip chip-mute">closed to tray · hidden</span>
+        </div>
+        <div class="pane" style="margin-bottom:12px">
+          <h4><span class="ann ghost">1</span>&nbsp;Close semantics（默认关闭）</h4>
+          <div class="split">
+            <div class="list-row" style="align-items:flex-start;margin-bottom:0">
+              <div class="lr-main"><div class="lr-title">✕ Close window</div><div class="lr-desc" style="white-space:normal">Window hides. Squirl keeps running in the tray; built-in processes keep running.</div></div>
+            </div>
+            <div class="list-row" style="align-items:flex-start;margin-bottom:0">
+              <div class="lr-main"><div class="lr-title">Quit (tray menu)</div><div class="lr-desc" style="white-space:normal">Reclaims <b>all</b> built-in process groups, then exits — same four-step sequence as MVP close.</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="tray-anchor">
+          <div class="tray-bar">椙 taskbar · <span style="color:var(--text-2)">🔊 🖥 ⚡</span> <span style="color:var(--accent);font-weight:700">🐿</span></div>
+          <div class="mini-menu tray-pop">
+            <div class="runrow"><span><b>Squirl</b></span><span class="kbd">show</span></div>
+            <div class="sep"></div>
+            <div class="runrow"><span><span class="dot dot-running" style="width:7px;height:7px"></span>&nbsp;squirl · dev</span><span class="mono" style="font-size:10px;color:var(--text-3)">2m</span></div>
+            <div class="runrow"><span><span class="dot dot-running" style="width:7px;height:7px"></span>&nbsp;api-gateway · serve</span><span class="mono" style="font-size:10px;color:var(--text-3)">18m</span></div>
+            <div class="runrow"><span style="color:var(--text-3)">■ Stop all built-in</span></div>
+            <div class="sep"></div>
+            <div class="red">✕ Quit Squirl</div>
+          </div>
+        </div>
+        <div class="callout info" style="margin-top:52px"><span>ℹ</span><span>Linux 托盘初始化失败时自动降级为普通窗口应用（关窗即退出），不阻塞使用。</span></div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>双关闭语义</b>：关窗 = 隐藏继续跑；托盘 Quit 才回收全部内置进程组后退出；托盘菜单实时列出运行中命令（来源：list_active_runs）</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ② 全局命令 ============ -->
+  <section class="scene" data-key="global">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="wf-topbar">
+          <span class="logo">Squirl</span>
+          <div class="search-grow"><span class="s-ic">⌕</span><input class="input" placeholder="Search projects and global commands…"></div>
+          <button class="btn btn-secondary btn-sm">＋ Add Root</button>
+          <button class="btn btn-ghost btn-sm">⚙</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <span class="chip chip-mute" style="cursor:pointer">Projects · 9</span>
+          <span class="chip chip-flag" style="cursor:pointer">Global commands · 4</span>
+          <span class="ann" style="transform:translateY(2px)">1</span>
+        </div>
+        <div class="list-row">
+          <span class="dot dot-idle"></span>
+          <div class="lr-main">
+            <div class="lr-title">pi chat <span class="chip chip-mute">assistant</span></div>
+            <div class="lr-sub">pi chat --model claude-opus-4 · cwd: ~</div>
+          </div>
+          <button class="btn btn-primary btn-sm">▶ Run</button>
+          <button class="btn btn-ghost btn-sm">Edit</button>
+        </div>
+        <div class="list-row">
+          <span class="dot dot-idle"></span>
+          <div class="lr-main">
+            <div class="lr-title">dsh deploy <span class="chip chip-mute">ops</span> <span class="chip chip-flag" style="font-size:9px">P2 · template</span></div>
+            <div class="lr-sub">dsh deploy {{service}} --env={{env:dev|prod}} · cwd: ~ · "一键部署脚本，忘参数就打开 Squirl"</div>
+          </div>
+          <button class="btn btn-primary btn-sm">▶ Run</button>
+          <button class="btn btn-ghost btn-sm">Edit</button>
+        </div>
+        <div class="list-row">
+          <span class="dot dot-idle"></span>
+          <div class="lr-main">
+            <div class="lr-title">gh pr checkout <span class="chip chip-mute">git</span></div>
+            <div class="lr-sub">gh pr checkout {{pr}} · docs ↗ · cwd: current project</div>
+          </div>
+          <button class="btn btn-primary btn-sm">▶ Run</button>
+          <button class="btn btn-ghost btn-sm">Edit</button>
+        </div>
+        <div class="list-row">
+          <span class="dot dot-idle"></span>
+          <div class="lr-main">
+            <div class="lr-title">serve-here <span class="chip chip-mute">utility</span></div>
+            <div class="lr-sub">python -m http.server 8000 · cwd: project root (per-invocation)</div>
+          </div>
+          <button class="btn btn-primary btn-sm">▶ Run</button>
+          <button class="btn btn-ghost btn-sm">Edit</button>
+        </div>
+        <div class="callout info" style="margin-top:8px">ℹ Global commands are the same entity as project commands with <span class="mono">type: global</span> — searchable in the same box, executable in both modes, working dir defaults to home (PRD P1 #2).</div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>全局命令</b>：与项目同数据实体，顶部以 Tab 切换；覆盖「忘了有哪些全局 CLI 工具、忘了长参数组合」痛点；P2 升级 <span class="mono">{{param}}</span> 模板填空</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ③ 多会话 ============ -->
+  <section class="scene" data-key="multi">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="d-head">
+          <button class="btn btn-ghost btn-sm">← Back</button>
+          <span class="dot dot-running"></span><span class="name">squirl</span>
+          <span class="path">D:\Code\AICreate\ZCode\squirl</span>
+          <span class="spacer"></span>
+          <span class="chip chip-green">3 active runs</span>
+          <button class="btn btn-danger btn-sm" data-open="dlg-stopall">■ Stop all</button>
+          <span class="ann" style="transform:translateY(2px)">2</span>
+        </div>
+        <div class="pane">
+          <h4><span class="ann ghost">1</span>&nbsp;Sessions · 3 parallel</h4>
+          <div class="logtabs" style="border:none;padding:0 0 10px;background:none">
+            <span class="act"><span class="dot dot-running" style="width:6px;height:6px"></span> dev · #a3f2</span>
+            <span><span class="dot dot-running" style="width:6px;height:6px"></span> test · #b90c</span>
+            <span><span class="dot dot-exited" style="width:6px;height:6px"></span> build · #c4d1</span>
+            <span style="border-style:dashed;color:var(--text-3)">+2 background</span>
+          </div>
+          <div class="logpanel">
+            <div class="log-head"><span class="dot dot-running"></span><span class="t">dev · run #a3f2</span><span class="spacer"></span>
+              <span class="chip chip-mute" style="font-size:10px">since 10:21</span><button class="btn btn-danger btn-sm">■ Stop</button></div>
+            <div class="log-body tall">
+              <div class="lg-dim">──── squirl command output ────</div>
+              <div class="lg-c">&nbsp;&nbsp;VITE v8.3.5&nbsp;&nbsp;ready in 412 ms</div>
+              <div class="lg-g">&nbsp;&nbsp;➜&nbsp;&nbsp;Local:&nbsp;&nbsp;http://localhost:5173/</div>
+              <div class="lg-y">[run] watching for changes…</div>
+              <div class="lg-dim cursor-blink">&nbsp;</div>
+            </div>
+          </div>
+          <p style="font-size:11px;color:var(--text-3);margin-top:10px">Each tab = one run_id with its own ring buffer. Batch stop walks the registry and reaps every group (3s grace each). Engine already supported parallelism in MVP — this is a UI-layer addition only (附录 A #6).</p>
+        </div>
+      </div>
+      <div class="win-overlay" id="dlg-stopall" style="display:none">
+        <div class="inline-dialog">
+          <div class="dlg-body">
+            <h4>Stop all built-in runs?</h4>
+            <p>3 running commands will be stopped — each process group gets SIGTERM then SIGKILL after a 3s grace period. External terminal windows are not affected.</p>
+          </div>
+          <div class="dlg-actions">
+            <button class="btn btn-ghost" onclick="this.closest('.win-overlay').style.display='none'">Cancel</button>
+            <button class="btn btn-danger" onclick="this.closest('.win-overlay').style.display='none'">■ Stop all 3</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>日志标签页</b>：每个 run_id 一页；点标签切换日志缓冲</span></li>
+      <li><span class="ann">2</span><span><b>并行一览 + 批量停止</b>：头部聚合运行数；Stop all 逐一收组、互不影响外部终端进程</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ④ 每根深度+排除 ============ -->
+  <section class="scene" data-key="perroot">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="wf-label"><h3><span class="ann ghost">1</span>Roots · per-root depth &amp; custom exclusions</h3><span class="mono">settings → roots</span></div>
+        <div class="root-row" style="align-items:flex-start">
+          <span class="rp" style="min-width:200px">D:\GitHub<small>normalized: d:\github · 74 entries · scanned 2m ago</small></span>
+          <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:220px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-size:11.5px;color:var(--text-2)">depth</span>
+              <span class="stepper"><button>−</button><span class="val" style="color:var(--accent);font-weight:700">3</span><button>+</button></span>
+              <span class="chip chip-mute" style="font-size:9.5px">global default: 1</span>
+            </div>
+            <div class="badge-set">
+              <span class="chip chip-mute mono">vendor <span style="opacity:.6">✕</span></span>
+              <span class="chip chip-mute mono">archive <span style="opacity:.6">✕</span></span>
+              <span class="chip chip-flag" style="cursor:pointer">＋ add exclusion</span>
+            </div>
+          </div>
+          <span class="switchable"><span class="toggle on" data-toggle></span>enabled</span>
+          <button class="btn btn-ghost btn-sm">Remove</button>
+        </div>
+        <div class="root-row" style="align-items:flex-start">
+          <span class="rp" style="min-width:200px">D:\Projects<small>normalized: d:\projects · 54 entries · scanned 2m ago</small></span>
+          <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:220px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-size:11.5px;color:var(--text-2)">depth</span>
+              <span class="stepper"><button>−</button><span class="val">1</span><button>+</button></span>
+              <span class="chip chip-mute" style="font-size:9.5px">follows global</span>
+            </div>
+            <div class="badge-set"><span style="font-size:10.5px;color:var(--text-3)">no custom exclusions — built-in list only</span></div>
+          </div>
+          <span class="switchable"><span class="toggle on" data-toggle></span>enabled</span>
+          <button class="btn btn-ghost btn-sm">Remove</button>
+        </div>
+        <div class="callout info">ℹ Custom exclusions extend the built-in list (never replace it) and match by entry name. Excluded subtrees are never walked. The 500-entry pause still applies across all roots.</div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>每根独立深度 + 自定义排除</b>（P1 #4）：多级扫描噪音控制；步进器覆盖全局默认；排除名单可增删</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ⑤ IDE 直达 ============ -->
+  <section class="scene" data-key="ide">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="d-head">
+          <button class="btn btn-ghost btn-sm">← Back</button>
+          <span class="dot dot-idle"></span><span class="name">avante.nvim</span>
+          <span class="path">D:\GitHub\avante.nvim</span>
+          <span class="spacer"></span>
+          <button class="btn btn-secondary btn-sm" data-open="dlg-ide">⇱ Open in…</button>
+          <span class="ann" style="transform:translateY(2px)">1</span>
+        </div>
+        <div class="detail-grid">
+          <div class="pane">
+            <h4>Commands</h4>
+            <div class="cmd-row"><span class="dot dot-idle"></span><div class="cmd-info"><div class="cmd-name">make test</div><div class="cmd-line">make test · cwd: project root</div></div><button class="btn btn-primary btn-sm">▶ Run</button></div>
+            <div class="cmd-row"><span class="dot dot-idle"></span><div class="cmd-info"><div class="cmd-name">lint</div><div class="cmd-line">make lint · cwd: project root</div></div><button class="btn btn-primary btn-sm">▶ Run</button></div>
+          </div>
+          <div class="pane">
+            <h4>Open externally</h4>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div class="list-row" style="margin-bottom:0"><div class="lr-main"><div class="lr-title">VS Code</div><div class="lr-sub mono">code D:\GitHub\avante.nvim</div></div><button class="btn btn-secondary btn-sm">Open</button></div>
+              <div class="list-row" style="margin-bottom:0"><div class="lr-main"><div class="lr-title">Cursor</div><div class="lr-sub mono">cursor D:\GitHub\avante.nvim</div></div><button class="btn btn-secondary btn-sm">Open</button></div>
+              <div class="list-row" style="margin-bottom:0"><div class="lr-main"><div class="lr-title">File explorer</div><div class="lr-sub mono">explorer / open</div></div><button class="btn btn-secondary btn-sm">Open</button></div>
+            </div>
+            <p style="font-size:11px;color:var(--text-3);margin-top:10px">Squirl stays the launcher; source-level work is handed off (需求 1.4「不做代码编辑」). Commands and card menus both expose these entries.</p>
+          </div>
+        </div>
+      </div>
+      <div class="win-overlay" id="dlg-ide" style="display:none">
+        <div class="inline-dialog" style="max-width:340px;padding:6px 0">
+          <div class="mini-menu" style="box-shadow:none;border:none">
+            <div>⌨ VS Code <span class="kbd">code .</span></div>
+            <div>⌨ Cursor</div>
+            <div class="sep"></div>
+            <div>▦ Reveal in file explorer</div>
+            <div>⧉ Copy path</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>IDE 一键打开</b>（P1 #5）：详情页与卡片菜单双入口；工具列表从系统探测（code / cursor 已装才显示）</span></li>
+    </ol>
+  </section>
+
+  <div class="doc-footer">
+    <span>Squirl Prototype · 04 P1 Extensions</span>
+    <span><a href="03-settings.html">← Settings</a> · <a href="index.html">Overview</a> · <a href="05-extensions-p2.html">Next: P2 →</a></span>
+  </div>
+</div>
+<script src="./assets/proto.js"></script>
+</body>
+</html>

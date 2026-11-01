@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squirl · 06 扩展 P3 — 生态与平台化</title>
+<link rel="stylesheet" href="./assets/proto.css">
+<style>
+  .window{position:relative}
+  .win-overlay{position:absolute;inset:0;background:rgba(6,7,9,.66);backdrop-filter:blur(2px);z-index:10;
+    display:flex;align-items:flex-start;justify-content:center;padding:60px 20px 24px}
+  .portb{font-family:var(--mono);font-size:10px;font-weight:600;border-radius:6px;padding:2.5px 8px;display:inline-flex;gap:4px;align-items:center;cursor:pointer}
+  .term{background:#0a0c0f;border:1px solid var(--border);border-radius:10px;padding:12px 14px;
+    font-family:var(--mono);font-size:11.5px;line-height:1.8;color:var(--text-2);overflow-x:auto;white-space:nowrap}
+  .term .p{color:var(--green)} .term .c{color:var(--text-1)} .term .cm{color:#565d6b}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="doc-badge" style="color:var(--green);background:var(--green-dim);border-color:rgba(62,207,142,.3)">06 · P3 Extensions — 生态与平台化（远期）</span>
+    <h1>命令面板 · 端口雷达 · Shell Doctor · 插件 · 同步 · MCP</h1>
+    <p class="doc-sub">P3 把台账变成平台：Ctrl+K 让启动快过思考；端口雷达和 Shell Doctor 把「点了却失败」提前拦截；
+      插件与同步以 manifest + 双锚点映射扩展生态；MCP Server 让 AI 助手直接查询你的项目台账。</p>
+  </header>
+
+  <div class="scene-bar" data-scene-group>
+    <span class="sb-title">P3 · 6 项</span>
+    <button class="pill act" data-scene="palette">① Ctrl+K 命令面板</button>
+    <button class="pill" data-scene="ports">② 端口雷达</button>
+    <button class="pill" data-scene="doctor">③ Shell Doctor</button>
+    <button class="pill" data-scene="plugins">④ 插件架构</button>
+    <button class="pill" data-scene="sync">⑤ 跨设备同步</button>
+    <button class="pill" data-scene="mcp">⑥ MCP Server</button>
+  </div>
+
+  <!-- ============ ① 命令面板 ============ -->
+  <section class="scene act" data-key="palette">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body" style="position:relative;min-height:430px">
+        <div style="opacity:.35;pointer-events:none">
+          <div class="wf-topbar"><span class="logo">Squirl</span><div class="search-grow"><span class="s-ic">⌕</span><input class="input" placeholder="Search…"></div></div>
+          <div class="pgrid">
+            <div class="pcard"><div class="pcard-top"><span class="dot dot-running"></span><span class="pcard-name">squirl</span></div><div class="pcard-path">D:\Code\AICreate\ZCode\squirl</div></div>
+            <div class="pcard"><div class="pcard-top"><span class="dot dot-idle"></span><span class="pcard-name">avante.nvim</span></div><div class="pcard-path">D:\GitHub\avante.nvim</div></div>
+          </div>
+          <div class="dsec"><div class="dsec-head"><span class="chev">▾</span><h4>Discovered this scan</h4></div></div>
+        </div>
+        <div class="win-overlay" style="align-items:flex-start">
+          <div class="palette-mock" style="width:100%;max-width:520px">
+            <div class="pm-in">⌕&nbsp;<span style="color:var(--text-1)">run de</span><span class="spacer"></span><span class="kbd">Ctrl K</span></div>
+            <div class="pm-row act"><span>▶ dev — squirl <span class="mono" style="font-size:10px;color:var(--text-3)">npm run dev</span></span><span class="grp">command</span></div>
+            <div class="pm-row"><span>▶ serve — api-gateway <span class="mono" style="font-size:10px;color:var(--text-3)">go run ./cmd/gateway</span></span><span class="grp">command</span></div>
+            <div class="pm-row"><span>◇ open project — rust-playground</span><span class="grp">project</span></div>
+            <div class="pm-row"><span>◇ register folder…</span><span class="grp">action</span></div>
+            <div class="pm-row"><span>⚙ settings → execution</span><span class="grp">nav</span></div>
+            <div style="padding:8px 14px;font-size:10.5px;color:var(--text-3);border-top:1px solid var(--border)">↑↓ navigate · ↵ run · tab complete — everything the ledger knows, one palette away</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>Ctrl+K 面板</b>（P3 #20）：聚合命令/项目/动作/导航四类结果；键盘优先，与 Raycast 心智一致；是快捷键体系的第一块拼图</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ② 端口雷达 ============ -->
+  <section class="scene" data-key="ports">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="wf-label"><h3><span class="ann ghost">1</span>Running projects · port radar</h3><span class="mono">netstat2 + sysinfo</span></div>
+        <div class="list-row">
+          <span class="dot dot-running"></span>
+          <div class="lr-main">
+            <div class="lr-title">squirl — dev <span class="portb" style="background:var(--green-dim);color:var(--green)">:5173 ↗</span> <span class="portb" style="background:var(--green-dim);color:var(--green)">:5174 ↗</span></div>
+            <div class="lr-sub">listening since 10:21 · vite dev server</div>
+          </div>
+          <button class="btn btn-secondary btn-sm">Open in browser</button>
+        </div>
+        <div class="list-row">
+          <span class="dot dot-running"></span>
+          <div class="lr-main">
+            <div class="lr-title">api-gateway — serve <span class="portb" style="background:var(--green-dim);color:var(--green)">:8080 ↗</span></div>
+            <div class="lr-sub">listening since 10:03 · go http</div>
+          </div>
+          <button class="btn btn-secondary btn-sm">Open in browser</button>
+        </div>
+        <div class="pane" style="margin-top:12px">
+          <h4><span class="ann ghost">2</span>&nbsp;Pre-launch check — starting "my-portfolio · dev"</h4>
+          <div class="callout warn" style="margin-bottom:12px"><span>⚠</span><span><b>Port 3000 is already taken</b> — by <span class="mono">legacy-admin (pid 4312)</span>, started outside Squirl 2 days ago. Starting now would fail with EADDRINUSE.</span></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap">
+            <button class="btn btn-danger btn-sm">Terminate pid 4312</button>
+            <button class="btn btn-secondary btn-sm">Start anyway</button>
+            <button class="btn btn-ghost btn-sm">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>运行中端口徽章</b>（P3 #17）：监听端口实时可见，一键浏览器跳转</span></li>
+      <li><span class="ann">2</span><span><b>启动前冲突预检</b>：占用方与应用外进程一并识别，提供终止/照常/取消三选</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ③ Shell Doctor ============ -->
+  <section class="scene" data-key="doctor">
+    <div class="window">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="pane">
+          <h4><span class="ann ghost">1</span>&nbsp;Shell Doctor — pre-flight for "avante.nvim · make test"</h4>
+          <p style="font-size:12px;color:var(--text-2);margin-bottom:12px">Runs in the target shell context before the real launch — sub-millisecond visibility check across terminal PATH differences.</p>
+          <div class="list-row" style="margin-bottom:0">
+            <div class="lr-main">
+              <div class="lr-title"><span class="chip chip-green" style="font-size:9.5px">✓ visible</span>&nbsp;<span class="mono" style="font-size:11.5px">make</span></div>
+              <div class="lr-sub">found in wt.exe × pwsh context at 0.4ms · C:\Program Files\Git\usr\bin\make.exe</div>
+            </div>
+          </div>
+          <div class="list-row" style="margin-bottom:0">
+            <div class="lr-main">
+              <div class="lr-title"><span class="chip chip-yellow" style="font-size:9.5px">⚠ missing</span>&nbsp;<span class="mono" style="font-size:11.5px">luarocks</span></div>
+              <div class="lr-sub">visible in Git Bash but NOT in pwsh — classic cross-terminal PATH gap; the command would fail there</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" data-open="dlg-fix">Fix PATH…</button>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:12px">
+            <button class="btn btn-primary btn-sm">▶ Launch anyway</button>
+            <button class="btn btn-ghost btn-sm">Skip doctor for this project</button>
+          </div>
+        </div>
+      </div>
+      <div class="win-overlay" id="dlg-fix" style="display:none">
+        <div class="inline-dialog">
+          <div class="dlg-body">
+            <h4>Fix cross-terminal PATH</h4>
+            <p style="margin-bottom:10px"><span class="mono">luarocks</span> resolves in Git Bash but not in pwsh. One click appends its directory to the pwsh profile PATH — Squirl shows the exact line before writing.</p>
+            <div class="template-line">$env:Path += ";C:\Program Files\Git\usr\bin" <span class="cm"># → PowerShell profile</span></div>
+          </div>
+          <div class="dlg-actions">
+            <button class="btn btn-ghost" data-close>Cancel</button>
+            <button class="btn btn-primary">Apply to pwsh profile</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>Shell Doctor 预检</b>（argon-dr）：正式唤起前在目标 shell 上下文做亚毫秒命令可见性预检；跨终端 PATH 缺失给一键修复（先展示将写入的内容）</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ④ 插件架构 ============ -->
+  <section class="scene" data-key="plugins">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="set-grid">
+          <div class="set-nav"><a style="opacity:.4">⚡ Execution</a><a style="opacity:.4">⊞ Scanning</a><a style="opacity:.4">⌂ Roots</a><a class="act">⬡ Plugins</a><a style="opacity:.4">℗ About</a></div>
+          <div class="set-body">
+            <div class="list-row">
+              <div class="lr-main">
+                <div class="lr-title">port-radar <span class="chip chip-green" style="font-size:9px">enabled</span> <span class="chip chip-mute" style="font-size:9px">v0.3.1 · official</span></div>
+                <div class="lr-sub">hooks: onPreLaunch · onRunStateChange — contributes the port badges &amp; conflict dialog</div>
+              </div>
+              <span class="toggle on" data-toggle></span>
+              <button class="btn btn-ghost btn-sm">Settings</button>
+            </div>
+            <div class="list-row">
+              <div class="lr-main">
+                <div class="lr-title">sync <span class="chip chip-blue" style="font-size:9px">enabled</span> <span class="chip chip-mute" style="font-size:9px">v0.2.0 · official</span></div>
+                <div class="lr-sub">hooks: onDataChanged — cross-device sync via dual-anchor mapping (see ⑤)</div>
+              </div>
+              <span class="toggle on" data-toggle></span>
+              <button class="btn btn-ghost btn-sm">Settings</button>
+            </div>
+            <div class="list-row">
+              <div class="lr-main">
+                <div class="lr-title">docker-buddy <span class="chip chip-mute" style="font-size:9px">community</span></div>
+                <div class="lr-sub">hooks: onRegister — detect docker-compose.yml and suggest run commands</div>
+              </div>
+              <span class="toggle" data-toggle></span>
+              <button class="btn btn-ghost btn-sm">Details</button>
+            </div>
+            <div class="callout info">ℹ Plugin contract: <span class="mono">manifest.json</span> + lifecycle hooks + declarative JSON Schema UI — hosts render plugin settings uniformly; WASM sandbox stays an optional hardening (形态启动前再裁决). This page itself is the host renderer.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>插件页</b>（P3 #15）：宿主统一渲染声明式 Schema 设置；端口雷达/同步在 P3 里降格为官方插件，核心保持小而稳（Obsidian 范式）</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ⑤ 跨设备同步 ============ -->
+  <section class="scene" data-key="sync">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="wf-label"><h3><span class="ann ghost">1</span>Sync — import from laptop export</h3><span class="mono">squirl.export v1 · 42 projects · 2026-10-28</span></div>
+        <div class="pane" style="margin-bottom:12px">
+          <h4>Root anchor mapping — confirm each pair</h4>
+          <div class="root-row">
+            <span class="rp" style="min-width:220px"><span style="color:var(--text-3)">laptop:</span> C:\Users\ice\GitHub<small style="color:var(--text-3)">alias "github-archive"</small></span>
+            <span style="color:var(--accent);font-size:14px">⇢</span>
+            <span class="rp" style="min-width:220px"><span style="color:var(--text-3)">here:</span> D:\GitHub<small>36 projects remapped by prefix</small></span>
+            <span class="chip chip-green" style="font-size:9px">confirmed</span>
+          </div>
+          <div class="root-row">
+            <span class="rp" style="min-width:220px"><span style="color:var(--text-3)">laptop:</span> ~/Projects<small>alias "sandbox"</small></span>
+            <span style="color:var(--accent);font-size:14px">⇢</span>
+            <span class="rp" style="min-width:220px"><span style="color:var(--text-3)">here:</span> D:\Projects<small>6 projects remapped</small></span>
+            <button class="btn btn-secondary btn-sm">Confirm</button>
+          </div>
+          <div class="root-row" style="border-color:rgba(229,196,83,.35)">
+            <span class="rp" style="min-width:220px"><span style="color:var(--text-3)">laptop:</span> E:\Scratch<small>no anchor on this machine</small></span>
+            <span style="color:var(--yellow);font-size:14px">⇢</span>
+            <span class="rp" style="min-width:220px"><span style="color:var(--text-3)">here:</span> —<small>3 projects imported as "no attribution · path missing" — kept, relocate later (F2 reuse)</small></span>
+            <span class="chip chip-yellow" style="font-size:9px">unmapped</span>
+          </div>
+          <div class="callout info" style="margin-top:6px">ℹ Dual anchor: root alias first, then Git remote URL matching. Paths are re-normalized on this machine; duplicates are skipped and listed. Sensitive values in commands are encrypted locally before any transport.</div>
+          <div style="display:flex;gap:9px;margin-top:12px">
+            <button class="btn btn-primary btn-sm">Import 45 projects (36+6+3)</button>
+            <button class="btn btn-ghost btn-sm">Preview diff</button>
+          </div>
+        </div>
+        <div class="list-row" style="margin-bottom:0">
+          <span class="dot dot-running" style="background:var(--blue)"></span>
+          <div class="lr-main">
+            <div class="lr-title">Sync channel — Git repository <span class="chip chip-mute" style="font-size:9px">private repo</span></div>
+            <div class="lr-sub">last push 2h ago · WebDAV / cloud-disk mirror also supported · terminal configs stay per-platform</div>
+          </div>
+          <button class="btn btn-secondary btn-sm">Sync now</button>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>双锚点映射</b>（P3 #16）：根目录别名 + Git Remote URL 两级匹配；未命中条目复用「无归属+路径失效」机制零新增概念；复用 MVP 冻结的导出格式契约（DR-15）</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ ⑥ MCP Server ============ -->
+  <section class="scene" data-key="mcp">
+    <div class="window">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="pane" style="margin-bottom:12px">
+          <h4><span class="ann ghost">1</span>&nbsp;MCP Server — expose the ledger to AI agents</h4>
+          <p style="font-size:12px;color:var(--text-2);margin-bottom:12px">A local MCP endpoint lets Claude Code / Codex query your project ledger, notes and global commands — no more "which folder was that demo in?".</p>
+          <div class="badge-set" style="margin-bottom:12px">
+            <span class="chip chip-mute mono">list_projects</span>
+            <span class="chip chip-mute mono">get_project_notes</span>
+            <span class="chip chip-mute mono">list_global_commands</span>
+            <span class="chip chip-mute mono">search_ledger</span>
+          </div>
+          <div class="term">
+            <div><span class="cm"># register in Claude Code</span></div>
+            <div><span class="p">$</span> <span class="c">claude mcp add squirl -- squirl mcp serve</span></div>
+            <div>&nbsp;</div>
+            <div><span class="cm"># then, in the agent:</span></div>
+            <div><span class="p">›</span> <span class="c">which project had the tauri clipboard prototype and how do I run it?</span></div>
+            <div><span class="p">●</span> <span class="c">squirl · search_ledger "clipboard tauri"</span></div>
+            <div><span class="p">↳</span> <span class="c">elegant-clipboard — "same Tauri stack, reference for UI patterns"</span></div>
+            <div><span class="p">↳</span> <span class="c">run: pnpm tauri dev (cwd: project root)</span></div>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:12px;align-items:center">
+            <span class="toggle on" data-toggle></span>
+            <span style="font-size:12px;color:var(--text-2)">Enable MCP server (localhost only, read-only queries)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>MCP / AI skills 导出</b>（P3 #19）：台账成为 AI 助手可查询的本地事实源；只读、仅本地回环，密钥类字段默认脱敏</span></li>
+    </ol>
+  </section>
+
+  <div class="doc-footer">
+    <span>Squirl Prototype · 06 P3 Extensions</span>
+    <span><a href="05-extensions-p2.html">← P2</a> · <a href="index.html">Overview</a></span>
+  </div>
+</div>
+<script src="./assets/proto.js"></script>
+</body>
+</html>

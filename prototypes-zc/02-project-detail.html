@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squirl · 02 项目详情页（MVP 核心流程）</title>
+<link rel="stylesheet" href="./assets/proto.css">
+<style>
+  .window{position:relative}
+  .win-overlay{position:absolute;inset:0;background:rgba(6,7,9,.58);backdrop-filter:blur(1.5px);z-index:10;
+    display:flex;align-items:flex-start;justify-content:center;padding:64px 20px 24px}
+  .d-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .d-head .name{font-size:16px;font-weight:700}
+  .d-head .path{font-family:var(--mono);font-size:11px;color:var(--text-3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="doc-badge">02 · Project Detail — 项目详情页（MVP · F3/F4/F5）</span>
+    <h1>命令记录 · 双模式执行 · 日志与停止</h1>
+    <p class="doc-sub">命令状态机六态在 UI 永远可见；临时命令带常驻「Save」按钮；执行覆盖三值可空（跟随全局）；
+      日志面板仅内置模式，按 run_id 归属，profile 输出折叠展示。</p>
+  </header>
+
+  <div class="scene-bar" data-scene-group>
+    <span class="sb-title">Scenarios</span>
+    <button class="pill act" data-scene="overview">常态 · 运行中</button>
+    <button class="pill" data-scene="log-failed">上次失败 · 错误可见</button>
+    <button class="pill" data-scene="input-suspected">疑似等待输入</button>
+    <button class="pill" data-scene="save-prompt">运行结束·保存提示</button>
+    <button class="pill" data-scene="repeat-run">重复启动拦截</button>
+    <button class="pill" data-scene="command-editor">命令编辑器</button>
+    <button class="pill" data-scene="external">外部终端模式</button>
+    <button class="pill" data-scene="delete">删除项目</button>
+  </div>
+
+  <!-- ============ 场景：常态 ============ -->
+  <section class="scene act" data-key="overview">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="d-head">
+          <button class="btn btn-ghost btn-sm">← Back</button>
+          <span class="dot dot-running"></span>
+          <span class="name">squirl</span>
+          <span class="path">D:\Code\AICreate\ZCode\squirl</span>
+          <span class="chip chip-flag mono">package.json</span>
+          <span class="spacer"></span>
+          <span class="chip chip-mute">last run 2m ago · 14 runs</span>
+          <span class="ann" style="transform:translateY(2px)">1</span>
+        </div>
+        <div class="detail-grid">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="pane">
+              <h4><span class="ann ghost">2</span>&nbsp;Note</h4>
+              <textarea class="input" style="min-height:52px">Local project registry &amp; one-click launcher hub. The squirrel that remembers where the nuts are buried.</textarea>
+            </div>
+            <div class="pane">
+              <h4><span class="ann ghost">3</span>&nbsp;Commands · 3</h4>
+              <div class="cmd-row">
+                <span class="dot dot-running"></span>
+                <div class="cmd-info"><div class="cmd-name">dev <span class="chip chip-green">running · run #a3f2</span></div><div class="cmd-line">npm run dev · cwd: project root</div></div>
+                <button class="btn btn-danger btn-sm">■ Stop</button>
+                <button class="btn btn-ghost btn-sm" data-open="dlg-editor">Edit</button>
+              </div>
+              <div class="cmd-row">
+                <span class="dot dot-failed"></span>
+                <div class="cmd-info"><div class="cmd-name">build <span class="chip chip-red">exit 1</span></div><div class="cmd-line">npm run build · cwd: project root</div></div>
+                <button class="btn btn-primary btn-sm">▶ Run</button>
+                <button class="btn btn-ghost btn-sm" data-open="dlg-editor">Edit</button>
+              </div>
+              <div class="cmd-row">
+                <span class="dot dot-idle"></span>
+                <div class="cmd-info"><div class="cmd-name">test</div><div class="cmd-line">vitest run --coverage · cwd: project root</div></div>
+                <button class="btn btn-primary btn-sm">▶ Run</button>
+                <button class="btn btn-ghost btn-sm" data-open="dlg-editor">Edit</button>
+              </div>
+              <div class="temp-run">
+                <input class="input mono" placeholder="One-off command, e.g. pnpm install" value="pnpm --version">
+                <button class="btn btn-secondary">▶ Run</button>
+                <button class="btn btn-secondary" data-open="dlg-save">💾 Save</button>
+                <span class="ann" style="transform:translateY(2px)">4</span>
+              </div>
+            </div>
+            <div class="pane">
+              <h4><span class="ann ghost">5</span>&nbsp;Execution Override</h4>
+              <div class="override-grid">
+                <div class="ov-row"><span>Mode</span><span class="select-mock">Follow global <span style="color:var(--text-3)">(External terminal)</span> <span class="caret">▾</span></span></div>
+                <div class="ov-row"><span>Emulator</span><span class="select-mock">Follow global <span style="color:var(--text-3)">(Windows Terminal)</span> <span class="caret">▾</span></span></div>
+                <div class="ov-row"><span>Shell</span><span class="select-mock">Follow global <span style="color:var(--text-3)">(pwsh 7+)</span> <span class="caret">▾</span></span></div>
+              </div>
+              <div class="ov-hint">effective: external · wt.exe × pwsh -Login -NoLogo · cwd: D:\Code\AICreate\ZCode\squirl</div>
+            </div>
+            <div class="danger-zone">
+              <p><b style="color:var(--red)">Danger zone</b> · Delete project removes 3 saved commands. Blocked while any command is running in built-in mode.</p>
+              <button class="btn btn-danger btn-sm" data-open="dlg-delete">Delete Project</button>
+            </div>
+          </div>
+          <div class="pane">
+            <h4><span class="ann ghost">6</span>&nbsp;Logs — dev · run #a3f2</h4>
+            <div class="logpanel">
+              <div class="log-head">
+                <span class="dot dot-running"></span><span class="t">npm run dev</span>
+                <span class="spacer"></span>
+                <span class="chip chip-mute" style="font-size:10px">auto-scroll ✓</span>
+                <button class="btn btn-danger btn-sm">■ Stop</button>
+              </div>
+              <div class="log-body tall">
+                <div class="profile-fold">▸ profile output · 12 lines</div>
+                <div class="lg-dim">──── squirl command output ────</div>
+                <div class="lg-w">$ npm run dev</div>
+                <div class="lg-g">&gt; squirl@0.1.0 dev</div>
+                <div class="lg-g">&gt; vite</div>
+                <div class="lg-w">&nbsp;</div>
+                <div class="lg-c">&nbsp;&nbsp;VITE v8.3.5&nbsp;&nbsp;ready in 412 ms</div>
+                <div class="lg-w">&nbsp;</div>
+                <div class="lg-g">&nbsp;&nbsp;➜&nbsp;&nbsp;Local:&nbsp;&nbsp;http://localhost:5173/</div>
+                <div class="lg-g">&nbsp;&nbsp;➜&nbsp;&nbsp;press h + enter to show help</div>
+                <div class="lg-y">[run] watching for changes…</div>
+                <div class="lg-dim">10:24:01 [vite] hmr update /src/App.tsx</div>
+                <div class="lg-dim cursor-blink">&nbsp;</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:10px;display:grid;gap:3px">
+              <span>· ANSI rendered via anser · ring buffer 5,000 lines / 2MB, oldest trimmed</span>
+              <span>· profile noise folded above the separator line</span>
+              <span>· session-only — logs are never written to disk, cleared on restart</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>详情页头</b>：状态点 + 名称 + 路径 + 标志徽章 + 最近使用/累计次数（run_count 双模式累计）</span></li>
+      <li><span class="ann">2</span><span><b>备注</b>：随手编辑，台账核心增值字段</span></li>
+      <li><span class="ann">3</span><span><b>命令列表</b>：六态点 + 实时状态徽章（run_id）；running 命令显示 Stop；内置模式运行中禁删，编辑允许且不影响已运行进程</span></li>
+      <li><span class="ann">4</span><span><b>临时命令</b>：按当前执行模式（全局/覆盖）执行；常驻 Save 随时可存（需命名确认）</span></li>
+      <li><span class="ann">5</span><span><b>执行覆盖</b>：Mode/Emulator/Shell 三值可空 = 跟随全局；底部实时显示合并后生效配置（get_effective_execution_config）</span></li>
+      <li><span class="ann">6</span><span><b>日志面板</b>：仅内置模式；ANSI 归一化、profile 折叠、自动滚动、Stop 收整棵进程组（不影响其他命令）</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：失败 ============ -->
+  <section class="scene" data-key="log-failed">
+    <div class="window">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="d-head">
+          <button class="btn btn-ghost btn-sm">← Back</button>
+          <span class="dot dot-failed"></span>
+          <span class="name">squirl</span>
+          <span class="path">D:\Code\AICreate\ZCode\squirl</span>
+          <span class="spacer"></span>
+          <span class="chip chip-red">last run failed · exit 1</span>
+        </div>
+        <div class="detail-grid">
+          <div class="pane">
+            <h4>Commands</h4>
+            <div class="cmd-row">
+              <span class="dot dot-failed"></span>
+              <div class="cmd-info"><div class="cmd-name">build <span class="chip chip-red">exit 1 · 4.2s</span></div><div class="cmd-line">npm run build · cwd: project root</div></div>
+              <button class="btn btn-primary btn-sm">▶ Run again</button>
+              <button class="btn btn-ghost btn-sm">Edit</button>
+            </div>
+            <div class="cmd-row">
+              <span class="dot dot-exited"></span>
+              <div class="cmd-info"><div class="cmd-name">typecheck <span class="chip chip-green">exited 0 · 11.8s</span></div><div class="cmd-line">tsc --noEmit · cwd: project root</div></div>
+              <button class="btn btn-primary btn-sm">▶ Run</button>
+              <button class="btn btn-ghost btn-sm">Edit</button>
+            </div>
+            <p style="font-size:11px;color:var(--text-3);margin-top:10px">last_exit_code recorded on built-in mode only — external mode leaves it NULL (process belongs to the terminal).</p>
+          </div>
+          <div class="pane">
+            <h4><span class="ann ghost">1</span>&nbsp;Logs — build · run #9c11</h4>
+            <div class="logpanel">
+              <div class="banner err">
+                <span class="t-ic" style="width:16px;height:16px;background:rgba(240,101,95,.18);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">✕</span>
+                <div style="flex:1"><b>Command failed with exit code 1</b><p>npm run build · ended 4.2s after start · raw output preserved below</p></div>
+                <span class="b-act kbd">shown &lt;1s after exit</span>
+              </div>
+              <div class="log-body tall">
+                <div class="profile-fold">▸ profile output · 12 lines</div>
+                <div class="lg-dim">──── squirl command output ────</div>
+                <div class="lg-w">$ npm run build</div>
+                <div class="lg-w">&gt; tsc &amp;&amp; vite build</div>
+                <div class="lg-w">&nbsp;</div>
+                <div class="lg-r">src/main.tsx:18:7 - error TS2322: Type 'string' is not assignable to type 'number'.</div>
+                <div class="lg-r">&nbsp;&nbsp;18&nbsp;&nbsp;&nbsp;const port = config.port;</div>
+                <div class="lg-w">&nbsp;</div>
+                <div class="lg-r">Found 1 error in src/main.tsx:18</div>
+                <div class="lg-dim">exit code 1 · 4.2s</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:10px">AC5: readable error within 5s of non-zero exit, original output kept visible.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>错误可见</b>（AC5）：非零退出 ≤5 秒在日志面板顶部出红色横幅，原始输出保留；「exit 1」徽章同步到命令行与卡片状态点</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：疑似等待输入 ============ -->
+  <section class="scene" data-key="input-suspected">
+    <div class="window">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="detail-grid">
+          <div class="pane">
+            <h4>Commands</h4>
+            <div class="cmd-row">
+              <span class="dot dot-running"></span>
+              <div class="cmd-info"><div class="cmd-name">setup <span class="chip chip-yellow">no output for 32s</span></div><div class="cmd-line">python init_db.py · cwd: project root</div></div>
+              <button class="btn btn-danger btn-sm">■ Force stop</button>
+            </div>
+            <p style="font-size:11px;color:var(--text-3);margin-top:10px">Heuristic only — long silent builds can trigger it. Squirl never intervenes automatically (DR-8).</p>
+          </div>
+          <div class="pane">
+            <h4><span class="ann ghost">1</span>&nbsp;Logs — setup · run #b7e0</h4>
+            <div class="logpanel">
+              <div class="banner warn">
+                <span class="t-ic" style="width:16px;height:16px;background:rgba(229,196,83,.18);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">!</span>
+                <div style="flex:1"><b>This command may be waiting for input</b><p>Squirl MVP provides no stdin (no Y/N prompts, no sudo passwords). Last output was 32s ago.</p></div>
+                <span class="b-act"><button class="btn btn-danger btn-sm">■ Force stop</button></span>
+              </div>
+              <div class="log-body tall">
+                <div class="profile-fold">▸ profile output · 9 lines</div>
+                <div class="lg-dim">──── squirl command output ────</div>
+                <div class="lg-w">$ python init_db.py</div>
+                <div class="lg-c">creating tables… done</div>
+                <div class="lg-y">Overwrite existing database? [y/N]</div>
+                <div class="lg-dim cursor-blink">&nbsp;</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>疑似等待输入</b>（DR-8）：running 且 30s 无任何输出 → run://input-suspected 事件 → 横幅提示 + 强制停止；只提示不干预，阈值待实测校准</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：保存提示 ============ -->
+  <section class="scene" data-key="save-prompt">
+    <div class="window slim">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="d-head">
+          <button class="btn btn-ghost btn-sm">← Back</button>
+          <span class="dot dot-exited"></span><span class="name">squirl</span>
+          <span class="spacer"></span><span class="chip chip-green">temp command exited 0 · 1.1s</span>
+        </div>
+        <div class="pane">
+          <h4><span class="ann ghost">1</span>&nbsp;One-off command · finished</h4>
+          <div class="logpanel" style="margin-bottom:12px">
+            <div class="log-body" style="min-height:0;max-height:120px">
+              <div class="lg-w">$ pnpm install</div>
+              <div class="lg-g">Done in 1.1s</div>
+              <div class="lg-dim">exit code 0 · 1.1s</div>
+            </div>
+          </div>
+          <div class="inline-dialog" style="box-shadow:none">
+            <div class="dlg-body">
+              <h4>Save this command?</h4>
+              <p>Temp commands are prompted once when they finish in built-in mode. Not saving discards it — nothing is ever remembered silently.</p>
+              <div class="field" style="margin-top:12px;margin-bottom:0">
+                <label>Command name</label>
+                <input class="input" value="install-deps">
+                <span class="hint mono">pnpm install · cwd: project root</span>
+              </div>
+            </div>
+            <div class="dlg-actions">
+              <button class="btn btn-ghost">Discard</button>
+              <button class="btn btn-primary">Save to project</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>运行结束保存提示</b>（F3）：仅内置模式的临时命令提示一次；外部模式无该提示，保存全靠常驻 Save 按钮；不保存则彻底丢弃</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：重复启动拦截 ============ -->
+  <section class="scene" data-key="repeat-run">
+    <div class="window">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="d-head">
+          <button class="btn btn-ghost btn-sm">← Back</button>
+          <span class="dot dot-running"></span><span class="name">squirl</span>
+          <span class="spacer"></span><span class="chip chip-green">dev is running</span>
+        </div>
+        <div class="detail-grid">
+          <div class="pane">
+            <h4>Commands</h4>
+            <div class="cmd-row">
+              <span class="dot dot-running"></span>
+              <div class="cmd-info"><div class="cmd-name">dev <span class="chip chip-green">running · run #a3f2</span></div><div class="cmd-line">npm run dev</div></div>
+              <button class="btn btn-secondary btn-sm" disabled>▶ Run</button>
+              <button class="btn btn-danger btn-sm">■ Stop</button>
+            </div>
+            <p style="font-size:11px;color:var(--text-3);margin-top:10px">Double-start is blocked by default (E_ALREADY_RUNNING) — each built-in launch owns an independent process group and log buffer.</p>
+          </div>
+          <div class="pane">
+            <h4>Logs — dev · run #a3f2</h4>
+            <div class="logpanel">
+              <div class="log-head"><span class="dot dot-running"></span><span class="t">npm run dev</span><span class="spacer"></span><button class="btn btn-danger btn-sm">■ Stop</button></div>
+              <div class="log-body tall">
+                <div class="lg-dim">──── squirl command output ────</div>
+                <div class="lg-c">&nbsp;&nbsp;VITE v8.3.5&nbsp;&nbsp;ready in 412 ms</div>
+                <div class="lg-g">&nbsp;&nbsp;➜&nbsp;&nbsp;Local:&nbsp;&nbsp;http://localhost:5173/</div>
+                <div class="lg-dim cursor-blink">&nbsp;</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="win-overlay">
+        <div class="inline-dialog">
+          <div class="dlg-body">
+            <h4><span class="ann" style="margin-right:8px">1</span>"dev" is already running</h4>
+            <p>Run <span class="mono">#a3f2</span> holds this command in built-in mode. Starting again would create an independent instance with its own process group and logs.</p>
+          </div>
+          <div class="dlg-actions">
+            <button class="btn btn-ghost" data-close>Cancel</button>
+            <button class="btn btn-secondary">View running logs</button>
+            <button class="btn btn-primary">Start another instance</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>重复启动</b>（F4）：默认阻止并提示；「再启动一个」= 分配新 run_id 的独立实例（日志/停止均按 run_id 归属）</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：命令编辑器 ============ -->
+  <section class="scene" data-key="command-editor">
+    <div class="window slim">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="inline-dialog" style="margin-top:8px">
+          <div class="dlg-body">
+            <h4><span class="ann" style="margin-right:8px">1</span>Edit command — dev</h4>
+            <div class="field" style="margin-top:12px">
+              <label>Name</label>
+              <input class="input" value="dev">
+            </div>
+            <div class="field">
+              <label>Command line <span style="color:var(--text-3);font-weight:400">(stored verbatim, never re-parsed)</span></label>
+              <input class="input mono" value="npm run dev">
+            </div>
+            <div class="field" style="margin-bottom:4px">
+              <label>Working directory</label>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <span class="select-mock"><span class="dot" style="width:7px;height:7px;background:var(--accent)"></span> Project root <span class="caret">▾</span></span>
+                <span class="mono" style="font-size:10.5px;color:var(--text-3)">or</span>
+                <input class="input mono" style="max-width:260px;width:auto" value="D:\Code\AICreate\ZCode\squirl\web">
+              </div>
+              <span class="hint">cwd is shared by both execution modes (global decision #7)</span>
+            </div>
+            <div class="callout info" style="margin-top:10px">ℹ Editing a command never affects an already-running process — the run keeps its launch plan.</div>
+          </div>
+          <div class="dlg-actions">
+            <button class="btn btn-danger" disabled>Delete <span class="chip chip-mute" style="font-size:9px;margin-left:4px">running</span></button>
+            <span class="spacer"></span>
+            <button class="btn btn-ghost">Cancel</button>
+            <button class="btn btn-primary">Save changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>命令编辑器</b>：名称/命令原文/cwd 三字段；命令原文直传不经二次解析（INV-6）；运行中禁删（先停止），编辑不影响已运行进程</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：外部终端模式 ============ -->
+  <section class="scene" data-key="external">
+    <div class="window wide">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="d-head">
+          <button class="btn btn-ghost btn-sm">← Back</button>
+          <span class="dot dot-idle"></span>
+          <span class="name">api-gateway</span>
+          <span class="path">D:\Projects\api-gateway</span>
+          <span class="chip chip-flag mono">go.mod</span>
+          <span class="spacer"></span>
+          <span class="chip chip-mute">last run 18m ago · 7 runs</span>
+        </div>
+        <div class="detail-grid">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="pane">
+              <h4>Note</h4>
+              <textarea class="input" style="min-height:44px">Go microservice gateway shared by side projects. Runs on :8080.</textarea>
+            </div>
+            <div class="pane">
+              <h4><span class="ann ghost">1</span>&nbsp;Commands</h4>
+              <div class="cmd-row">
+                <span class="dot dot-idle"></span>
+                <div class="cmd-info"><div class="cmd-name">serve <span class="chip chip-blue">↗ external</span></div><div class="cmd-line">go run ./cmd/gateway · cwd: project root</div></div>
+                <button class="btn btn-primary btn-sm">↗ Run</button>
+                <button class="btn btn-ghost btn-sm">Edit</button>
+              </div>
+              <div class="cmd-row">
+                <span class="dot dot-idle"></span>
+                <div class="cmd-info"><div class="cmd-name">migrate</div><div class="cmd-line">go run ./cmd/migrate up · cwd: project root</div></div>
+                <button class="btn btn-primary btn-sm">↗ Run</button>
+                <button class="btn btn-ghost btn-sm">Edit</button>
+              </div>
+            </div>
+            <div class="pane">
+              <h4>Execution Override</h4>
+              <div class="override-grid">
+                <div class="ov-row"><span>Mode</span><span class="select-mock" style="border-color:rgba(90,162,255,.5);color:var(--blue)">External terminal <span class="caret">▾</span></span></div>
+                <div class="ov-row"><span>Emulator</span><span class="select-mock">Follow global <span style="color:var(--text-3)">(Windows Terminal)</span> <span class="caret">▾</span></span></div>
+                <div class="ov-row"><span>Shell</span><span class="select-mock">Follow global <span style="color:var(--text-3)">(pwsh 7+)</span> <span class="caret">▾</span></span></div>
+              </div>
+              <div class="ov-hint">effective: external · wt.exe × pwsh -Login -NoLogo · keep-open: -NoExit</div>
+            </div>
+          </div>
+          <div class="pane">
+            <h4><span class="ann ghost">2</span>&nbsp;External mode</h4>
+            <div class="callout info" style="margin-bottom:12px">↗ Launched in <b>Windows Terminal × pwsh</b> at the command's cwd. The window stays open after the command ends so errors never flash away.</div>
+            <div class="list-row" style="align-items:flex-start">
+              <div class="lr-main">
+                <div class="lr-title">Process ownership</div>
+                <div class="lr-desc" style="white-space:normal">The terminal owns this process. Squirl only updates <span class="mono">last_run_at</span> and counts the launch — no exit code, no state machine, and quitting Squirl never touches it.</div>
+              </div>
+            </div>
+            <div class="list-row" style="align-items:flex-start">
+              <div class="lr-main">
+                <div class="lr-title">Launch record</div>
+                <div class="lr-sub" style="white-space:normal;margin-top:2px">run_id 7f3a… · adapter wt+pwsh · args: wt -d &lt;cwd&gt; -- pwsh -Login -NoLogo -Command &lt;cmd&gt; · written to app log before spawn (DR-12)</div>
+              </div>
+            </div>
+            <p style="font-size:11px;color:var(--text-3);margin-top:12px">AC3: click → terminal window visible ≤ 2s. Saving still works via the persistent Save button.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>外部模式</b>（默认）：Run 按钮用 ↗ 标识「跳出应用」；模拟器 × shell 组合唤起，命令直传 + 保持窗口打开（附录 A #4/#8）</span></li>
+      <li><span class="ann">2</span><span><b>外部模式右栏</b>：无日志面板；明示进程归属终端、不记退出码、应用退出不影响；launch record 保证「点了没反应」可回溯</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ 场景：删除项目 ============ -->
+  <section class="scene" data-key="delete">
+    <div class="window slim">
+      <div class="titlebar"><div class="app-title">Squirl</div><div class="caption"><span>─</span><span>▢</span><span class="close">✕</span></div></div>
+      <div class="wf-body">
+        <div class="d-head">
+          <button class="btn btn-ghost btn-sm">← Back</button>
+          <span class="dot dot-idle"></span><span class="name">old-scraper</span>
+          <span class="path">D:\Archive\old-scraper</span>
+        </div>
+        <div class="pane" style="margin-bottom:14px">
+          <h4>Commands · 2</h4>
+          <div class="cmd-row"><span class="dot dot-idle"></span><div class="cmd-info"><div class="cmd-name">scrape</div><div class="cmd-line">python scrape.py --full</div></div><button class="btn btn-primary btn-sm">▶ Run</button></div>
+          <div class="cmd-row"><span class="dot dot-idle"></span><div class="cmd-info"><div class="cmd-name">parse</div><div class="cmd-line">python parse.py out.json</div></div><button class="btn btn-primary btn-sm">▶ Run</button></div>
+        </div>
+        <div class="danger-zone">
+          <p><b style="color:var(--red)">Danger zone</b> · Delete project removes 2 saved commands.</p>
+          <button class="btn btn-danger btn-sm" data-open="dlg-delete">Delete Project</button>
+        </div>
+      </div>
+      <div class="win-overlay">
+        <div class="inline-dialog danger">
+          <div class="dlg-body">
+            <h4><span class="ann" style="margin-right:8px">1</span>Delete "old-scraper"?</h4>
+            <p>This removes the ledger entry, its note, and <b style="color:var(--text-1)">2 saved commands</b> (cascade). This cannot be undone.</p>
+            <p style="margin-top:6px">Blocked while any command is running in built-in mode (E_PROJECT_RUNNING_NO_DELETE).</p>
+          </div>
+          <div class="dlg-actions">
+            <button class="btn btn-ghost" data-close>Cancel</button>
+            <button class="btn btn-danger">Delete project</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="ann">1</span><span><b>删除确认</b>（G1）：二次确认并明示级联删除 N 条命令；有内置运行中命令时拒绝删除</span></li>
+    </ol>
+  </section>
+
+  <div class="doc-footer">
+    <span>Squirl Prototype · 02 Project Detail · MVP F3/F4/F5/F6</span>
+    <span><a href="01-home.html">← Home</a> · <a href="index.html">Overview</a> · <a href="03-settings.html">Next: Settings →</a></span>
+  </div>
+</div>
+<script src="./assets/proto.js"></script>
+</body>
+</html>

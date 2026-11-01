@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Squirl · 界面设计语言 v0.1</title>
+<style>
+  :root{
+    --canvas:#F2F1EE; --canvas-2:#EDEBE7;
+    --surface:#FFFFFF; --surface-2:#FAF9F7;
+    --line:#E4E1DB; --line-soft:#EFEDE8;
+    --ink:#171614; --ink-2:#5C5952; --ink-3:#98938A; --ink-4:#C2BDB4;
+    --acorn:#9C5A32; --acorn-2:#B87A50; --acorn-wash:#F7EEE7;
+    --moss:#4C7A55; --brick:#B0473D; --amber:#B4791F;
+    --r-s:6px; --r-m:10px; --r-l:14px; --r-pill:999px;
+    --shadow-pop:0 12px 32px -8px rgba(23,22,20,.16), 0 2px 8px rgba(23,22,20,.06);
+    --font:"Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,Inter,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    --mono:"Cascadia Code","JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{
+    margin:0;background:var(--canvas);color:var(--ink);
+    font-family:var(--font);font-size:14px;line-height:1.6;
+    background-image:radial-gradient(1200px 500px at 50% -200px,rgba(156,90,50,.05),transparent 70%);
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 32px 140px}
+
+  /* ---------- typography helpers ---------- */
+  .micro{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .mono{font-family:var(--mono);font-variant-ligatures:none}
+
+  /* ---------- hero ---------- */
+  header.hero{padding:88px 0 56px;border-bottom:1px solid var(--line)}
+  .mark{display:flex;align-items:center;gap:10px;margin-bottom:34px}
+  .mark .glyph{width:26px;height:26px;color:var(--acorn)}
+  .mark b{font-size:14px;font-weight:650;letter-spacing:-.01em}
+  .mark span{font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;padding-left:10px;border-left:1px solid var(--line)}
+  h1{font-size:clamp(30px,4.4vw,46px);line-height:1.14;letter-spacing:-.028em;font-weight:640;margin:0 0 18px;max-width:19em}
+  h1 em{font-style:normal;color:var(--acorn)}
+  .lede{font-size:15px;color:var(--ink-2);max-width:44em;margin:0 0 34px}
+  .refs{display:flex;flex-wrap:wrap;gap:8px}
+  .ref{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2);
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-pill);padding:5px 13px 5px 10px}
+  .ref i{width:5px;height:5px;border-radius:50%;background:var(--acorn);display:block}
+
+  /* ---------- section ---------- */
+  section{padding:64px 0 0}
+  .sec-h{display:flex;align-items:baseline;gap:16px;margin-bottom:8px}
+  .sec-h .n{font-family:var(--mono);font-size:11px;color:var(--ink-4);letter-spacing:.06em;padding-top:5px}
+  .sec-h h2{font-size:19px;font-weight:620;letter-spacing:-.02em;margin:0}
+  .sec-d{font-size:13.5px;color:var(--ink-2);margin:0 0 30px 40px;max-width:52em}
+  .rule{height:1px;background:var(--line);margin:0 0 30px}
+
+  /* ---------- principle grid ---------- */
+  .principles{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden}
+  .pr{background:var(--surface);padding:22px 20px 24px}
+  .pr b{display:block;font-size:13px;font-weight:640;margin-bottom:7px;letter-spacing:-.01em}
+  .pr p{margin:0;font-size:12.5px;color:var(--ink-2);line-height:1.65}
+  .pr .k{font-family:var(--mono);font-size:10.5px;color:var(--acorn);display:block;margin-bottom:14px}
+
+  /* ---------- direction cards ---------- */
+  .dirs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+  .dir{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);padding:20px;display:flex;flex-direction:column;gap:16px}
+  .dir.pick{border-color:var(--acorn);box-shadow:0 0 0 3px var(--acorn-wash)}
+  .dir-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .dir-top h3{margin:0;font-size:14px;font-weight:640;letter-spacing:-.01em}
+  .dir-top p{margin:4px 0 0;font-size:12px;color:var(--ink-3)}
+  .badge-pick{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--acorn);
+    background:var(--acorn-wash);border-radius:var(--r-pill);padding:3px 9px;font-weight:650;white-space:nowrap}
+  .strip{display:flex;height:26px;border-radius:5px;overflow:hidden;border:1px solid var(--line)}
+  .strip i{flex:1}
+  .mini{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--canvas);font-size:11px}
+  .mini .t{display:flex;align-items:center;gap:6px;font-weight:640;font-size:12px;margin-bottom:3px}
+  .mini .p{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-bottom:9px}
+  .mini .btn{display:inline-flex;align-items:center;gap:5px;background:var(--ink);color:#fff;border-radius:5px;padding:4px 9px;font-size:10.5px;font-weight:600}
+  .mini .btn.acorn{background:var(--acorn)}
+  .mini .btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+  .dir-note{font-size:12px;color:var(--ink-2);margin:0;line-height:1.65}
+  .dir-verdict{font-size:11.5px;color:var(--ink-3);border-top:1px solid var(--line-soft);padding-top:12px;margin-top:auto}
+
+  /* ---------- swatches ---------- */
+  .scale{display:grid;grid-template-columns:repeat(10,1fr);gap:0;border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden}
+  .scale div{padding:26px 8px 9px;font-family:var(--mono);font-size:9.5px;text-align:center;border-right:1px solid rgba(0,0,0,.05)}
+  .scale div:last-child{border-right:0}
+  .sem{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:14px}
+  .sem div{border:1px solid var(--line);border-radius:var(--r-s);background:var(--surface);padding:11px 13px;display:flex;align-items:center;gap:10px}
+  .sem .d{width:9px;height:9px;border-radius:50%;flex:none}
+  .sem b{font-size:12px;font-weight:600;display:block;line-height:1.3}
+  .sem span{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+
+  /* ---------- type table ---------- */
+  .tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  .tbl th{text-align:left;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+    font-weight:600;padding:0 14px 9px 0;border-bottom:1px solid var(--line)}
+  .tbl td{padding:13px 14px 13px 0;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  .tbl td:last-child,.tbl th:last-child{padding-right:0}
+  .tbl .u{color:var(--ink-2);font-size:12px}
+  .tbl .m{font-family:var(--mono);font-size:11px;color:var(--ink-3);white-space:nowrap}
+
+  /* ---------- component demo shell ---------- */
+  .demo{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);padding:28px;margin-top:16px}
+  .demo-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+
+  /* project card */
+  .pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);padding:14px 14px 12px;
+    display:flex;flex-direction:column;gap:0;transition:.16s;max-width:340px}
+  .pcard:hover{border-color:var(--ink-4);box-shadow:0 6px 18px -10px rgba(23,22,20,.28)}
+  .pcard .r1{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+  .pcard .nm{font-size:14px;font-weight:640;letter-spacing:-.012em;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pcard .pth{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:7px}
+  .pcard .nte{font-size:12px;color:var(--ink-2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:13px;min-height:36px}
+  .split{display:flex;height:30px;border-radius:var(--r-s);overflow:hidden;background:var(--ink)}
+  .split .main{flex:1;display:flex;align-items:center;gap:6px;color:#fff;font-size:11.5px;font-weight:600;padding:0 11px;cursor:pointer}
+  .split .main .lb{color:rgba(255,255,255,.62);font-weight:500}
+  .split .car{width:26px;display:grid;place-items:center;border-left:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.8);cursor:pointer}
+  .split:hover{background:var(--acorn)}
+  .pcard .r4{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:10.5px;color:var(--ink-3)}
+
+  /* dot */
+  .dot{width:6px;height:6px;border-radius:50%;flex:none;display:inline-block;position:relative}
+  .dot.idle{background:var(--ink-4)}
+  .dot.run{background:var(--acorn);box-shadow:0 0 0 0 rgba(156,90,50,.5);animation:pulse 1.8s infinite}
+  .dot.ok{background:var(--moss)}
+  .dot.err{background:var(--brick)}
+  .dot.kill{background:var(--ink-3)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(156,90,50,.45)}70%{box-shadow:0 0 0 5px rgba(156,90,50,0)}100%{box-shadow:0 0 0 0 rgba(156,90,50,0)}}
+
+  /* states list */
+  .states{display:flex;flex-wrap:wrap;gap:8px}
+  .st{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:var(--r-pill);
+    padding:4px 11px 4px 9px;font-size:11.5px;color:var(--ink-2);background:var(--surface)}
+  .st code{font-family:var(--mono);font-size:10px;color:var(--ink-4)}
+
+  /* chips */
+  .chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;letter-spacing:.04em;font-weight:600;
+    text-transform:uppercase;color:var(--acorn);background:var(--acorn-wash);border-radius:4px;padding:2px 6px;font-family:var(--mono)}
+  .chip.n{color:var(--ink-3);background:var(--canvas-2)}
+
+  /* buttons */
+  .b{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:var(--r-s);
+    font-size:12px;font-weight:560;border:1px solid transparent;cursor:pointer;white-space:nowrap;font-family:inherit}
+  .b.pri{background:var(--ink);color:#fff}
+  .b.pri:hover{background:var(--acorn)}
+  .b.gh{background:transparent;color:var(--ink-2);border-color:var(--line)}
+  .b.gh:hover{background:var(--surface-2);color:var(--ink);border-color:var(--ink-4)}
+  .b.dan{background:transparent;color:var(--brick);border-color:rgba(176,71,61,.28)}
+  .b.sm{height:26px;font-size:11.5px;padding:0 10px}
+
+  /* input */
+  .inp{display:flex;align-items:center;gap:8px;height:32px;padding:0 11px;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--r-s);font-size:12.5px;color:var(--ink-3);width:100%;max-width:340px}
+  .inp.focus{border-color:var(--acorn);box-shadow:0 0 0 3px var(--acorn-wash);color:var(--ink)}
+
+  /* toggle */
+  .tg{width:34px;height:19px;border-radius:var(--r-pill);background:var(--ink);position:relative;flex:none}
+  .tg::after{content:"";position:absolute;top:2px;right:2px;width:15px;height:15px;border-radius:50%;background:#fff}
+  .tg.off{background:var(--line)}
+  .tg.off::after{right:auto;left:2px;background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.14)}
+
+  /* segmented */
+  .seg{display:inline-flex;background:var(--canvas-2);border-radius:var(--r-s);padding:2px;gap:2px}
+  .seg span{font-size:11.5px;padding:4px 13px;border-radius:4px;color:var(--ink-3);font-weight:500}
+  .seg span.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(23,22,20,.08)}
+
+  /* dialog */
+  .dlg{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);box-shadow:var(--shadow-pop);
+    padding:22px;max-width:400px}
+  .dlg h4{margin:0 0 6px;font-size:14px;font-weight:640;letter-spacing:-.01em}
+  .dlg p{margin:0 0 18px;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+  .dlg .row{display:flex;gap:8px;justify-content:flex-end}
+
+  /* log */
+  .log{background:#FCFBF9;border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden;font-family:var(--mono);font-size:11.5px;line-height:1.75}
+  .log .hd{display:flex;align-items:center;gap:9px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--surface);font-family:var(--font)}
+  .log .bd{padding:11px 14px;color:var(--ink-2);white-space:pre;overflow-x:auto}
+  .log .bd .g{color:var(--moss)} .log .bd .a{color:var(--acorn)} .log .bd .d{color:var(--ink-3)}
+  .log .bd .sep{color:var(--ink-4)}
+
+  /* layout diagram */
+  .diag{border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface);padding:22px}
+  .dbox{border:1px solid var(--ink-4);border-radius:8px;overflow:hidden;background:var(--canvas)}
+  .drow{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:0 12px;font-size:10px;color:var(--ink-3);font-family:var(--mono)}
+  .drow:last-child{border-bottom:0}
+  .dtb{height:26px}
+  .dtool{height:30px}
+  .dct{padding:10px 12px;display:block;font-family:var(--font)}
+  .dlab{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:650;margin-bottom:6px}
+  .dcards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+  .dcards i{height:44px;border:1px solid var(--line);border-radius:5px;background:var(--surface);display:block}
+  .drowbox{height:26px;border:1px solid var(--line);border-radius:5px;background:var(--surface)}
+  .dmsg{flex:1;display:flex;align-items:center;gap:6px;height:18px;border:1px solid var(--line);border-radius:3px;background:var(--surface);padding:0 6px;font-size:9px;color:var(--ink-4)}
+  .dbtn{font-size:8.5px;border:1px solid var(--line);border-radius:3px;padding:1px 5px;background:var(--surface);color:var(--ink-3);white-space:nowrap}
+  .dspacer{flex:1}
+  .dim{font-family:var(--mono);font-size:9.5px;color:var(--ink-4);white-space:nowrap;flex:none}
+  .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .dsub{display:flex;gap:6px;height:88px}
+  .dsub>div{border:1px solid var(--line);border-radius:5px;background:var(--surface);display:grid;place-items:center;font-family:var(--mono);font-size:9px;color:var(--ink-3);text-align:center;line-height:1.4}
+
+  /* motion table */
+  .motion{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden}
+  .motion div{background:var(--surface);padding:16px 18px}
+  .motion b{display:block;font-family:var(--mono);font-size:12px;color:var(--ink);margin-bottom:4px}
+  .motion span{font-size:12px;color:var(--ink-2)}
+
+  /* dark preview */
+  .darkp{--canvas:#141312;--canvas-2:#1D1B18;--surface:#1B1A18;--surface-2:#232120;
+    --line:#302D28;--line-soft:#262320;--ink:#EDEAE4;--ink-2:#A8A29A;--ink-3:#78726A;--ink-4:#514C45;
+    --acorn:#D08A5C;--acorn-wash:#2E2119;--moss:#7BA483;--brick:#D07167;
+    color:var(--ink);
+    background:var(--canvas);border-radius:var(--r-l);padding:24px;border:1px solid var(--line)}
+  .darkp .pcard{background:var(--surface)}
+  .darkp .split{background:#EDEAE4}
+  .darkp .split .main{color:#141312}
+  .darkp .split .main .lb{color:rgba(20,19,18,.55)}
+  .darkp .split .car{border-left-color:rgba(20,19,18,.14);color:rgba(20,19,18,.7)}
+
+  /* open questions */
+  .qs{border:1px solid var(--line);border-radius:var(--r-l);overflow:hidden;background:var(--surface)}
+  .q{display:flex;gap:16px;padding:18px 22px;border-bottom:1px solid var(--line-soft)}
+  .q:last-child{border-bottom:0}
+  .q .i{font-family:var(--mono);font-size:11px;color:var(--acorn);flex:none;padding-top:2px}
+  .q b{display:block;font-size:13px;font-weight:620;margin-bottom:3px}
+  .q p{margin:0;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+
+  .anno{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--acorn);color:#fff;
+    font-size:10px;font-weight:700;font-family:var(--mono);vertical-align:middle}
+
+  @media(max-width:760px){
+    .wrap{padding:0 18px 90px}
+    header.hero{padding:56px 0 40px}
+    .sec-d{margin-left:0}
+    .scale{grid-template-columns:repeat(5,1fr)}
+    .tbl .hide-s{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="mark">
+      <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3.2c-4.2 0-7.2 3-7.2 6.9 0 2.4 1.1 3.9 1.9 5.4.6 1.1.9 2 .9 3.3h8.8c0-1.3.3-2.2.9-3.3.8-1.5 1.9-3 1.9-5.4 0-3.9-3-6.9-7.2-6.9Z"/>
+        <path d="M9.4 18.8h5.2M9.9 21h4.2"/>
+        <circle cx="9.6" cy="9.6" r=".9" fill="currentColor" stroke="none"/>
+        <circle cx="14.4" cy="9.6" r=".9" fill="currentColor" stroke="none"/>
+      </svg>
+      <b>Squirl</b><span>Interface language · v0.1</span>
+    </div>
+    <h1>一张安静的台账。<br>信息靠排版分层，动作只留<em>一个</em>。</h1>
+    <p class="lede">
+      这是 Squirl 的界面设计语言与结构草图，用于在进入高保真原型前确认方向。
+      整体取 magpie 的密度与克制、ElegantClipboard 的面板与描边，再压掉所有装饰：
+      没有渐变、没有彩色块面、没有图标墙。路径和命令是主角，所以它们用等宽字体完整露出。
+    </p>
+    <div class="refs">
+      <span class="ref"><i></i>magpie — 行式列表 / 细描边 / 黑白动作色</span>
+      <span class="ref"><i></i>ElegantClipboard — 侧栏导航 / 分区卡片 / 墨色选中态</span>
+      <span class="ref"><i></i>Linear · Raycast — 键盘优先 / 密度 / 无标题栏噪音</span>
+      <span class="ref"><i></i>JetBrains Toolbox — 项目清单的信息取舍</span>
+    </div>
+  </header>
+
+  <!-- 01 -->
+  <section>
+    <div class="sec-h"><span class="n">01</span><h2>五条设计原则</h2></div>
+    <p class="sec-d">所有页面决策回落到这五条；冲突时按序号优先。</p>
+    <div class="principles">
+      <div class="pr"><span class="k">01 / SURFACE</span><b>内容优先，装饰归零</b><p>不用渐变、不用彩色卡片底色、不用插画。层级只靠字号、字重、留白和 1px 描边区分。</p></div>
+      <div class="pr"><span class="k">02 / COLOR</span><b>只有一个强调色</b><p>橡果褐只表示「活着 / 正在发生」。其余全部中性灰。颜色是状态，不是装饰。</p></div>
+      <div class="pr"><span class="k">03 / DENSITY</span><b>密度换效率</b><p>13px 基准字号、20px 行高，一屏能放下 12 个项目卡片。这是工具，不是展示页。</p></div>
+      <div class="pr"><span class="k">04 / PATH</span><b>路径是一等公民</b><p>路径、命令、cwd 一律等宽字体、可完整读取、可一键复制。截断只发生在尾部，hover 出全文。</p></div>
+      <div class="pr"><span class="k">05 / STATE</span><b>状态永远可见</b><p>六种运行状态用「圆点 + 微标签」常驻呈现，不用弹窗打断操作，不用进度条动画抢注意力。</p></div>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section>
+    <div class="sec-h"><span class="n">02</span><h2>视觉方向 · 三选一</h2></div>
+    <p class="sec-d">三个方向共用同一套布局与字体，只差「强调色」这一件事。推荐 A。</p>
+    <div class="dirs">
+
+      <div class="dir pick">
+        <div class="dir-top">
+          <div><h3>A · 纸感台账</h3><p>暖中性灰 + 橡果褐</p></div>
+          <span class="badge-pick">推荐</span>
+        </div>
+        <div class="strip">
+          <i style="background:#F2F1EE"></i><i style="background:#E4E1DB"></i><i style="background:#C2BDB4"></i>
+          <i style="background:#5C5952"></i><i style="background:#171614"></i><i style="background:#9C5A32"></i>
+        </div>
+        <div class="mini">
+          <div class="t"><span class="dot run"></span>squirl</div>
+          <div class="p">D:\Code\AICreate\ZCode\squirl</div>
+          <span class="btn acorn">▶ Run dev</span>
+        </div>
+        <p class="dir-note">画布带一点纸的暖度，纯白卡片浮在上面。橡果褐呼应松鼠存坚果的命名，也是唯一有温度的颜色——运行中、焦点环、主按钮 hover 都用它。</p>
+        <div class="dir-verdict">适合：想让工具「有性格但不吵」。长时间盯屏不累眼。</div>
+      </div>
+
+      <div class="dir">
+        <div class="dir-top">
+          <div><h3>B · 纯灰阶</h3><p>完全无彩，最接近 magpie</p></div>
+        </div>
+        <div class="strip">
+          <i style="background:#F4F3F1"></i><i style="background:#E6E4E1"></i><i style="background:#C6C3BF"></i>
+          <i style="background:#5E5C58"></i><i style="background:#191817"></i><i style="background:#191817"></i>
+        </div>
+        <div class="mini">
+          <div class="t"><span class="dot idle"></span>squirl</div>
+          <div class="p">D:\Code\AICreate\ZCode\squirl</div>
+          <span class="btn">▶ Run dev</span>
+        </div>
+        <p class="dir-note">所有动作色都是近黑。运行中状态靠圆点的「呼吸动画」而不是颜色表达。最克制、最耐看，但六个状态只能靠灰阶深浅区分，辨识度弱一档。</p>
+        <div class="dir-verdict">适合：追求极致冷静；愿意用动效替代颜色做状态区分。</div>
+      </div>
+
+      <div class="dir">
+        <div class="dir-top">
+          <div><h3>C · 墨青</h3><p>冷中性 + 深墨绿，接近 ElegantClipboard</p></div>
+        </div>
+        <div class="strip">
+          <i style="background:#F1F2F2"></i><i style="background:#E2E4E4"></i><i style="background:#BFC4C4"></i>
+          <i style="background:#4E5A5C"></i><i style="background:#14201F"></i><i style="background:#1D4A44"></i>
+        </div>
+        <div class="mini">
+          <div class="t"><span class="dot run" style="background:#1D4A44"></span>squirl</div>
+          <div class="p">D:\Code\AICreate\ZCode\squirl</div>
+          <span class="btn" style="background:#1D4A44">▶ Run dev</span>
+        </div>
+        <p class="dir-note">冷灰画布 + 墨青强调，最「工程师工具」的一版。和终端、代码编辑器同色温，气质统一，但和市面上大量深青色的开发者工具较难区分。</p>
+        <div class="dir-verdict">适合：希望和终端环境视觉一致；不在意品牌辨识度。</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section>
+    <div class="sec-h"><span class="n">03</span><h2>色彩系统</h2></div>
+    <p class="sec-d">十级中性阶承担 95% 的界面；五个语义色只用于 6px 圆点和极少量文字。</p>
+    <div class="scale">
+      <div style="background:#FFFFFF;color:#98938A">N0<br>#FFFFFF</div>
+      <div style="background:#FAF9F7;color:#98938A">N1<br>#FAF9F7</div>
+      <div style="background:#F2F1EE;color:#98938A">N2<br>#F2F1EE</div>
+      <div style="background:#EDEBE7;color:#98938A">N3<br>#EDEBE7</div>
+      <div style="background:#E4E1DB;color:#7C776E">N4<br>#E4E1DB</div>
+      <div style="background:#C2BDB4;color:#fff">N5<br>#C2BDB4</div>
+      <div style="background:#98938A;color:#fff">N6<br>#98938A</div>
+      <div style="background:#5C5952;color:#fff">N7<br>#5C5952</div>
+      <div style="background:#2B2926;color:#fff">N8<br>#2B2926</div>
+      <div style="background:#171614;color:#fff">N9<br>#171614</div>
+    </div>
+    <div class="sem">
+      <div><span class="d" style="background:#9C5A32"></span><span><b>Running</b><span>#9C5A32 强调</span></span></div>
+      <div><span class="d" style="background:#4C7A55"></span><span><b>Exited 0</b><span>#4C7A55</span></span></div>
+      <div><span class="d" style="background:#B0473D"></span><span><b>Failed</b><span>#B0473D</span></span></div>
+      <div><span class="d" style="background:#B4791F"></span><span><b>Warning</b><span>#B4791F</span></span></div>
+      <div><span class="d" style="background:#98938A"></span><span><b>Killed / Idle</b><span>#98938A / #C2BDB4</span></span></div>
+    </div>
+    <div class="demo" style="margin-top:16px">
+      <div class="micro" style="margin-bottom:14px">用法规则</div>
+      <table class="tbl">
+        <tr><td style="width:34%"><b style="font-size:12.5px">允许</b></td><td class="u">运行状态点、焦点环、主按钮 hover、下拉菜单选中项左侧 2px 竖条</td></tr>
+        <tr><td><b style="font-size:12.5px">禁止</b></td><td class="u">大面积填充、卡片底色、标题文字、图标默认色、装饰性线条</td></tr>
+        <tr><td><b style="font-size:12.5px">上限</b></td><td class="u">单屏可见的强调色面积不超过画面 3%；超出说明用错了</td></tr>
+        <tr><td><b style="font-size:12.5px">暗色映射</b></td><td class="u">强调色提亮到 <span class="mono">#D08A5C</span>，中性阶整体反转但保留暖度，纯黑背景改为 <span class="mono">#141312</span></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section>
+    <div class="sec-h"><span class="n">04</span><h2>字体系统</h2></div>
+    <p class="sec-d">界面字体走系统栈（Windows 上是 Segoe UI Variable），保证 Tauri 三端零字体文件、包体不涨；路径与命令一律等宽。</p>
+    <div class="demo">
+      <table class="tbl">
+        <thead><tr><th style="width:44%">样式</th><th style="width:14%">字号 / 字重</th><th class="hide-s">用途</th></tr></thead>
+        <tbody>
+          <tr><td><span style="font-size:30px;font-weight:640;letter-spacing:-.03em">No projects yet</span></td><td class="m">30 / 640 / -0.03em</td><td class="u hide-s">空状态主文案，全应用仅此一处</td></tr>
+          <tr><td><span style="font-size:20px;font-weight:620;letter-spacing:-.022em">squirl</span></td><td class="m">20 / 620</td><td class="u hide-s">项目详情页标题</td></tr>
+          <tr><td><span style="font-size:14px;font-weight:640;letter-spacing:-.012em">squirl</span></td><td class="m">14 / 640</td><td class="u hide-s">卡片项目名、对话框标题</td></tr>
+          <tr><td><span style="font-size:13px">本地项目台账与一键启动中枢</span></td><td class="m">13 / 400</td><td class="u hide-s">正文、备注、设置项说明</td></tr>
+          <tr><td><span style="font-size:12.5px;color:#5C5952">Run dev · 3 commands · 2h ago</span></td><td class="m">12.5 / 400</td><td class="u hide-s">次级信息、元数据</td></tr>
+          <tr><td><span style="font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:#98938A">Registered</span></td><td class="m">10.5 / 600 / +0.1em</td><td class="u hide-s">分区标签，全大写</td></tr>
+          <tr><td><span class="mono" style="font-size:11.5px;color:#5C5952">D:\Code\AICreate\ZCode\squirl</span></td><td class="m">11.5 / mono</td><td class="u hide-s">路径、命令原文、cwd、日志</td></tr>
+          <tr><td><span class="mono" style="font-size:11px;color:#98938A">dev · build · test</span></td><td class="m">11 / mono</td><td class="u hide-s">命令名、标志文件 chip</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section>
+    <div class="sec-h"><span class="n">05</span><h2>尺寸与质感</h2></div>
+    <p class="sec-d">4px 基准网格。圆角只有三档，阴影只有一种（且只给浮层）。</p>
+    <div class="demo">
+      <div class="demo-2">
+        <div>
+          <div class="micro" style="margin-bottom:12px">间距阶梯</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:10px"><span class="mono" style="font-size:10px;color:#98938A;width:34px">4</span><i style="height:8px;width:4px;background:#9C5A32;border-radius:1px"></i><span style="font-size:11.5px;color:#5C5952">图标与文字</span></div>
+            <div style="display:flex;align-items:center;gap:10px"><span class="mono" style="font-size:10px;color:#98938A;width:34px">8</span><i style="height:8px;width:8px;background:#9C5A32;border-radius:1px"></i><span style="font-size:11.5px;color:#5C5952">行内元素</span></div>
+            <div style="display:flex;align-items:center;gap:10px"><span class="mono" style="font-size:10px;color:#98938A;width:34px">12</span><i style="height:8px;width:12px;background:#9C5A32;border-radius:1px"></i><span style="font-size:11.5px;color:#5C5952">卡片内边距 / 网格间隙</span></div>
+            <div style="display:flex;align-items:center;gap:10px"><span class="mono" style="font-size:10px;color:#98938A;width:34px">20</span><i style="height:8px;width:20px;background:#9C5A32;border-radius:1px"></i><span style="font-size:11.5px;color:#5C5952">区块内边距</span></div>
+            <div style="display:flex;align-items:center;gap:10px"><span class="mono" style="font-size:10px;color:#98938A;width:34px">32</span><i style="height:8px;width:32px;background:#9C5A32;border-radius:1px"></i><span style="font-size:11.5px;color:#5C5952">页面左右边距</span></div>
+            <div style="display:flex;align-items:center;gap:10px"><span class="mono" style="font-size:10px;color:#98938A;width:34px">56</span><i style="height:8px;width:56px;background:#9C5A32;border-radius:1px"></i><span style="font-size:11.5px;color:#5C5952">分区之间</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="micro" style="margin-bottom:12px">圆角 / 描边 / 阴影</div>
+          <div style="display:flex;gap:10px;margin-bottom:14px">
+            <div style="width:52px;height:52px;border:1px solid #E4E1DB;border-radius:6px;background:#FAF9F7;display:grid;place-items:center;font-family:var(--mono);font-size:10px;color:#98938A">6</div>
+            <div style="width:52px;height:52px;border:1px solid #E4E1DB;border-radius:10px;background:#FAF9F7;display:grid;place-items:center;font-family:var(--mono);font-size:10px;color:#98938A">10</div>
+            <div style="width:52px;height:52px;border:1px solid #E4E1DB;border-radius:14px;background:#FAF9F7;display:grid;place-items:center;font-family:var(--mono);font-size:10px;color:#98938A">14</div>
+            <div style="width:52px;height:52px;border:1px solid #E4E1DB;border-radius:999px;background:#FAF9F7;display:grid;place-items:center;font-family:var(--mono);font-size:10px;color:#98938A">∞</div>
+          </div>
+          <p style="font-size:12px;color:#5C5952;margin:0 0 10px">6 控件 · 10 卡片 · 14 浮层与窗口 · pill 标签</p>
+          <p style="font-size:12px;color:#5C5952;margin:0">描边统一 1px <span class="mono">#E4E1DB</span>，hover 升到 <span class="mono">#C2BDB4</span>。阴影只给弹出层：<span class="mono" style="font-size:10.5px">0 12px 32px -8px rgba(23,22,20,.16)</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section>
+    <div class="sec-h"><span class="n">06</span><h2>核心组件</h2></div>
+    <p class="sec-d">这张卡片是整个应用的主角，出现频率最高，所以它承担了最多信息：状态、名字、路径、备注、主命令、命令数、最近使用。</p>
+
+    <div class="demo">
+      <div class="demo-2" style="align-items:start">
+        <div>
+          <div class="micro" style="margin-bottom:12px">项目卡片 · 默认态</div>
+          <div class="pcard">
+            <div class="r1"><span class="dot idle"></span><span class="nm">squirl</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#98938A" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>
+            </div>
+            <div class="pth">D:\Code\AICreate\ZCode\squirl</div>
+            <div class="nte">本地项目台账与一键启动中枢，把散落在多个根目录下的项目登记成一张可搜索的清单。</div>
+            <div class="split"><span class="main"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.2v13.6L19 12z"/></svg><span class="lb">Run</span> dev</span><span class="car"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></div>
+            <div class="r4"><span>3 commands</span><span>2h ago</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="micro" style="margin-bottom:12px">项目卡片 · 运行中</div>
+          <div class="pcard" style="border-color:#9C5A32;box-shadow:0 0 0 3px #F7EEE7">
+            <div class="r1"><span class="dot run"></span><span class="nm">squirl</span>
+              <span style="font-family:var(--mono);font-size:10px;color:#9C5A32;letter-spacing:.02em">dev · 00:42</span>
+            </div>
+            <div class="pth">D:\Code\AICreate\ZCode\squirl</div>
+            <div class="nte">本地项目台账与一键启动中枢，把散落在多个根目录下的项目登记成一张可搜索的清单。</div>
+            <div class="split" style="background:#9C5A32"><span class="main"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg><span class="lb">Stop</span> dev</span><span class="car"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></div>
+            <div class="r4"><span>3 commands</span><span style="color:#9C5A32">running</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="micro" style="margin-bottom:12px">状态六态</div>
+          <div class="states">
+            <span class="st"><span class="dot idle"></span>Idle</span>
+            <span class="st"><span class="dot run" style="animation:none"></span>Starting</span>
+            <span class="st"><span class="dot run"></span>Running</span>
+            <span class="st"><span class="dot ok"></span>Exited 0</span>
+            <span class="st"><span class="dot err"></span>Failed 1</span>
+            <span class="st"><span class="dot kill"></span>Killed</span>
+          </div>
+          <p style="font-size:11.5px;color:#98938A;margin:14px 0 0;line-height:1.6">
+            圆点 6px 常驻卡片左上角；<b style="color:#5C5952">running</b> 带 1.8s 呼吸环，其余静止。
+            悬停出文字标签，避免只有颜色没有语义。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo">
+      <div class="micro" style="margin-bottom:16px">按钮 / 输入 / 开关 / 分段 / 标签</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:22px">
+        <span class="b pri"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add root</span>
+        <span class="b gh">Register folder</span>
+        <span class="b gh sm">Refresh</span>
+        <span class="b dan sm">Delete project</span>
+        <span class="chip">node</span><span class="chip">rust</span><span class="chip">git</span><span class="chip n">no flag</span>
+        <span class="tg"></span><span class="tg off"></span>
+        <span class="seg"><span class="on">External</span><span>In-app</span></span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+        <div class="inp"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search projects, paths, notes…</div>
+        <div class="inp focus"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>squ<span style="width:1px;height:14px;background:#9C5A32;display:inline-block;margin-left:1px"></span></div>
+        <div class="inp" style="max-width:200px;font-family:var(--mono);font-size:11.5px;color:#171614">pnpm dev</div>
+      </div>
+    </div>
+
+    <div class="demo">
+      <div class="micro" style="margin-bottom:16px">浮层与反馈</div>
+      <div class="demo-2">
+        <div class="dlg" style="max-width:none">
+          <h4>Scan paused at 500 entries</h4>
+          <p>Squirl stopped because the roots returned more than 500 folders. Narrow the scope or raise the depth limit.</p>
+          <div class="row"><span class="b gh sm">Cancel</span><span class="b gh sm">Reduce depth</span><span class="b pri sm">Continue</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:flex-start;gap:10px;background:#171614;color:#fff;border-radius:8px;padding:11px 14px;font-size:12px">
+            <span style="width:5px;height:5px;border-radius:50%;background:#D08A5C;margin-top:6px;flex:none"></span>
+            <span>Could not open Windows Terminal — falling back to console host.<span style="display:block;color:rgba(255,255,255,.55);font-size:11px;margin-top:2px">E_LAUNCH_FAILED · wt.exe exited with code 1</span></span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;background:#F7EEE7;border:1px solid rgba(156,90,50,.22);border-radius:8px;padding:11px 14px;font-size:12px;color:#7A4526">
+            <span style="width:5px;height:5px;border-radius:50%;background:#9C5A32;margin-top:6px;flex:none"></span>
+            <span>This command may be waiting for input. In-app mode does not provide stdin.<span style="display:block;color:rgba(122,69,38,.7);font-size:11px;margin-top:2px">No output for 30s · run 7f3a</span></span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;background:#F1F5F1;border:1px solid rgba(76,122,85,.22);border-radius:8px;padding:11px 14px;font-size:12px;color:#3D6244">
+            <span style="width:5px;height:5px;border-radius:50%;background:#4C7A55;margin-top:6px;flex:none"></span>
+            <span>Database was corrupted and restored from the latest backup (2 minutes ago).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo">
+      <div class="micro" style="margin-bottom:14px">日志面板 · 内置模式</div>
+      <div class="log">
+        <div class="hd">
+          <span class="dot run"></span>
+          <b style="font-size:12px;font-weight:640">dev</b>
+          <span class="mono" style="font-size:10.5px;color:#98938A">run 7f3a · 00:42</span>
+          <span style="flex:1"></span>
+          <span style="font-size:11px;color:#98938A">Auto-scroll</span><span class="tg" style="transform:scale(.85)"></span>
+          <span style="width:1px;height:14px;background:#E4E1DB;margin:0 4px"></span>
+          <span class="b gh sm">Clear</span>
+          <span class="b sm" style="background:#B0473D;color:#fff">Stop</span>
+        </div>
+        <div class="bd"><span class="d">▸ profile output · 12 lines</span>
+<span class="sep">──────────── squirl command output ────────────</span>
+<span class="a">$</span> pnpm dev
+<span class="g">VITE v8.3.5</span>  ready in <span class="a">412</span> ms
+  <span class="g">➜</span>  Local:   <span class="a">http://localhost:5173/</span>
+  <span class="g">➜</span>  press <span class="a">h + enter</span> to show help</div>
+      </div>
+      <p style="font-size:11.5px;color:#98938A;margin:12px 0 0">profile 噪音默认折叠成一行「▸ profile output · 12 lines」，点开才展开。命令行首用强调色，成功信息用 moss，其余走中性灰。</p>
+    </div>
+  </section>
+
+  <!-- 07 -->
+  <section>
+    <div class="sec-h"><span class="n">07</span><h2>窗口与栅格</h2></div>
+    <p class="sec-d">默认 1280×832，最小 960×640。标题栏 46px 自绘（Windows / macOS 统一形态），无侧边栏常驻——只有三个视图，用面包屑切换。</p>
+    <div class="diag">
+      <div class="dgrid">
+        <div>
+          <div class="dbox">
+            <div class="drow dtb">
+              <span style="color:var(--acorn)">◈</span><span style="color:var(--ink);font-family:var(--font);font-weight:650">Squirl</span>
+              <span class="dspacer"></span>
+              <span>─ ▢ ✕</span>
+              <span class="dim">46</span>
+            </div>
+            <div class="drow dtool">
+              <span class="dmsg">⌕ Search projects, paths, notes…</span>
+              <span class="dbtn">Add root</span><span class="dbtn">⚙</span>
+              <span class="dim">56</span>
+            </div>
+            <div class="drow dct">
+              <div style="display:flex;align-items:baseline;gap:6px">
+                <span class="dlab" style="margin:0">Registered</span><span style="font-size:8.5px;color:var(--ink-4);font-family:var(--mono)">12</span>
+                <span class="dspacer"></span><span style="font-size:8.5px;color:var(--ink-4)">Sort: Recent ⌄</span>
+              </div>
+              <div class="dcards" style="margin-top:6px"><i></i><i></i><i></i></div>
+              <div style="display:flex;align-items:baseline;gap:6px">
+                <span class="dlab" style="margin:0">Discovered</span><span style="font-size:8.5px;color:var(--ink-4);font-family:var(--mono)">14</span>
+                <span class="dspacer"></span><span style="font-size:8.5px;color:var(--ink-4)">⌄</span>
+              </div>
+              <div class="drowbox" style="margin-top:6px"></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:5px">
+            <span class="dim">← 32</span><span class="dim">主窗口 1280 × 832 · 最小 960 × 640</span><span class="dim">32 →</span>
+          </div>
+        </div>
+
+        <div>
+          <div style="display:grid;grid-template-columns:1fr 96px;gap:6px;height:96px">
+            <div style="border:1px solid var(--line);border-radius:5px;background:var(--surface);display:grid;place-items:center;font-family:var(--mono);font-size:9px;color:var(--ink-3);text-align:center;line-height:1.5">主栏 · 1fr<br><span style="color:var(--ink-4)">项目头 / 备注 / 命令表 / 日志坞</span></div>
+            <div style="border:1px solid var(--line);border-radius:5px;background:var(--surface-2);display:grid;place-items:center;font-family:var(--mono);font-size:9px;color:var(--ink-3);text-align:center;line-height:1.5">268<br><span style="color:var(--ink-4)">右栏</span></div>
+          </div>
+          <div class="dim" style="margin-top:5px">详情页 · 右栏承载执行覆盖 / 元信息 / 危险区</div>
+
+          <div style="display:grid;grid-template-columns:80px 1fr;gap:6px;height:76px;margin-top:16px">
+            <div style="border:1px solid var(--line);border-radius:5px;background:var(--canvas-2);display:grid;place-items:center;font-family:var(--mono);font-size:9px;color:var(--ink-3);text-align:center;line-height:1.5">176<br><span style="color:var(--ink-4)">导航</span></div>
+            <div style="border:1px solid var(--line);border-radius:5px;background:var(--surface);display:grid;place-items:center;font-family:var(--mono);font-size:9px;color:var(--ink-3);text-align:center;line-height:1.5">内容 · 最大 640<br><span style="color:var(--ink-4)">分区卡片堆叠</span></div>
+          </div>
+          <div class="dim" style="margin-top:5px">设置页 · 左导航黑底选中态，右内容白底</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 -->
+  <section>
+    <div class="sec-h"><span class="n">08</span><h2>动效</h2></div>
+    <p class="sec-d">只有三种时长。所有动效都是「反馈」，没有一个是「表演」。</p>
+    <div class="motion">
+      <div><b>120ms</b><span>hover 变色、按钮按下、图标旋转</span></div>
+      <div><b>180ms</b><span>下拉展开、卡片 hover 抬升、toast 进出</span></div>
+      <div><b>240ms</b><span>对话框淡入、发现区折叠、日志坞升降</span></div>
+      <div><b>cubic-bezier(.2,.8,.2,1)</b><span>统一缓动，全部 ease-out 手感</span></div>
+    </div>
+    <p style="font-size:12px;color:#98938A;margin-top:14px">唯一允许的循环动画是 running 状态的呼吸环（1.8s）。不做骨架屏流光、不做加载转圈——扫描用顶部 2px 进度条。</p>
+  </section>
+
+  <!-- 09 -->
+  <section>
+    <div class="sec-h"><span class="n">09</span><h2>暗色对照</h2></div>
+    <p class="sec-d">暗色不是反相：画布用 #141312 而非纯黑，强调色提亮到 #D08A5C，描边对比度整体降低。默认跟随系统。</p>
+    <div class="darkp">
+      <div class="demo-2" style="align-items:start">
+        <div class="pcard">
+          <div class="r1"><span class="dot run"></span><span class="nm">squirl</span>
+            <span style="font-family:var(--mono);font-size:10px;color:#D08A5C">dev · 00:42</span>
+          </div>
+          <div class="pth" style="color:#78726A">D:\Code\AICreate\ZCode\squirl</div>
+          <div class="nte" style="color:#A8A29A">本地项目台账与一键启动中枢，把散落在多个根目录下的项目登记成一张可搜索的清单。</div>
+          <div class="split"><span class="main"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg><span class="lb">Stop</span> dev</span><span class="car"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></div>
+          <div class="r4" style="color:#78726A"><span>3 commands</span><span style="color:#D08A5C">running</span></div>
+        </div>
+        <div style="background:#1B1A18;border:1px solid #302D28;border-radius:10px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid #302D28">
+            <span class="dot run"></span><b style="font-size:12px;color:#EDEAE4">dev</b>
+            <span class="mono" style="font-size:10.5px;color:#78726A">run 7f3a</span>
+            <span style="flex:1"></span><span style="font-size:11px;color:#78726A">Stop</span>
+          </div>
+          <div class="mono" style="padding:11px 14px;font-size:11.5px;line-height:1.75;color:#A8A29A;white-space:pre">$ pnpm dev
+<span style="color:#7BA483">VITE v8.3.5</span>  ready in <span style="color:#D08A5C">412</span> ms
+  <span style="color:#7BA483">➜</span>  Local: <span style="color:#D08A5C">http://localhost:5173/</span></div>
+        </div>
+        <div>
+          <div class="micro" style="color:#78726A;margin-bottom:12px">暗色变量映射</div>
+          <table class="tbl" style="font-size:11.5px">
+            <tr><td style="border-color:#302D28;color:#A8A29A;padding:8px 0">canvas</td><td style="border-color:#302D28;color:#78726A;padding:8px 0" class="mono">#141312</td></tr>
+            <tr><td style="border-color:#302D28;color:#A8A29A;padding:8px 0">surface</td><td style="border-color:#302D28;color:#78726A;padding:8px 0" class="mono">#1B1A18</td></tr>
+            <tr><td style="border-color:#302D28;color:#A8A29A;padding:8px 0">line</td><td style="border-color:#302D28;color:#78726A;padding:8px 0" class="mono">#302D28</td></tr>
+            <tr><td style="border-color:#302D28;color:#A8A29A;padding:8px 0">ink</td><td style="border-color:#302D28;color:#78726A;padding:8px 0" class="mono">#EDEAE4</td></tr>
+            <tr><td style="color:#A8A29A;padding:8px 0">accent</td><td style="color:#78726A;padding:8px 0" class="mono">#D08A5C</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section>
+    <div class="sec-h"><span class="n">10</span><h2>待你确认的四件事</h2></div>
+    <p class="sec-d">这四点会直接影响下一步高保真原型的产出方式，其余细节我可以自行决策。</p>
+    <div class="qs">
+      <div class="q"><span class="i">Q1</span><div><b>视觉方向选 A / B / C？</b><p>我推荐 A（纸感台账 + 橡果褐）。如果更想要 magpie 那种完全无彩的冷静感，选 B；想贴近终端色温选 C。</p></div></div>
+      <div class="q"><span class="i">Q2</span><div><b>界面文案用英文还是中文？</b><p>需求文档 F8 明确「UI 文案英文 + react-i18next」。但评审阶段中文更容易读。建议：原型按英文出，关键术语旁注中文。</p></div></div>
+      <div class="q"><span class="i">Q3</span><div><b>主界面两分区是「上下堆叠」还是「左右分栏」？</b><p>需求附录 A #10 定的是上下两分区，我按此设计。但「本次发现」条目多时会把已登记区挤到需要滚动；也可以改成右侧可折叠抽屉。要不要我在草图里两种都画一版对比？</p></div></div>
+      <div class="q"><span class="i">Q4</span><div><b>扩展功能（P1/P2）要不要现在就出原型？</b><p>招牌功能里「README × 配置双栏快填台」和「全局 CLI 词典 + 参数模板」的界面形态最不确定，值得先出概念稿验证；其余（托盘、端口雷达）可以等 MVP 定稿后再补。</p></div></div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Squirl · 扩展功能概念稿</title>
+<style>
+  :root{
+    --canvas:#F2F1EE; --canvas-2:#EDEBE7;
+    --surface:#FFFFFF; --surface-2:#FAF9F7;
+    --line:#E4E1DB; --line-soft:#EFEDE8; --win:#DCD8D1;
+    --ink:#171614; --ink-2:#5C5952; --ink-3:#98938A; --ink-4:#C2BDB4;
+    --acorn:#9C5A32; --acorn-wash:#F7EEE7; --acorn-line:rgba(156,90,50,.28);
+    --moss:#4C7A55; --moss-wash:#F1F5F1; --brick:#B0473D; --brick-wash:#FAF1F0; --amber:#B4791F;
+    --r-s:6px; --r-m:10px; --r-l:14px;
+    --shadow-pop:0 16px 40px -14px rgba(23,22,20,.24),0 2px 8px rgba(23,22,20,.06);
+    --shadow-big:0 26px 70px -55px rgba(23,22,20,.6);
+    --font:"Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,Inter,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    --mono:"Cascadia Code","JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas-2);color:var(--ink);font-family:var(--font);font-size:13px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1400px;margin:0 auto;padding:52px 40px 120px}
+
+  .hd h1{font-size:27px;font-weight:640;letter-spacing:-.026em;margin:0 0 10px}
+  .hd p{font-size:13px;color:var(--ink-2);max-width:58em;margin:0 0 6px}
+  .tagline{display:inline-flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:650;margin-bottom:18px}
+  .tagline i{width:5px;height:5px;border-radius:50%;background:var(--acorn);display:block}
+
+  .fx{margin-top:58px;padding-top:26px;border-top:1px solid var(--line)}
+  .fx-h{display:flex;align-items:flex-start;gap:13px;margin-bottom:16px}
+  .fx-h .id{font-family:var(--mono);font-size:9.5px;color:#fff;background:var(--ink);border-radius:4px;padding:2px 7px;margin-top:3px;flex:none;letter-spacing:.04em}
+  .fx-h .id.p2{background:var(--acorn)}
+  .fx-h .id.p3{background:var(--ink-3)}
+  .fx-h h2{margin:0;font-size:16px;font-weight:640;letter-spacing:-.018em}
+  .fx-h p{margin:4px 0 0;font-size:12.5px;color:var(--ink-2);max-width:58em}
+
+  .stage{background:var(--canvas);border:1px solid var(--win);border-radius:var(--r-l);padding:34px;display:flex;justify-content:center;box-shadow:var(--shadow-big)}
+
+  /* window */
+  .win{background:var(--canvas);border:1px solid var(--win);border-radius:var(--r-l);overflow:hidden;box-shadow:var(--shadow-big);display:flex;flex-direction:column;width:100%}
+  .tb{height:40px;flex:none;display:flex;align-items:center;gap:9px;padding:0 13px 0 15px;background:#F6F5F2;border-bottom:1px solid var(--line)}
+  .tb .br{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:650}
+  .tb .br svg{width:14px;height:14px;color:var(--acorn)}
+  .tb .cb{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-3);margin-left:4px;padding-left:11px;border-left:1px solid var(--line)}
+  .tb .cb b{color:var(--ink);font-weight:600}
+  .tb .wc{margin-left:auto;display:flex;gap:13px;color:var(--ink-4)}
+  .tb .wc svg{width:10px;height:10px}
+
+  .btn{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border-radius:5px;font-size:10.5px;
+    font-weight:560;border:1px solid transparent;background:transparent;color:var(--ink-2);white-space:nowrap;font-family:inherit}
+  .btn svg{width:10px;height:10px}
+  .btn.gh{border-color:var(--line);background:var(--surface)}
+  .btn.pri{background:var(--ink);color:#fff}
+  .btn.sm{height:22px;font-size:9.5px;padding:0 7px}
+  .sp{flex:1}
+  .d{width:5px;height:5px;border-radius:50%;flex:none;display:inline-block}
+  .d.idle{background:var(--ink-4)} .d.run{background:var(--acorn)} .d.ok{background:var(--moss)} .d.err{background:var(--brick)}
+  .chip{font-family:var(--mono);font-size:8.5px;letter-spacing:.03em;font-weight:600;text-transform:uppercase;
+    color:var(--acorn);background:var(--acorn-wash);border-radius:3px;padding:0 4px;line-height:13px;white-space:nowrap}
+  .chip.n{color:var(--ink-4);background:var(--canvas-2)}
+  .mono{font-family:var(--mono)}
+
+  /* ---- 1 tray ---- */
+  .tray{width:352px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-pop);overflow:hidden}
+  .tray-h{display:flex;align-items:center;gap:7px;padding:11px 13px 9px;border-bottom:1px solid var(--line-soft)}
+  .tray-h .br{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:650}
+  .tray-h .br svg{width:14px;height:14px;color:var(--acorn)}
+  .tray-h .st{font-family:var(--mono);font-size:9px;color:var(--acorn);background:var(--acorn-wash);border-radius:3px;padding:1px 5px}
+  .tray-list{padding:5px}
+  .tr{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px}
+  .tr:hover{background:var(--canvas-2)}
+  .tr .n{font-size:11.5px;font-weight:560;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tr .c{font-family:var(--mono);font-size:9px;color:var(--ink-4)}
+  .tr .go{width:20px;height:20px;border-radius:4px;background:var(--ink);color:#fff;display:grid;place-items:center;flex:none}
+  .tr .go svg{width:8px;height:8px}
+  .tray-f{display:flex;align-items:center;gap:8px;padding:9px 13px;border-top:1px solid var(--line-soft);background:var(--surface-2);font-size:10px;color:var(--ink-3)}
+
+  /* ---- 2 global commands ---- */
+  .gc{display:flex;flex-direction:column;height:100%}
+  .gbar{display:flex;align-items:center;gap:8px;padding:0 22px;height:52px;border-bottom:1px solid var(--line-soft);flex:none}
+  .srch{display:flex;align-items:center;gap:7px;height:29px;padding:0 10px;background:var(--surface);border:1px solid var(--line);border-radius:5px;width:300px;font-size:11.5px;color:var(--ink-3)}
+  .srch svg{width:12px;height:12px;flex:none}
+  .gc-body{padding:16px 22px;flex:1;min-height:0;overflow:auto}
+  .sec{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+  .sec .lb{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:650}
+  .sec .cnt{font-family:var(--mono);font-size:9px;color:var(--ink-3);background:var(--canvas-2);border-radius:999px;padding:1px 6px}
+  .sec .rt{margin-left:auto;font-size:10px;color:var(--ink-3)}
+  .glist{border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden;background:var(--surface)}
+  .gi{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line-soft);font-size:11px}
+  .gi:last-child{border-bottom:0}
+  .gi:hover{background:var(--surface-2)}
+  .gi .ic{width:20px;height:20px;border-radius:4px;background:var(--canvas-2);display:grid;place-items:center;color:var(--ink-2);flex:none}
+  .gi .ic svg{width:10px;height:10px}
+  .gi .n{font-weight:600;width:96px;flex:none}
+  .gi .cl{font-family:var(--mono);font-size:9.5px;color:var(--ink-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gi .cat{font-family:var(--mono);font-size:8.5px;color:var(--ink-4);border:1px solid var(--line);border-radius:3px;padding:0 4px;flex:none;white-space:nowrap}
+  .gi .go{width:20px;height:20px;border-radius:4px;background:var(--canvas-2);display:grid;place-items:center;flex:none;color:var(--ink-2)}
+  .gi .go svg{width:8px;height:8px}
+
+  /* ---- 3 multi session ---- */
+  .tabs{display:flex;align-items:center;gap:1px;padding:0 12px;border-bottom:1px solid var(--line);background:var(--surface-2);flex:none;overflow-x:auto}
+  .tab{display:flex;align-items:center;gap:6px;padding:7px 10px;font-size:10.5px;color:var(--ink-3);border-bottom:2px solid transparent;white-space:nowrap}
+  .tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--acorn);background:var(--surface)}
+  .tab .x{color:var(--ink-4);display:flex}
+  .tab .x svg{width:9px;height:9px}
+
+  /* ---- 4 readme / config ---- */
+  .dual{display:grid;grid-template-columns:1fr 1fr;flex:1;min-height:0}
+  .pane{display:flex;flex-direction:column;min-height:0;min-width:0}
+  .pane+.pane{border-left:1px solid var(--line)}
+  .pane-h{display:flex;align-items:center;gap:7px;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--surface-2);flex:none}
+  .pane-h .lb{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:650}
+  .pane-h .fn{font-family:var(--mono);font-size:9.5px;color:var(--ink-2)}
+  .pane-b{padding:14px 16px;overflow:auto;flex:1;min-height:0;background:var(--surface)}
+  .md h4{margin:0 0 8px;font-size:12.5px;font-weight:650}
+  .md h5{margin:14px 0 6px;font-size:11px;font-weight:640;color:var(--ink)}
+  .md p{margin:0 0 8px;font-size:11px;color:var(--ink-2);line-height:1.7}
+  .md pre{margin:0 0 10px;background:var(--canvas-2);border-radius:5px;padding:8px 10px;font-family:var(--mono);font-size:9.5px;color:var(--ink-2);overflow:auto;position:relative}
+  .md pre .use{position:absolute;right:6px;top:6px;font-family:var(--font);font-size:8.5px;color:var(--ink-3);border:1px solid var(--line);border-radius:3px;padding:0 4px;background:var(--surface)}
+  .md .var{background:var(--acorn-wash);color:var(--acorn);border-radius:2px;padding:0 2px;font-family:var(--mono);font-size:9.5px}
+  .frm{display:flex;flex-direction:column;gap:9px}
+  .fld label{display:block;font-size:9px;font-family:var(--mono);color:var(--ink-3);margin-bottom:3px}
+  .fld .in{display:flex;align-items:center;height:26px;border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:0 8px;font-family:var(--mono);font-size:9.5px;color:var(--ink-2)}
+  .fld .in.f{border-color:var(--acorn);box-shadow:0 0 0 2px var(--acorn-wash);color:var(--ink)}
+  .fld .in .ph{color:var(--ink-4)}
+  .fld .hint{font-size:9px;color:var(--ink-4);margin-top:2px}
+
+  /* ---- 5 cli dict ---- */
+  .pd{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);padding:12px;margin-top:10px}
+  .pd .ttl{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:650;margin-bottom:8px}
+  .pd .line{font-family:var(--mono);font-size:10px;color:var(--ink-2);background:var(--canvas-2);border-radius:5px;padding:8px 10px;margin-bottom:10px;line-height:1.8}
+  .pd .line b{background:var(--acorn);color:#fff;border-radius:3px;padding:0 4px;font-weight:500}
+  .pd .prow{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+  .pd .prow .k{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);width:64px;flex:none}
+  .pd .prow .v{flex:1;height:25px;border:1px solid var(--line);border-radius:4px;display:flex;align-items:center;padding:0 8px;font-family:var(--mono);font-size:9.5px;color:var(--ink)}
+  .pd .prow .v.sel{justify-content:space-between;color:var(--ink-2)}
+
+  /* ---- 6 ports ---- */
+  .port{font-family:var(--mono);font-size:8.5px;color:var(--moss);background:var(--moss-wash);border-radius:3px;padding:0 4px;line-height:13px}
+  .port.busy{color:var(--brick);background:var(--brick-wash)}
+
+  .notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden;margin-top:14px}
+  .note{background:var(--surface);padding:14px 16px}
+  .note b{display:block;font-size:11.5px;font-weight:640;margin-bottom:4px}
+  .note p{margin:0;font-size:11.5px;color:var(--ink-2);line-height:1.65}
+
+  @media(max-width:1000px){
+    .wrap{padding:32px 18px 80px}
+    .stage{padding:16px}
+    .dual{grid-template-columns:1fr}
+    .pane+.pane{border-left:0;border-top:1px solid var(--line)}
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.2v13.6L19 12z" fill="currentColor"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.4-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.5h7A1.5 1.5 0 0 1 19 10v7.5A1.5 1.5 0 0 1 17.5 19h-13A1.5 1.5 0 0 1 3 17.5Z"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="m7 9.5 3 2.5-3 2.5M13 15h4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10v16H5.5A1.5 1.5 0 0 1 4 18.5Z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14v16h4.5A1.5 1.5 0 0 0 20 18.5Z"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12.5 12.5 20 4 11.5V4h7.5Z"/><circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0Z"/><path d="M12 17v4"/></symbol>
+  <symbol id="i-panel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M3 14h18"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></symbol>
+  <symbol id="i-squirrel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c-4.2 0-7.2 3-7.2 6.9 0 2.4 1.1 3.9 1.9 5.4.6 1.1.9 2 .9 3.3h8.8c0-1.3.3-2.2.9-3.3.8-1.5 1.9-3 1.9-5.4 0-3.9-3-6.9-7.2-6.9Z"/><path d="M9.4 18.8h5.2M9.9 21h4.2"/><circle cx="9.6" cy="9.6" r=".9" fill="currentColor" stroke="none"/><circle cx="14.4" cy="9.6" r=".9" fill="currentColor" stroke="none"/></symbol>
+</svg>
+
+<div class="wrap">
+  <div class="hd">
+    <div class="tagline"><i></i>扩展功能 · 概念稿</div>
+    <h1>招牌功能的界面形态</h1>
+    <p>MVP 不做的部分。这里只验证<b>界面形态</b>是否成立，不涉及实现细节——形态定下来之后，优先级排序才有意义。</p>
+    <p>六个概念：托盘面板、全局命令、多会话日志、README × 配置双栏快填台、CLI 词典与参数模板、端口雷达。</p>
+  </div>
+
+  <!-- 1 托盘 -->
+  <section class="fx">
+    <div class="fx-h"><span class="id">P1</span><div><h2>托盘面板</h2>
+      <p>常驻但不打扰。托盘点开就是「最近用过的 5 个项目」，一个按钮直接跑。</p></div></div>
+    <div class="stage">
+      <div class="tray">
+        <div class="tray-h">
+          <div class="br"><svg><use href="#i-squirrel"/></svg>Squirl</div>
+          <span class="st">2 个在跑</span>
+          <span class="sp"></span>
+          <svg style="width:13px;height:13px;color:var(--ink-4)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
+        </div>
+        <div class="tray-list">
+          <div class="tr"><span class="d run"></span><span class="n">squirl</span><span class="c">dev · 00:42</span><span class="go"><svg><use href="#i-stop"/></svg></span></div>
+          <div class="tr"><span class="d run"></span><span class="n">api-gateway</span><span class="c">serve · 12:08</span><span class="go"><svg><use href="#i-stop"/></svg></span></div>
+          <div class="tr"><span class="d idle"></span><span class="n">magpie</span><span class="c">2 小时前</span><span class="go"><svg><use href="#i-play"/></svg></span></div>
+          <div class="tr"><span class="d idle"></span><span class="n">notes-site</span><span class="c">3 天前</span><span class="go"><svg><use href="#i-play"/></svg></span></div>
+          <div class="tr"><span class="d err"></span><span class="n">legacy-admin</span><span class="c">上次失败</span><span class="go"><svg><use href="#i-play"/></svg></span></div>
+        </div>
+        <div class="tray-f">
+          <span>打开主窗口</span><span class="sp"></span>
+          <span>全部停止</span><span style="color:var(--ink-4)">·</span><span>退出</span>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="note"><b>只有 5 条</b><p>托盘不是第二个主窗口。它只放最近用过的 5 个，找更多就打开主窗口。</p></div>
+      <div class="note"><b>状态优先</b><p>运行中的永远排在最前，且右侧按钮直接变成「停止」——这是托盘唯一的高频动作。</p></div>
+      <div class="note"><b>默认关闭</b><p>关窗=隐藏还是退出，需要一个开关。默认「关窗即退出」保持 MVP 语义不变。</p></div>
+    </div>
+  </section>
+
+  <!-- 2 全局命令 -->
+  <section class="fx">
+    <div class="fx-h"><span class="id">P1</span><div><h2>全局命令</h2>
+      <p>和项目命令同一个数据实体，只是不绑根目录、工作目录默认主目录。覆盖「忘了有哪些 CLI、忘了长参数怎么拼」。</p></div></div>
+    <div class="stage" style="padding:0;overflow:hidden;border-radius:14px">
+      <div class="win" style="border-radius:0;box-shadow:none;border:0;height:520px">
+        <div class="tb"><div class="br"><svg><use href="#i-squirrel"/></svg>Squirl</div>
+          <div class="cb"><b>全局命令</b></div>
+          <div class="wc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="1"/></svg><svg><use href="#i-x"/></svg></div>
+        </div>
+        <div class="gc">
+          <div class="gbar">
+            <div class="srch"><svg><use href="#i-search"/></svg>搜索命令、用途、参数</div>
+            <div class="sp"></div>
+            <button class="btn gh"><svg><use href="#i-plus"/></svg>新建全局命令</button>
+            <button class="btn gh"><svg><use href="#i-gear"/></svg></button>
+          </div>
+          <div class="gc-body">
+            <div class="sec"><span class="lb">常用</span><span class="cnt">3</span><span class="rt">按最近使用排序</span></div>
+            <div class="glist" style="margin-bottom:16px">
+              <div class="gi"><span class="ic"><svg><use href="#i-terminal"/></svg></span><span class="n">pi</span><span class="cl">pi --model {{model}} --profile work</span><span class="cat">AI</span><span class="go"><svg><use href="#i-play"/></svg></span></div>
+              <div class="gi"><span class="ic"><svg><use href="#i-terminal"/></svg></span><span class="n">dsh deploy</span><span class="cl">dsh deploy {{service}} --env={{env}}</span><span class="cat">部署</span><span class="go"><svg><use href="#i-play"/></svg></span></div>
+              <div class="gi"><span class="ic"><svg><use href="#i-terminal"/></svg></span><span class="n">codex</span><span class="cl">codex --sandbox {{mode}} --cwd {{dir}}</span><span class="cat">AI</span><span class="go"><svg><use href="#i-play"/></svg></span></div>
+            </div>
+            <div class="sec"><span class="lb">工具字典</span><span class="cnt">6</span><span class="rt">用途备忘 + 文档链接</span></div>
+            <div class="glist">
+              <div class="gi"><span class="ic"><svg><use href="#i-book"/></svg></span><span class="n">pnpm</span><span class="cl">包管理器，比 npm 快，workspace 支持更好</span><span class="cat">构建</span><span class="go"><svg><use href="#i-play"/></svg></span></div>
+              <div class="gi"><span class="ic"><svg><use href="#i-book"/></svg></span><span class="n">cargo</span><span class="cl">Rust 构建与包管理</span><span class="cat">构建</span><span class="go"><svg><use href="#i-play"/></svg></span></div>
+              <div class="gi"><span class="ic"><svg><use href="#i-book"/></svg></span><span class="n">jwalk</span><span class="cl">并行目录遍历，Squirl 扫描器在用</span><span class="cat">库</span><span class="go"><svg><use href="#i-play"/></svg></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="note"><b>和项目命令同一个表</b><p>只多一个 <span class="mono">type: global</span> 字段，不绑 project_id。搜索、运行、保存全部复用。</p></div>
+      <div class="note"><b>「用途」是一等字段</b><p>这个功能的价值一半在「这条命令是干什么的」。没写用途的命令在列表里会显得单薄。</p></div>
+      <div class="note"><b>不抢主界面</b><p>全局命令单独一页，从顶栏入口进，不占主界面的两个分区。</p></div>
+    </div>
+  </section>
+
+  <!-- 3 多会话 -->
+  <section class="fx">
+    <div class="fx-h"><span class="id">P1</span><div><h2>多会话日志</h2>
+      <p>引擎在 MVP 就支持并行，这里只是把 UI 补上：标签页切换、批量停止、一眼看清谁在跑。</p></div></div>
+    <div class="stage" style="padding:0;overflow:hidden;border-radius:14px">
+      <div class="win" style="border-radius:0;box-shadow:none;border:0;height:480px">
+        <div class="tb"><div class="br"><svg><use href="#i-squirrel"/></svg>Squirl</div>
+          <div class="cb"><b>项目</b><span>/</span><b>squirl</b></div>
+          <div class="wc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="1"/></svg><svg><use href="#i-x"/></svg></div>
+        </div>
+        <div style="padding:14px 20px 10px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:650">命令</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--ink-3);background:var(--canvas-2);border-radius:999px;padding:1px 6px">4</span>
+            <span class="sp"></span>
+            <button class="btn gh sm">全部停止</button>
+          </div>
+          <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)">
+            <div class="gi" style="padding:8px 11px"><span class="d run"></span><span class="n" style="width:70px">dev</span><span class="cl">pnpm dev</span><span class="chip" style="color:var(--acorn);background:var(--acorn-wash)">运行中</span><span class="c mono" style="font-size:9px;color:var(--ink-4)">00:42</span></div>
+            <div class="gi" style="padding:8px 11px"><span class="d run"></span><span class="n" style="width:70px">tauri</span><span class="cl">pnpm tauri dev --features debug</span><span class="chip" style="color:var(--acorn);background:var(--acorn-wash)">运行中</span><span class="c mono" style="font-size:9px;color:var(--ink-4)">01:10</span></div>
+            <div class="gi" style="padding:8px 11px"><span class="d ok"></span><span class="n" style="width:70px">build</span><span class="cl">pnpm build</span><span class="chip" style="color:var(--moss);background:var(--moss-wash)">0</span><span class="c mono" style="font-size:9px;color:var(--ink-4)">昨天</span></div>
+          </div>
+        </div>
+        <div class="tabs">
+          <div class="tab on"><span class="d run"></span>dev<span class="x"><svg><use href="#i-x"/></svg></span></div>
+          <div class="tab"><span class="d run"></span>tauri<span class="x"><svg><use href="#i-x"/></svg></span></div>
+          <div class="tab"><span class="d ok"></span>build<span class="x"><svg><use href="#i-x"/></svg></span></div>
+          <div class="tab" style="color:var(--ink-4)"><svg style="width:10px;height:10px"><use href="#i-plus"/></svg></div>
+        </div>
+        <div style="flex:1;background:#FCFBF9;font-family:var(--mono);font-size:10px;line-height:1.85;padding:10px 14px;color:var(--ink-2);overflow:hidden">
+<span style="color:var(--ink-3)">▸ profile 输出 · 12 行</span>
+<span style="color:var(--ink-4)">──────────── squirl 命令输出 ────────────</span>
+<span style="color:var(--acorn)">$</span> pnpm dev
+
+&gt; squirl@0.1.0 dev
+&gt; vite
+
+  <span style="color:var(--moss)">VITE v8.3.5</span>  ready in <span style="color:var(--acorn)">412</span> ms
+  <span style="color:var(--moss)">➜</span>  Local:   <span style="color:var(--acorn)">http://localhost:5173/</span>
+
+<span style="color:var(--ink-3)">[tauri] watching src-tauri …</span></div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="note"><b>标签在日志坞顶部</b><p>不另开窗口。切标签 = 切 run_id，日志缓冲各自独立。</p></div>
+      <div class="note"><b>「全部停止」放命令列表上方</b><p>它是危险动作，放在能看见所有命令的位置，且需要二次确认。</p></div>
+      <div class="note"><b>关标签 ≠ 停进程</b><p>关标签只是不再看日志，进程继续跑。这个语义要在标签上明确（关闭时提示）。</p></div>
+    </div>
+  </section>
+
+  <!-- 4 README x 配置 -->
+  <section class="fx">
+    <div class="fx-h"><span class="id p2">P2</span><div><h2>README × 配置双栏快填台</h2>
+      <p>四份需求文档的共同主打。左边读 README，右边填 .env —— 不再在浏览器、编辑器、终端之间来回切。</p></div></div>
+    <div class="stage" style="padding:0;overflow:hidden;border-radius:14px">
+      <div class="win" style="border-radius:0;box-shadow:none;border:0;height:540px">
+        <div class="tb"><div class="br"><svg><use href="#i-squirrel"/></svg>Squirl</div>
+          <div class="cb"><b>项目</b><span>/</span><b>api-gateway</b><span>/</span><b>快填台</b></div>
+          <div class="wc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="1"/></svg><svg><use href="#i-x"/></svg></div>
+        </div>
+        <div class="dual">
+          <div class="pane">
+            <div class="pane-h"><span class="lb">README</span><span class="fn">README.md</span><span class="sp"></span><span style="font-size:9px;color:var(--ink-4)">自动滚动跟随</span></div>
+            <div class="pane-b md">
+              <h4>api-gateway</h4>
+              <p>订单网关服务，Rust + axum。启动前需要准备数据库连接与 JWT 密钥。</p>
+              <h5>环境变量</h5>
+              <p>复制 <span class="var">.env.example</span> 为 <span class="var">.env</span>，至少填写 <span class="var">DATABASE_URL</span> 与 <span class="var">JWT_SECRET</span>。</p>
+              <pre>cp .env.example .env
+cargo run --release</pre>
+              <h5>启动</h5>
+              <pre>cargo run --release<span class="use">设为启动命令</span></pre>
+              <p>默认监听 <span class="var">8080</span>，健康检查在 <span class="var">/healthz</span>。</p>
+            </div>
+          </div>
+          <div class="pane">
+            <div class="pane-h"><span class="lb">配置</span><span class="fn">.env</span><span class="sp"></span>
+              <span style="font-size:9px;color:var(--moss);display:flex;align-items:center;gap:4px"><span class="d ok"></span>3 / 5 已填</span>
+            </div>
+            <div class="pane-b">
+              <div class="frm">
+                <div class="fld"><label>DATABASE_URL</label><div class="in f">postgres://localhost:5432/gateway<span style="width:1px;height:11px;background:var(--acorn);margin-left:1px"></span></div><div class="hint">README 第 12 行提到</div></div>
+                <div class="fld"><label>JWT_SECRET</label><div class="in"><span class="ph">留空将无法启动</span></div><div class="hint">必填 · 无默认值</div></div>
+                <div class="fld"><label>PORT</label><div class="in">8080</div><div class="hint">已有默认值</div></div>
+                <div class="fld"><label>LOG_LEVEL</label><div class="in sel" style="justify-content:space-between">info<svg style="width:9px;height:9px;color:var(--ink-4)"><use href="#i-chev"/></svg></div></div>
+                <div class="fld"><label>REDIS_URL</label><div class="in"><span class="ph">未设置</span></div><div class="hint">可选</div></div>
+              </div>
+              <div style="margin-top:14px;padding:9px 11px;background:var(--acorn-wash);border:1px solid var(--acorn-line);border-radius:7px;font-size:10px;color:#7A4526;line-height:1.6">
+                写回时会<b>完整保留注释、缩进与键顺序</b>，只替换值。
+              </div>
+              <div style="display:flex;gap:6px;margin-top:12px">
+                <button class="btn gh sm">用 .env.example 转正</button>
+                <span class="sp"></span>
+                <button class="btn pri sm">保存并运行</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="note"><b>左栏是只读渲染</b><p>README 用 GFM 渲染，代码块右上角一个「设为启动命令」，把这块代码直接变成命令。</p></div>
+      <div class="note"><b>右栏是结构化表单</b><p>从 .env / .yml / .toml 解析出键值，写成表单。写回时保格式原子重写，不重排文件。</p></div>
+      <div class="note"><b>联动是灵魂</b><p>表单聚焦某个变量时，左栏自动滚到 README 里提到它的那一段。这才叫「不用来回切」。</p></div>
+    </div>
+  </section>
+
+  <!-- 5 CLI 词典 -->
+  <section class="fx">
+    <div class="fx-h"><span class="id p2">P2</span><div><h2>参数模板填空</h2>
+      <p>命令里写 <span class="mono">{{param}}</span>，运行时弹一张小卡片填空。长参数组合不用再背。</p></div></div>
+    <div class="stage">
+      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;justify-content:center">
+        <div class="glist" style="width:420px">
+          <div class="gi" style="padding:10px 12px"><span class="ic"><svg><use href="#i-terminal"/></svg></span><span class="n" style="width:80px">dsh deploy</span><span class="cl">dsh deploy {{service}} --env={{env}}</span><span class="go"><svg><use href="#i-play"/></svg></span></div>
+          <div class="gi" style="padding:10px 12px"><span class="ic"><svg><use href="#i-terminal"/></svg></span><span class="n" style="width:80px">pi</span><span class="cl">pi --model {{model}} --profile work</span><span class="go"><svg><use href="#i-play"/></svg></span></div>
+          <div class="gi" style="padding:10px 12px"><span class="ic"><svg><use href="#i-terminal"/></svg></span><span class="n" style="width:80px">codex</span><span class="cl">codex --sandbox {{mode}} --cwd {{dir}}</span><span class="go"><svg><use href="#i-play"/></svg></span></div>
+        </div>
+
+        <div style="width:360px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-pop);padding:15px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+            <span style="font-size:12px;font-weight:650">运行 dsh deploy</span>
+            <span style="font-family:var(--mono);font-size:8.5px;color:var(--acorn);background:var(--acorn-wash);border-radius:3px;padding:1px 5px">2 个参数</span>
+          </div>
+          <div class="pd" style="margin-top:10px">
+            <div class="ttl">预览</div>
+            <div class="line">dsh deploy <b>order-api</b> --env=<b>prod</b></div>
+            <div class="prow"><span class="k">service</span><span class="v">order-api</span></div>
+            <div class="prow"><span class="k">env</span><span class="v sel">prod<svg style="width:9px;height:9px;color:var(--ink-4)"><use href="#i-chev"/></svg></span></div>
+            <div style="font-size:9px;color:var(--ink-4);margin-top:2px">可选值：dev · staging · prod</div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:12px">
+            <button class="btn gh sm">取消</button>
+            <span class="sp"></span>
+            <button class="btn gh sm">外部终端</button>
+            <button class="btn pri sm">应用内运行</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="note"><b>参数有两种</b><p>自由输入（<span class="mono">{{service}}</span>）和枚举选择（<span class="mono">{{env:dev|prod}}</span>）。枚举直接给下拉，减少打错。</p></div>
+      <div class="note"><b>实时预览</b><p>顶部一行把填好的值合成完整命令，用户在按运行前就知道会发生什么。</p></div>
+      <div class="note"><b>不存值</b><p>填过的值只在这一次运行里有效，不回写命令原文——避免模板被悄悄改坏。</p></div>
+    </div>
+  </section>
+
+  <!-- 6 端口雷达 -->
+  <section class="fx">
+    <div class="fx-h"><span class="id p3">P3</span><div><h2>端口雷达</h2>
+      <p>启动前预检冲突，运行中把端口徽章挂在卡片上，点一下直接开浏览器。</p></div></div>
+    <div class="stage">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;width:100%;max-width:900px">
+        <div style="background:var(--surface);border:1px solid var(--acorn-line);border-radius:10px;padding:12px;box-shadow:0 0 0 3px var(--acorn-wash)">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="d run"></span><span style="font-size:12.5px;font-weight:640;flex:1">squirl</span></div>
+          <div style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-bottom:8px">D:\Code\AICreate\ZCode\squirl</div>
+          <div style="display:flex;gap:4px;margin-bottom:9px"><span class="port">:5173</span><span class="port">:1420</span></div>
+          <div style="display:flex;height:26px;border-radius:5px;overflow:hidden;background:var(--acorn)">
+            <span style="flex:1;display:flex;align-items:center;gap:5px;color:#fff;font-size:10.5px;font-weight:600;padding:0 8px"><svg style="width:8px;height:8px"><use href="#i-stop"/></svg>停止 dev</span>
+          </div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="d idle"></span><span style="font-size:12.5px;font-weight:640;flex:1">notes-site</span></div>
+          <div style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-bottom:8px">D:\web\notes-site</div>
+          <div style="display:flex;gap:4px;margin-bottom:9px"><span class="port busy">:8080 被占用</span></div>
+          <div style="display:flex;height:26px;border-radius:5px;background:var(--ink)">
+            <span style="flex:1;display:flex;align-items:center;gap:5px;color:#fff;font-size:10.5px;font-weight:600;padding:0 8px"><svg style="width:8px;height:8px"><use href="#i-play"/></svg>运行 start</span>
+          </div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="d ok"></span><span style="font-size:12.5px;font-weight:640;flex:1">api-gateway</span></div>
+          <div style="font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-bottom:8px">D:\work\api-gateway</div>
+          <div style="display:flex;gap:4px;margin-bottom:9px"><span class="port">:8080</span><span class="port">:6379</span></div>
+          <div style="display:flex;height:26px;border-radius:5px;background:var(--ink)">
+            <span style="flex:1;display:flex;align-items:center;gap:5px;color:#fff;font-size:10.5px;font-weight:600;padding:0 8px"><svg style="width:8px;height:8px"><use href="#i-play"/></svg>运行 serve</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="note"><b>徽章只在有意义时出现</b><p>没有端口信息的项目不加徽章，避免每个卡片都挂一排装饰。</p></div>
+      <div class="note"><b>冲突要说清是谁占的</b><p>「:8080 被占用」后面必须能展开看到占用的 PID 与进程名，并提供终止入口。</p></div>
+      <div class="note"><b>点徽章开浏览器</b><p>运行中的端口徽章可点击，直接打开 <span class="mono">http://localhost:5173</span>。</p></div>
+    </div>
+  </section>
+
+  <div style="margin-top:56px;padding-top:24px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-3);line-height:1.75;max-width:70em">
+    <b style="color:var(--ink);font-size:12px">关于优先级</b>：这六项里，<b>托盘面板</b>和<b>全局命令</b>成本最低、留存价值最高，建议 P1 先做；
+    <b>双栏快填台</b>是差异化最强但工作量也最大的一项（涉及文件解析与保格式写回），适合在 MVP 稳定后再启动；
+    <b>端口雷达</b>依赖系统 API，跨平台差异大，放 P3 合理。
+  </div>
+</div>
+</body>
+</html>

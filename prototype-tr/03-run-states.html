@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Squirl · 运行状态</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="canvas" id="canvas">
+      <div class="page">
+        <div class="page-head">
+          <div class="pt">
+            <h1>运行状态</h1>
+            <div class="sub">
+              <span><b id="activeCount">2</b> 个活动会话</span>
+              <span class="sep"></span>
+              <span>6 状态机</span>
+              <span class="sep"></span>
+              <span>日志环形缓冲 <span class="mono lg">5,000 行 / 2MB</span></span>
+            </div>
+          </div>
+          <div class="acts">
+            <button class="btn" id="cleanBtn"><span class="ic-slot" data-ic="trash"></span>清理已结束</button>
+            <button class="btn btn-danger" id="stopAllBtn"><span class="ic-slot" data-ic="stop"></span>全部停止</button>
+          </div>
+        </div>
+
+        <div id="bannerHost"></div>
+
+        <div class="sec-head">
+          <h2>六状态机</h2>
+          <span class="ct">idle → starting → running → exited / failed / killed</span>
+          <span class="sp"></span>
+          <span class="hint">状态只存在于会话内存，不写数据库</span>
+        </div>
+
+        <div class="states-grid">
+          <div class="state-card">
+            <div class="corner"><span class="pill"><i></i>未运行</span></div>
+            <div class="sv">01 · IDLE</div>
+            <div class="cmdline">pnpm dev</div>
+            <div class="dsc">命令已保存，尚未启动。卡片上的 ▶ 会按该项目的执行配置派生子进程。</div>
+            <div class="acts">
+              <button class="btn btn-sm btn-run" data-act="start"><span class="ic-slot" data-ic="play"></span>启动</button>
+              <button class="btn btn-sm btn-ghost" data-act="edit"><span class="ic-slot" data-ic="edit"></span>编辑命令</button>
+            </div>
+          </div>
+
+          <div class="state-card">
+            <div class="corner"><span class="pill starting"><i></i>启动中</span></div>
+            <div class="sv">02 · STARTING</div>
+            <div class="cmdline">uv run uvicorn app.main:app --reload</div>
+            <div class="dsc">进程已派生但还没出现首行输出。超过 3 秒无输出会提示「疑似等待输入」，而不是继续假装正常。</div>
+            <div class="acts">
+              <button class="btn btn-sm" data-act="log"><span class="ic-slot" data-ic="terminal"></span>查看日志</button>
+              <button class="btn btn-sm btn-danger" data-act="kill"><span class="ic-slot" data-ic="stop"></span>结束</button>
+            </div>
+          </div>
+
+          <div class="state-card">
+            <div class="corner"><span class="pill run"><i></i>运行中</span></div>
+            <div class="sv">03 · RUNNING</div>
+            <div class="cmdline">pnpm dev</div>
+            <div class="dsc">进程树健康，日志按批推送；界面只镜像渲染，不轮询、不阻塞。计数器显示已运行时长。</div>
+            <div class="acts">
+              <button class="btn btn-sm btn-run" data-act="log"><span class="ic-slot" data-ic="terminal"></span>查看日志</button>
+              <button class="btn btn-sm btn-danger" data-act="stop"><span class="ic-slot" data-ic="stop"></span>停止</button>
+            </div>
+          </div>
+
+          <div class="state-card">
+            <div class="corner"><span class="pill ok"><i></i>已退出</span></div>
+            <div class="sv">04 · EXITED · exit 0</div>
+            <div class="cmdline">pnpm build</div>
+            <div class="dsc">正常结束。退出码与耗时进入本次运行记录；项目目录与台账数据都不被改写。</div>
+            <div class="acts">
+              <button class="btn btn-sm btn-run" data-act="restart"><span class="ic-slot" data-ic="refresh"></span>再次运行</button>
+              <button class="btn btn-sm btn-ghost" data-act="log"><span class="ic-slot" data-ic="terminal"></span>日志</button>
+            </div>
+          </div>
+
+          <div class="state-card" style="border-color:var(--brick-line)">
+            <div class="corner"><span class="pill bad"><i></i>失败</span></div>
+            <div class="sv">05 · FAILED · exit 1</div>
+            <div class="cmdline">pnpm tauri dev</div>
+            <div class="dsc">非零退出。错误行在日志里高亮，重试沿用同一条命令与同一份执行配置，不改任何文件。</div>
+            <div class="acts">
+              <button class="btn btn-sm btn-danger" data-act="restart"><span class="ic-slot" data-ic="refresh"></span>重试</button>
+              <button class="btn btn-sm btn-ghost" data-act="log"><span class="ic-slot" data-ic="terminal"></span>查看错误</button>
+            </div>
+          </div>
+
+          <div class="state-card">
+            <div class="corner"><span class="pill warn"><i></i>已停止</span></div>
+            <div class="sv">06 · KILLED · exit 143</div>
+            <div class="cmdline">pnpm dev</div>
+            <div class="dsc">人工停止或随应用退出回收。整个进程树结束，子进程无残留；外部终端会话不在此列。</div>
+            <div class="acts">
+              <button class="btn btn-sm btn-run" data-act="restart"><span class="ic-slot" data-ic="play"></span>重新启动</button>
+              <button class="btn btn-sm btn-ghost" data-act="log"><span class="ic-slot" data-ic="terminal"></span>日志</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec-head mt26">
+          <h2>会话列表</h2>
+          <span class="ct" id="runCount">6</span>
+          <span class="hint">run_id 是会话内存里的唯一归属，停止与日志都按它索引</span>
+          <span class="sp"></span>
+          <div class="seg" id="runFilter">
+            <button class="on" data-value="all">全部</button>
+            <button data-value="active">活动</button>
+            <button data-value="done">已结束</button>
+          </div>
+        </div>
+
+        <div class="run-list" id="runList">
+          <div class="run-row head">
+            <span>项目</span><span>命令</span><span>run_id</span><span>状态</span><span>用时</span><span style="text-align:right">操作</span>
+          </div>
+          <div id="runBody"></div>
+        </div>
+        <div class="mono mt8">运行记录只保留在会话内存；台账里只沉淀「最近运行时间」与「启动次数」两项事实。</div>
+
+        <div class="sec-head mt26">
+          <h2>退出回收的三条路径</h2>
+          <span class="sp"></span>
+          <span class="tag">AC9</span>
+          <span class="tag">INV-2</span>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding:6px 8px 8px">
+            <table class="table">
+              <thead><tr><th>路径</th><th>触发</th><th>动作</th><th>保证</th></tr></thead>
+              <tbody>
+                <tr><td class="k">手动停止</td><td>用户在日志面板点「停止」</td><td>结束整个进程树（Job Object / setsid）</td><td>exit 143，无残留子进程</td></tr>
+                <tr><td class="k">应用退出</td><td>关闭窗口 / 从托盘退出</td><td>遍历 run 注册表，逐个结束</td><td>退出前等待 ≤ 2 秒，超时强杀</td></tr>
+                <tr><td class="k">后端崩溃</td><td>Rust 主进程异常终止</td><td>Windows 由 Job Object 随句柄关闭回收；Unix 使用 <code>prctl(PDEATHSIG)</code></td><td>外部终端会话完全不受影响（INV-2）</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="banner info mt12">
+          <span class="ic-slot" data-ic="shield"></span>
+          <div><span class="bi">两条路径不得混同</span>
+            外部终端里的进程归终端所有，Squirl 只负责唤起、不接管；只有应用内启动的进程才进入 run 注册表与回收流程。
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/icons.js"></script>
+<script src="assets/mock.js"></script>
+<script src="assets/ui.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  var M = MOCK;
+  var runBody = document.getElementById('runBody');
+  var filter = 'all';
+
+  function active(r) { return r.state === 'running' || r.state === 'starting'; }
+
+  function visible() {
+    return M.runs.filter(function (r) {
+      if (filter === 'active') return active(r);
+      if (filter === 'done') return !active(r);
+      return true;
+    });
+  }
+
+  function row(r) {
+    var acts = '';
+    if (active(r)) {
+      acts = '<button class="iconbtn" data-log title="查看日志"><span class="ic-slot">' + icon('terminal') + '</span></button>' +
+        '<button class="iconbtn danger" data-stop title="停止"><span class="ic-slot">' + icon('stop') + '</span></button>';
+    } else {
+      acts = '<button class="iconbtn" data-log title="查看日志"><span class="ic-slot">' + icon('terminal') + '</span></button>' +
+        '<button class="iconbtn" data-restart title="再运行"><span class="ic-slot">' + icon('play') + '</span></button>';
+    }
+    return '<div class="run-row" data-rid="' + r.rid + '">' +
+      '<span class="nm">' + Sq.esc(r.project) + '</span>' +
+      '<span class="cmd" title="' + Sq.esc(r.line) + '">' + Sq.esc(r.line) + '</span>' +
+      '<span class="rid">' + Sq.esc(r.rid) + '</span>' +
+      '<span>' + Sq.statusPill(r.state) + '</span>' +
+      '<span class="mono">' + Sq.esc(r.elapsed) + '</span>' +
+      '<span class="as">' + acts + '</span>' +
+    '</div>';
+  }
+
+  function render() {
+    var list = visible();
+    runBody.innerHTML = list.length
+      ? list.map(row).join('')
+      : '<div class="cmd-empty" style="padding:20px">没有符合当前筛选的会话</div>';
+    document.getElementById('runCount').textContent = M.runs.length;
+    document.getElementById('activeCount').textContent = M.runs.filter(active).length;
+
+    Sq.qa('[data-rid]', runBody).forEach(function (el) {
+      var r = M.runs.filter(function (x) { return x.rid === el.dataset.rid; })[0];
+      var bLog = el.querySelector('[data-log]');
+      if (bLog) bLog.addEventListener('click', function () {
+        location.href = '02-project.html?id=' + (M.projects.filter(function (p) { return p.name === r.project; })[0] || {}).id;
+      });
+      var bStop = el.querySelector('[data-stop]');
+      if (bStop) bStop.addEventListener('click', function () { confirmStop([r]); });
+      var bRe = el.querySelector('[data-restart]');
+      if (bRe) bRe.addEventListener('click', function () { restart(r); });
+    });
+    renderBanner();
+  }
+
+  function renderBanner() {
+    var waiting = M.runs.filter(function (r) { return r.state === 'starting'; })[0];
+    if (!waiting) {
+      document.getElementById('bannerHost').innerHTML = '';
+      return;
+    }
+    document.getElementById('bannerHost').innerHTML =
+      '<div class="banner warn" style="margin-bottom:14px">' +
+        '<span class="ic-slot" data-ic="alert"></span>' +
+        '<div><span class="bi">疑似等待输入</span>' +
+        '<b>' + Sq.esc(waiting.project) + ' · ' + Sq.esc(waiting.cmd) + '</b> 已启动 ' + Sq.esc(waiting.elapsed) +
+        ' 仍无首行输出。应用内会话不是交互式终端，无法应答确认提示；建议查看日志或结束进程。</div>' +
+        '<div class="bact">' +
+          '<button class="btn btn-sm" id="bannerLog">查看日志</button>' +
+          '<button class="btn btn-sm btn-danger" id="bannerKill">结束进程</button>' +
+        '</div>' +
+      '</div>';
+    document.querySelectorAll('#bannerHost [data-ic]').forEach(function (x) { x.innerHTML = icon(x.dataset.ic); });
+    Sq.bind(document.getElementById('bannerLog'), 'click', function () {
+      location.href = '02-project.html?id=' + (M.projects.filter(function (p) { return p.name === waiting.project; })[0] || {}).id;
+    });
+    Sq.bind(document.getElementById('bannerKill'), 'click', function () { confirmStop([waiting]); });
+  }
+
+  function confirmStop(list) {
+    if (!list.length) return;
+    var names = list.map(function (r) { return r.project + ' · ' + r.cmd; }).join('、');
+    Sq.dialog({
+      title: list.length > 1 ? '结束全部 ' + list.length + ' 个会话？' : '结束这次运行？',
+      desc: '只会结束应用内启动的进程树；外部终端窗口不受影响。',
+      body: '<div class="banner warn"><span class="bi">待结束</span>' + Sq.esc(names) + '</div>',
+      danger: true, ok: '结束', cancel: '保留',
+      onOk: function () {
+        var n = 0;
+        list.forEach(function (r) {
+          if (!active(r)) return;
+          r.state = 'killed'; r.elapsed = '—'; n++;
+          var p = M.projects.filter(function (x) { return x.name === r.project; })[0];
+          if (p) p.state = 'killed';
+        });
+        render();
+        Sq.toast('已结束 <b>' + n + '</b> 个会话', 'ok', '进程树已回收，日志保留直到应用退出');
+      }
+    });
+  }
+
+  function restart(r) {
+    r.state = 'starting';
+    r.elapsed = '0.2s';
+    render();
+    Sq.toast('正在重新启动 <b>' + r.project + '</b>', 'info', 'run_id 会重新分配 · ' + r.cmd);
+    setTimeout(function () {
+      r.state = 'running';
+      r.elapsed = '1s';
+      r.since = '刚刚';
+      render();
+      Sq.toast('已进入运行中', 'ok', r.project + ' · ' + r.cmd);
+    }, 1200);
+  }
+
+  /* 状态卡片动作 */
+  Sq.qa('.state-card [data-act]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var act = b.dataset.act;
+      if (act === 'start' || act === 'restart') {
+        var r = M.runs.filter(function (x) { return x.state === 'idle'; })[0] || M.runs[0];
+        if (r) restart(r);
+      } else if (act === 'stop' || act === 'kill') {
+        var r2 = M.runs.filter(active)[0];
+        if (r2) confirmStop([r2]);
+      } else if (act === 'log' || act === 'edit') {
+        Sq.toast(act === 'edit' ? '打开命令编辑器' : '跳转到项目日志', 'info', act === 'edit' ? '命令原文会作为事实记录保存' : '日志按 run_id 归属，切换会话不会串流');
+        setTimeout(function () { location.href = '02-project.html?id=p1'; }, 900);
+      }
+    });
+  });
+
+  /* 过滤 */
+  Sq.bindSegs(document.getElementById('runFilter'));
+  document.getElementById('runFilter').addEventListener('segchange', function (e) {
+    filter = e.detail.value;
+    render();
+  });
+
+  /* 清理已结束 */
+  document.getElementById('cleanBtn').addEventListener('click', function () {
+    var done = M.runs.filter(function (r) { return !active(r); });
+    if (!done.length) { Sq.toast('没有可清理的会话', 'info'); return; }
+    Sq.dialog({
+      title: '清理 ' + done.length + ' 条已结束记录？',
+      desc: '只清理会话内存里的运行记录。台账中的「最近运行 / 启动次数」不受影响。',
+      ok: '清理',
+      onOk: function () {
+        M.runs = M.runs.filter(active);
+        render();
+        Sq.toast('已清理 <b>' + done.length + '</b> 条记录', 'ok', '运行记录不落数据库，应用重启后本就不存在');
+      }
+    });
+  });
+
+  /* 全部停止 */
+  document.getElementById('stopAllBtn').addEventListener('click', function () {
+    var list = M.runs.filter(active);
+    if (!list.length) { Sq.toast('当前没有活动会话', 'info'); return; }
+    confirmStop(list);
+  });
+
+  SqShell.mount({
+    active: 'runs',
+    crumb: [{ label: 'Squirl' }, { label: '运行状态' }],
+    search: '搜索项目…',
+    actions: '<a class="btn btn-sm btn-ghost" href="01-home.html">' + icon('chevronLeft') + '返回台账</a>'
+  });
+
+  document.querySelectorAll('[data-ic]').forEach(function (x) { x.innerHTML = icon(x.dataset.ic); });
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Squirl · 主界面分区布局对比</title>
+<style>
+  :root{
+    --canvas:#F2F1EE; --canvas-2:#EDEBE7;
+    --surface:#FFFFFF; --surface-2:#FAF9F7;
+    --line:#E4E1DB; --line-soft:#EFEDE8; --win:#DCD8D1;
+    --ink:#171614; --ink-2:#5C5952; --ink-3:#98938A; --ink-4:#C2BDB4;
+    --acorn:#9C5A32; --acorn-wash:#F7EEE7; --acorn-line:rgba(156,90,50,.28);
+    --moss:#4C7A55; --moss-wash:#F1F5F1; --brick:#B0473D; --amber:#B4791F;
+    --r-s:6px; --r-m:10px; --r-l:14px;
+    --shadow-pop:0 16px 40px -14px rgba(23,22,20,.24),0 2px 8px rgba(23,22,20,.06);
+    --font:"Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,Inter,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    --mono:"Cascadia Code","JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas-2);color:var(--ink);font-family:var(--font);font-size:13px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1440px;margin:0 auto;padding:52px 40px 120px}
+
+  .hd h1{font-size:27px;font-weight:640;letter-spacing:-.026em;margin:0 0 10px}
+  .hd p{font-size:13px;color:var(--ink-2);max-width:56em;margin:0 0 6px}
+  .tagline{display:inline-flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:650;margin-bottom:18px}
+  .tagline i{width:5px;height:5px;border-radius:50%;background:var(--acorn);display:block}
+
+  .opt{margin-top:52px}
+  .opt-h{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px}
+  .opt-h .id{font-family:var(--mono);font-size:10px;color:#fff;background:var(--ink);border-radius:4px;padding:2px 8px;margin-top:3px;flex:none}
+  .opt-h .id.b{background:var(--acorn)}
+  .opt-h h2{margin:0;font-size:17px;font-weight:640;letter-spacing:-.018em;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .opt-h h2 em{font-style:normal;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);border:1px solid var(--line);border-radius:4px;padding:1px 6px;background:var(--surface);font-weight:600}
+  .opt-h p{margin:5px 0 0;font-size:12.5px;color:var(--ink-2);max-width:60em}
+
+  /* window */
+  .win{background:var(--canvas);border:1px solid var(--win);border-radius:var(--r-l);overflow:hidden;
+    box-shadow:0 26px 70px -55px rgba(23,22,20,.6);display:flex;flex-direction:column}
+  .win.fixed{height:640px}
+  .win.fixed .ct{overflow:auto}
+  .tb{height:42px;flex:none;display:flex;align-items:center;gap:9px;padding:0 13px 0 15px;background:#F6F5F2;border-bottom:1px solid var(--line)}
+  .tb .br{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:650}
+  .tb .br svg{width:14px;height:14px;color:var(--acorn)}
+  .tb .wc{margin-left:auto;display:flex;gap:14px;color:var(--ink-4)}
+  .tb .wc svg{width:10px;height:10px}
+  .tbar{flex:none;display:flex;align-items:center;gap:8px;padding:0 22px;height:52px;border-bottom:1px solid var(--line-soft)}
+  .srch{display:flex;align-items:center;gap:7px;height:29px;padding:0 10px;background:var(--surface);border:1px solid var(--line);
+    border-radius:5px;width:320px;font-size:11.5px;color:var(--ink-3)}
+  .srch svg{width:12px;height:12px;flex:none}
+  .srch .kbd{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-4);border:1px solid var(--line);border-radius:3px;padding:0 4px}
+  .sp{flex:1}
+  .btn{display:inline-flex;align-items:center;gap:5px;height:27px;padding:0 10px;border-radius:5px;font-size:11px;
+    font-weight:560;border:1px solid transparent;background:transparent;color:var(--ink-2);white-space:nowrap}
+  .btn svg{width:11px;height:11px}
+  .btn.gh{border-color:var(--line);background:var(--surface)}
+  .btn.ic{width:27px;padding:0;justify-content:center}
+  .btn.pri{background:var(--ink);color:#fff}
+  .divider{width:1px;height:14px;background:var(--line)}
+
+  .ct{padding:16px 22px;flex:1;min-height:0}
+  .sec{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+  .sec .lb{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:650}
+  .sec .cnt{font-family:var(--mono);font-size:9px;color:var(--ink-3);background:var(--canvas-2);border-radius:999px;padding:1px 6px}
+  .sec .rt{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ink-3)}
+  .sec .rt svg{width:10px;height:10px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:9px}
+  .pc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);padding:11px 11px 9px;display:flex;flex-direction:column;min-width:0}
+  .pc-h{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+  .pc-n{font-size:12.5px;font-weight:640;letter-spacing:-.012em;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pc-h .mo{color:var(--ink-4);display:flex}
+  .pc-h .mo svg{width:12px;height:12px}
+  .pc-p{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px}
+  .pc-t{font-size:11px;color:var(--ink-2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:9px;min-height:32px}
+  .sp-btn{display:flex;height:26px;border-radius:5px;overflow:hidden;background:var(--ink);margin-top:auto}
+  .sp-btn .m{flex:1;display:flex;align-items:center;gap:5px;color:#fff;font-size:10.5px;font-weight:600;padding:0 8px;min-width:0}
+  .sp-btn .m svg{width:8px;height:8px;flex:none}
+  .sp-btn .m em{font-style:normal;color:rgba(255,255,255,.58);font-weight:500}
+  .sp-btn .m b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sp-btn .c{width:22px;display:grid;place-items:center;border-left:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.75)}
+  .sp-btn .c svg{width:10px;height:10px}
+  .sp-btn.a{background:var(--acorn)}
+  .sp-btn.o{background:transparent;border:1px solid var(--line)}
+  .sp-btn.o .m{color:var(--ink-4);font-weight:560}
+  .sp-btn.o .c{border-left-color:var(--line);color:var(--ink-4)}
+  .pc-f{display:flex;justify-content:space-between;margin-top:7px;font-size:9.5px;color:var(--ink-3);font-family:var(--mono)}
+
+  .d{width:5px;height:5px;border-radius:50%;flex:none;display:inline-block}
+  .d.idle{background:var(--ink-4)} .d.run{background:var(--acorn)} .d.ok{background:var(--moss)} .d.err{background:var(--brick)} .d.warn{background:var(--amber)}
+
+  .chip{font-family:var(--mono);font-size:8.5px;letter-spacing:.03em;font-weight:600;text-transform:uppercase;
+    color:var(--acorn);background:var(--acorn-wash);border-radius:3px;padding:0 4px;line-height:13px}
+  .chip.n{color:var(--ink-4);background:var(--canvas-2)}
+
+  .rows{border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden;background:var(--surface)}
+  .row{display:flex;align-items:center;gap:9px;padding:7px 11px;border-bottom:1px solid var(--line-soft);font-size:11px}
+  .row:last-child{border-bottom:0}
+  .row .rn{font-weight:560;width:136px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .rp{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .rf{display:flex;gap:3px;flex:none}
+  .row .ra{flex:none;font-size:10px;color:var(--ink-2);border:1px solid var(--line);border-radius:4px;padding:1px 7px;background:var(--surface)}
+  .row.plain .rn{color:var(--ink-3);font-weight:500}
+
+  /* variant B split */
+  .split{display:grid;grid-template-columns:minmax(0,1fr) 316px;flex:1;min-height:0}
+  .split .main{display:flex;flex-direction:column;min-width:0;min-height:0}
+  .split .side{border-left:1px solid var(--line);background:var(--surface-2);display:flex;flex-direction:column;min-height:0}
+  .side-h{display:flex;align-items:center;gap:7px;padding:11px 14px 9px;border-bottom:1px solid var(--line);flex:none}
+  .side-h .lb{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:650}
+  .side-h .cnt{font-family:var(--mono);font-size:9px;color:var(--ink-3);background:var(--canvas-2);border-radius:999px;padding:1px 6px}
+  .side-h .x{margin-left:auto;color:var(--ink-4);display:flex;padding:2px;border-radius:3px}
+  .side-h .x svg{width:12px;height:12px}
+  .side-b{flex:1;overflow:auto;padding:6px}
+  .er{padding:8px 9px;border-radius:6px;margin-bottom:2px;transition:.12s}
+  .er:hover{background:var(--surface)}
+  .er .t{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:560;margin-bottom:2px}
+  .er .t .ra{margin-left:auto;font-size:9.5px;color:var(--ink-3);border:1px solid var(--line);border-radius:4px;padding:0 6px;background:var(--surface);transition:.12s}
+  .er:hover .t .ra{color:#fff;background:var(--ink);border-color:var(--ink)}
+  .er .p{font-family:var(--mono);font-size:9px;color:var(--ink-4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+  .er .f{display:flex;gap:3px}
+
+  /* annotation */
+  .notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden;margin-top:14px}
+  .note{background:var(--surface);padding:15px 17px}
+  .note b{display:block;font-size:11.5px;font-weight:640;margin-bottom:5px}
+  .note b.good{color:var(--moss)} .note b.bad{color:var(--brick)}
+  .note p{margin:0;font-size:11.5px;color:var(--ink-2);line-height:1.65}
+
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden}
+  th{text-align:left;font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:650;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+  td{padding:11px 14px;border-bottom:1px solid var(--line-soft);color:var(--ink-2);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td:first-child{color:var(--ink);font-weight:560;width:180px}
+  td .win-a{color:var(--acorn);font-weight:600}
+  td .win-b{color:var(--moss);font-weight:600}
+
+  .verdict{margin-top:22px;background:var(--surface);border:1px solid var(--acorn-line);border-radius:var(--r-l);padding:22px 24px;display:flex;gap:18px}
+  .verdict .ic{width:22px;height:22px;color:var(--acorn);flex:none;margin-top:2px}
+  .verdict h3{margin:0 0 7px;font-size:13.5px;font-weight:650;letter-spacing:-.01em}
+  .verdict p{margin:0 0 7px;font-size:12px;color:var(--ink-2);line-height:1.7}
+  .verdict p:last-child{margin-bottom:0}
+  .verdict code{font-family:var(--mono);font-size:10.5px;background:var(--canvas-2);border-radius:3px;padding:1px 5px}
+
+  @media(max-width:1000px){
+    .wrap{padding:32px 18px 80px}
+    .win{height:auto}
+    .split{grid-template-columns:1fr}
+    .split .side{border-left:0;border-top:1px solid var(--line);max-height:340px}
+    .tbar{flex-wrap:wrap;height:auto;padding:10px 16px}
+    .srch{width:100%}
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.2v13.6L19 12z" fill="currentColor"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.4-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.5h7A1.5 1.5 0 0 1 19 10v7.5A1.5 1.5 0 0 1 17.5 19h-13A1.5 1.5 0 0 1 3 17.5Z"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-.9 4.6"/><path d="M20 5v6h-6"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-8 8M18 14v4.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></symbol>
+  <symbol id="i-squirrel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c-4.2 0-7.2 3-7.2 6.9 0 2.4 1.1 3.9 1.9 5.4.6 1.1.9 2 .9 3.3h8.8c0-1.3.3-2.2.9-3.3.8-1.5 1.9-3 1.9-5.4 0-3.9-3-6.9-7.2-6.9Z"/><path d="M9.4 18.8h5.2M9.9 21h4.2"/><circle cx="9.6" cy="9.6" r=".9" fill="currentColor" stroke="none"/><circle cx="14.4" cy="9.6" r=".9" fill="currentColor" stroke="none"/></symbol>
+</svg>
+
+<div class="wrap">
+  <div class="hd">
+    <div class="tagline"><i></i>布局决策 · 需你拍板</div>
+    <h1>主界面分区：两种排布</h1>
+    <p>需求附录 A #10 定的是「同页两分区、上下堆叠」。你也想看看左右分栏。两版共用同一套卡片、同一套发现区条目，只换容器。</p>
+  </div>
+
+  <!-- A -->
+  <section class="opt">
+    <div class="opt-h">
+      <span class="id">A</span>
+      <div>
+        <h2>上下堆叠 <em>需求原方案</em></h2>
+        <p>已登记在上，本次发现在下。发现区默认折叠成一行，需要时展开。窗口窄的时候也成立。</p>
+      </div>
+    </div>
+
+    <div class="win">
+      <div class="tb"><div class="br"><svg><use href="#i-squirrel"/></svg>Squirl</div>
+        <div class="wc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="1"/></svg><svg><use href="#i-x"/></svg></div>
+      </div>
+      <div class="tbar">
+        <div class="srch"><svg><use href="#i-search"/></svg>搜索项目、路径、备注、命令<span class="kbd">Ctrl K</span></div>
+        <div class="sp"></div>
+        <button class="btn gh"><svg><use href="#i-folder"/></svg>添加根目录</button>
+        <button class="btn gh">手动登记</button>
+        <div class="divider"></div>
+        <button class="btn ic gh"><svg><use href="#i-gear"/></svg></button>
+      </div>
+      <div class="ct">
+        <div class="sec"><span class="lb">已登记</span><span class="cnt">8</span><span class="rt">排序：最近使用<svg><use href="#i-chev"/></svg></span></div>
+        <div class="grid">
+          <article class="pc"><div class="pc-h"><span class="d run"></span><span class="pc-n">squirl</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\Code\AICreate\ZCode\squirl</div><div class="pc-t">本地项目台账与一键启动中枢，把散落的项目登记成一张可搜索的清单</div><div class="sp-btn a"><span class="m"><svg><use href="#i-stop"/></svg><em>停止</em><b>dev</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>3 条命令</span><span style="color:var(--acorn)">00:42</span></div></article>
+          <article class="pc"><div class="pc-h"><span class="d idle"></span><span class="pc-n">magpie</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">C:\Users\ICE\GitHub\magpie</div><div class="pc-t">每个 Agent 的模型，都在一处。本地模型路由网关</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>dev</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>2 条命令</span><span>2 小时前</span></div></article>
+          <article class="pc"><div class="pc-h"><span class="d ok"></span><span class="pc-n">api-gateway</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\work\api-gateway</div><div class="pc-t">订单网关，Rust + axum</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>serve</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>5 条命令</span><span>昨天</span></div></article>
+          <article class="pc"><div class="pc-h"><span class="d idle"></span><span class="pc-n">notes-site</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\web\notes-site</div><div class="pc-t">个人笔记站，Astro</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>start</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>1 条命令</span><span>3 天前</span></div></article>
+          <article class="pc"><div class="pc-h"><span class="d err"></span><span class="pc-n">legacy-admin</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\work\legacy-admin</div><div class="pc-t">老后台，Vue2 + webpack，启动要 40 秒</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>dev</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>4 条命令</span><span style="color:var(--brick)">上次失败</span></div></article>
+          <article class="pc"><div class="pc-h"><span class="d warn"></span><span class="pc-n">moved-repo</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p" style="color:var(--brick)">E:\archive\moved-repo</div><div class="pc-t">路径不存在，命令仍然可见，但无法运行</div><div class="sp-btn o"><span class="m"><svg><use href="#i-ext"/></svg><b>重新定位…</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>2 条命令</span><span style="color:var(--brick)">路径不存在</span></div></article>
+          <article class="pc"><div class="pc-h"><span class="d idle"></span><span class="pc-n">data-lab</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\work\data-lab</div><div class="pc-t">数据清洗脚本集，pandas + jupyter</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>jupyter</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>2 条命令</span><span>5 天前</span></div></article>
+          <article class="pc"><div class="pc-h"><span class="d ok"></span><span class="pc-n">blog-engine</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\web\blog-engine</div><div class="pc-t">静态博客生成器，Go + 模板</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>serve</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>3 条命令</span><span>上周</span></div></article>
+        </div>
+
+        <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:12px">
+          <div class="sec"><span class="lb">本次发现</span><span class="cnt">14</span><span class="rt">上次扫描 · 2 分钟前<svg style="margin-left:6px"><use href="#i-refresh"/></svg>重新扫描</span></div>
+          <div class="rows">
+            <div class="row"><span class="rn">squirl-lab</span><span class="rp">\ZCode\squirl-lab</span><span class="rf"><span class="chip">git</span><span class="chip">node</span></span><span class="ra">登记</span></div>
+            <div class="row"><span class="rn">electron-shell</span><span class="rp">\opensource\electron-shell</span><span class="rf"><span class="chip">node</span><span class="chip">git</span></span><span class="ra">登记</span></div>
+            <div class="row"><span class="rn">scraper</span><span class="rp">\work\scraper</span><span class="rf"><span class="chip">python</span></span><span class="ra">登记</span></div>
+            <div class="row plain"><span class="rn">临时导出</span><span class="rp">\tmp\临时导出</span><span class="rf"><span class="chip n">无标志</span></span><span class="ra">登记</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="note"><b class="good">好处</b><p>卡片网格可以铺满整宽，一行放 4 个，扫视效率最高。窗口拉窄也不会破相。</p></div>
+      <div class="note"><b class="good">好处</b><p>发现区天然是「次级信息」，折叠后不占主屏，符合它一天只看一次的频率。</p></div>
+      <div class="note"><b class="bad">代价</b><p>展开发现区会把卡片往下推，页面变长；项目多时要滚两屏才能同时看到两块。</p></div>
+    </div>
+  </section>
+
+  <!-- B -->
+  <section class="opt">
+    <div class="opt-h">
+      <span class="id b">B</span>
+      <div>
+        <h2>左右分栏 <em>宽屏变体</em></h2>
+        <p>已登记占主区，本次发现固定在右侧 316px 的栏里，常驻可见、可收起。适合「一边扫一边登记」的连续操作。</p>
+      </div>
+    </div>
+
+    <div class="win fixed">
+      <div class="tb"><div class="br"><svg><use href="#i-squirrel"/></svg>Squirl</div>
+        <div class="wc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="1"/></svg><svg><use href="#i-x"/></svg></div>
+      </div>
+      <div class="tbar">
+        <div class="srch"><svg><use href="#i-search"/></svg>搜索项目、路径、备注、命令<span class="kbd">Ctrl K</span></div>
+        <div class="sp"></div>
+        <button class="btn gh"><svg><use href="#i-folder"/></svg>添加根目录</button>
+        <button class="btn gh">手动登记</button>
+        <div class="divider"></div>
+        <button class="btn ic gh"><svg><use href="#i-gear"/></svg></button>
+      </div>
+      <div class="split">
+        <div class="main">
+          <div class="ct">
+            <div class="sec"><span class="lb">已登记</span><span class="cnt">8</span><span class="rt">排序：最近使用<svg><use href="#i-chev"/></svg></span></div>
+            <div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+              <article class="pc"><div class="pc-h"><span class="d run"></span><span class="pc-n">squirl</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\Code\AICreate\ZCode\squirl</div><div class="pc-t">本地项目台账与一键启动中枢，把散落的项目登记成一张可搜索的清单</div><div class="sp-btn a"><span class="m"><svg><use href="#i-stop"/></svg><em>停止</em><b>dev</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>3 条命令</span><span style="color:var(--acorn)">00:42</span></div></article>
+              <article class="pc"><div class="pc-h"><span class="d idle"></span><span class="pc-n">magpie</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">C:\Users\ICE\GitHub\magpie</div><div class="pc-t">每个 Agent 的模型，都在一处。本地模型路由网关</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>dev</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>2 条命令</span><span>2 小时前</span></div></article>
+              <article class="pc"><div class="pc-h"><span class="d ok"></span><span class="pc-n">api-gateway</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\work\api-gateway</div><div class="pc-t">订单网关，Rust + axum</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>serve</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>5 条命令</span><span>昨天</span></div></article>
+              <article class="pc"><div class="pc-h"><span class="d idle"></span><span class="pc-n">notes-site</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\web\notes-site</div><div class="pc-t">个人笔记站，Astro</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>start</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>1 条命令</span><span>3 天前</span></div></article>
+              <article class="pc"><div class="pc-h"><span class="d err"></span><span class="pc-n">legacy-admin</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\work\legacy-admin</div><div class="pc-t">老后台，Vue2 + webpack，启动要 40 秒</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>dev</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>4 条命令</span><span style="color:var(--brick)">上次失败</span></div></article>
+              <article class="pc"><div class="pc-h"><span class="d warn"></span><span class="pc-n">moved-repo</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p" style="color:var(--brick)">E:\archive\moved-repo</div><div class="pc-t">路径不存在，命令仍然可见，但无法运行</div><div class="sp-btn o"><span class="m"><svg><use href="#i-ext"/></svg><b>重新定位…</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>2 条命令</span><span style="color:var(--brick)">路径不存在</span></div></article>
+              <article class="pc"><div class="pc-h"><span class="d idle"></span><span class="pc-n">data-lab</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\work\data-lab</div><div class="pc-t">数据清洗脚本集，pandas + jupyter</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>jupyter</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>2 条命令</span><span>5 天前</span></div></article>
+              <article class="pc"><div class="pc-h"><span class="d ok"></span><span class="pc-n">blog-engine</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\web\blog-engine</div><div class="pc-t">静态博客生成器，Go + 模板</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>serve</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>3 条命令</span><span>上周</span></div></article>
+              <article class="pc"><div class="pc-h"><span class="d idle"></span><span class="pc-n">cli-tools</span><span class="mo"><svg><use href="#i-dots"/></svg></span></div><div class="pc-p">D:\opensource\cli-tools</div><div class="pc-t">一组 Rust 写的命令行小工具</div><div class="sp-btn"><span class="m"><svg><use href="#i-play"/></svg><em>运行</em><b>build</b></span><span class="c"><svg><use href="#i-chev"/></svg></span></div><div class="pc-f"><span>2 条命令</span><span>上周</span></div></article>
+            </div>
+          </div>
+        </div>
+
+        <aside class="side">
+          <div class="side-h">
+            <span class="lb">本次发现</span><span class="cnt">14</span>
+            <span class="sp"></span>
+            <span class="x" title="收起"><svg style="transform:rotate(-90deg)"><use href="#i-chev"/></svg></span>
+          </div>
+          <div style="padding:8px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:7px;font-size:10px;color:var(--ink-3);flex:none">
+            <svg style="width:11px;height:11px"><use href="#i-refresh"/></svg>上次扫描 2 分钟前
+            <span class="sp"></span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--ink-4)">D:\Code\AICreate</span>
+          </div>
+          <div class="side-b">
+            <div class="er"><div class="t"><span>squirl-lab</span><span class="ra">登记</span></div><div class="p">\ZCode\squirl-lab</div><div class="f"><span class="chip">git</span><span class="chip">node</span></div></div>
+            <div class="er"><div class="t"><span>electron-shell</span><span class="ra">登记</span></div><div class="p">\opensource\electron-shell</div><div class="f"><span class="chip">node</span><span class="chip">git</span></div></div>
+            <div class="er"><div class="t"><span>scraper</span><span class="ra">登记</span></div><div class="p">\work\scraper</div><div class="f"><span class="chip">python</span></div></div>
+            <div class="er"><div class="t"><span>docs-site</span><span class="ra">登记</span></div><div class="p">\web\docs-site</div><div class="f"><span class="chip">node</span><span class="chip">make</span></div></div>
+            <div class="er"><div class="t"><span>ml-notes</span><span class="ra">登记</span></div><div class="p">\work\ml-notes</div><div class="f"><span class="chip">python</span><span class="chip">git</span></div></div>
+            <div class="er"><div class="t"><span>old-backup</span><span class="ra">登记</span></div><div class="p">\tmp\old-backup</div><div class="f"><span class="chip n">无标志</span></div></div>
+            <div class="er"><div class="t"><span>design-kit</span><span class="ra">登记</span></div><div class="p">\web\design-kit</div><div class="f"><span class="chip">node</span><span class="chip">git</span></div></div>
+            <div class="er"><div class="t"><span>proto-playground</span><span class="ra">登记</span></div><div class="p">\ZCode\proto-playground</div><div class="f"><span class="chip">node</span></div></div>
+            <div class="er"><div class="t"><span>infra-notes</span><span class="ra">登记</span></div><div class="p">\work\infra-notes</div><div class="f"><span class="chip n">无标志</span></div></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="note"><b class="good">好处</b><p>发现区常驻，扫完一眼就能连续登记，不用来回展开折叠。宽屏下空间利用率更高。</p></div>
+      <div class="note"><b class="good">好处</b><p>主区永远是卡片网格，滚动位置稳定——展开发现区不会把卡片推走。</p></div>
+      <div class="note"><b class="bad">代价</b><p>主区少一列卡片；窗口宽度小于 1200 时右栏会挤压卡片，必须收成窄条或退回方案 A。</p></div>
+    </div>
+  </section>
+
+  <table>
+    <thead><tr><th>维度</th><th>A 上下堆叠</th><th>B 左右分栏</th></tr></thead>
+    <tbody>
+      <tr><td>已登记一屏可见</td><td><span class="win-a">多</span> · 4 列铺满</td><td>中 · 3 列</td></tr>
+      <tr><td>发现区同时可见条目</td><td>展开后 5–8 条</td><td><span class="win-b">多</span> · 9–12 条</td></tr>
+      <tr><td>「扫完即登记」连贯性</td><td>需要展开一次</td><td><span class="win-b">最好</span> · 常驻</td></tr>
+      <tr><td>窄窗口（&lt;1200px）</td><td><span class="win-a">直接成立</span></td><td>需要退化处理</td></tr>
+      <tr><td>与需求附录 A #10 的一致性</td><td><span class="win-a">完全一致</span></td><td>需补一条决策记录</td></tr>
+      <tr><td>实现成本</td><td>低</td><td>中 · 多一个折叠态</td></tr>
+    </tbody>
+  </table>
+
+  <div class="verdict">
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c-4.2 0-7.2 3-7.2 6.9 0 2.4 1.1 3.9 1.9 5.4.6 1.1.9 2 .9 3.3h8.8c0-1.3.3-2.2.9-3.3.8-1.5 1.9-3 1.9-5.4 0-3.9-3-6.9-7.2-6.9Z"/><path d="M9.4 18.8h5.2M9.9 21h4.2"/></svg>
+    <div>
+      <h3>我的建议：A 作默认，B 作宽屏自动变体</h3>
+      <p>两者其实不是二选一，而是同一个组件的两种容器。<b>窗口宽度 ≥ 1360px 时，发现区自动靠右成栏；小于这个宽度就退回上下堆叠。</b>用户不用做选择，行为也始终合理。</p>
+      <p>代价是需要多写一个折叠态（右栏收成 44px 竖条，只留计数徽章），约 <code>0.5 人天</code>。如果只想要一版，选 A——它和需求文档一致，且不需要任何额外决策。</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
