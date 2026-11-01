@@ -1,0 +1,9 @@
+{
+  "title": "Squirl",
+  "tagline": "本地项目台账与一键启动中枢",
+  "registered": "已登记",
+  "discovery": "本次发现",
+  "addRoot": "添加根目录",
+  "manualRegister": "手动注册",
+  "emptyGuide": "先添加一个根目录，Squirl 会扫描其中的项目"
+}

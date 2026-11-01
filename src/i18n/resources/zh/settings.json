@@ -1,0 +1,10 @@
+{
+  "title": "设置",
+  "defaultMode": "默认执行模式",
+  "modeExternal": "外部终端",
+  "modeBuiltin": "应用内运行（Phase 2 解锁）",
+  "emulator": "终端模拟器",
+  "shell": "Shell",
+  "loadProfile": "加载 shell profile",
+  "scanDepth": "扫描深度"
+}

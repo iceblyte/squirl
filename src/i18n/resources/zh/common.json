@@ -1,0 +1,16 @@
+{
+  "app": "Squirl",
+  "cancel": "取消",
+  "confirm": "确认",
+  "save": "保存",
+  "delete": "删除",
+  "edit": "编辑",
+  "run": "运行",
+  "stop": "停止",
+  "search": "搜索",
+  "refresh": "刷新",
+  "errorUnexpected": "发生未知错误",
+  "errorDbRestored": "数据库已损坏，已从最近备份恢复",
+  "errorDbRebuilt": "数据库无法恢复，已重建空库",
+  "errorStartupBlocked": "启动已阻断：数据已保全，请使用配套旧版本打开或反馈修复"
+}

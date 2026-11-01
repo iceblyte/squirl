@@ -1,0 +1,7 @@
+minimumReleaseAgeExclude:
+  - '@tanstack/query-core@5.105.1'
+  - '@tanstack/react-query@5.105.1'
+  - '@tanstack/react-virtual@3.14.25'
+  - '@tanstack/virtual-core@3.19.10'
+  - i18next@26.6.0
+  - react-i18next@17.1.10
