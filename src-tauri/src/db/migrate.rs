@@ -1,0 +1,126 @@
+//! 迁移链（设计 §5.1.1 Schema v1 + DR-13）。
+//!
+//! `PRAGMA user_version` 对应需求的 `schema_version` 语义；
+//! 每条迁移在事务内执行（rusqlite_migration），SQL 失败自动回滚。
+
+use rusqlite::Connection;
+use rusqlite_migration::{M, Migrations};
+
+use crate::error::{AppError, Result};
+
+/// Schema v1 SQL（与设计 §5.1.1 逐字段一致；settings 单行 CHECK(id=1)，
+/// roots/projects 以 path_normalized UNIQUE 防重复登记——附录 A #13）。
+/// 常量为 C3 迁移失败演练提供可组合的基线。
+pub const SCHEMA_V1_SQL: &str = r#"
+        CREATE TABLE settings (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          default_mode TEXT NOT NULL DEFAULT 'external',
+          default_emulator TEXT,
+          default_shell TEXT,
+          load_shell_profile INTEGER NOT NULL DEFAULT 1,
+          scan_depth INTEGER NOT NULL DEFAULT 1 CHECK (scan_depth BETWEEN 1 AND 10)
+        );
+        INSERT INTO settings (id) VALUES (1);
+
+        CREATE TABLE roots (
+          id TEXT PRIMARY KEY,
+          path TEXT NOT NULL,
+          path_normalized TEXT NOT NULL UNIQUE,
+          enabled INTEGER NOT NULL DEFAULT 1
+        );
+
+        CREATE TABLE projects (
+          id TEXT PRIMARY KEY,
+          path TEXT NOT NULL,
+          path_normalized TEXT NOT NULL UNIQUE,
+          name TEXT NOT NULL,
+          note TEXT NOT NULL DEFAULT '',
+          exec_mode TEXT,
+          exec_emulator TEXT,
+          exec_shell TEXT,
+          created_at TEXT NOT NULL,
+          last_run_at TEXT,
+          run_count INTEGER NOT NULL DEFAULT 0
+        );
+
+        CREATE TABLE commands (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          command_line TEXT NOT NULL,
+          cwd TEXT,
+          last_run_at TEXT,
+          last_exit_code INTEGER
+        );
+        CREATE INDEX idx_commands_project ON commands(project_id);
+        "#;
+
+/// Schema v1 迁移链。
+pub fn schema_v1_migrations() -> Migrations<'static> {
+    Migrations::new(vec![M::up(SCHEMA_V1_SQL)])
+}
+
+pub fn user_version(conn: &Connection) -> u32 {
+    conn.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
+        .unwrap_or(0) as u32
+}
+
+/// 迁移后 sanity 检查（DR-13 语义错误防线）：
+/// 四张表 + 索引在位、settings 默认行存在。
+pub fn sanity_check(conn: &Connection) -> Result<()> {
+    let mut stmt = conn
+        .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+        .map_err(AppError::Db)?;
+    let tables: Vec<String> = stmt
+        .query_map([], |r| r.get(0))
+        .map_err(AppError::Db)?
+        .filter_map(|r| r.ok())
+        .collect();
+    for expected in ["settings", "roots", "projects", "commands"] {
+        if !tables.iter().any(|t| t == expected) {
+            return Err(AppError::MigrationBlocked(format!(
+                "sanity 失败：缺少表 {expected}"
+            )));
+        }
+    }
+    let idx: i64 = conn
+        .query_row(
+            "SELECT count(*) FROM sqlite_master WHERE type='index' AND name='idx_commands_project'",
+            [],
+            |r| r.get(0),
+        )
+        .map_err(AppError::Db)?;
+    if idx != 1 {
+        return Err(AppError::MigrationBlocked("sanity 失败：缺少命令索引".into()));
+    }
+    let settings_rows: i64 = conn
+        .query_row("SELECT count(*) FROM settings", [], |r| r.get(0))
+        .map_err(AppError::Db)?;
+    if settings_rows != 1 {
+        return Err(AppError::MigrationBlocked(
+            "sanity 失败：settings 单行表必须恰有 1 行".into(),
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn v1_migration_and_sanity_pass() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        schema_v1_migrations().to_latest(&mut conn).unwrap();
+        assert_eq!(user_version(&conn), 1);
+        sanity_check(&conn).unwrap();
+    }
+
+    #[test]
+    fn sanity_detects_dropped_table() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        schema_v1_migrations().to_latest(&mut conn).unwrap();
+        conn.execute("DROP TABLE commands", []).unwrap();
+        assert!(sanity_check(&conn).is_err());
+    }
+}
