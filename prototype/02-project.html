@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Squirl · 项目详情</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="canvas" id="canvas">
+      <div class="page">
+        <div class="detail-head">
+          <div class="dh-avatar" id="pAvatar">s</div>
+          <div class="dh-main">
+            <h1 id="pName">squirl</h1>
+            <div class="dh-meta">
+              <span class="pth" id="pPath">D:\Code\AICreate\ZCode\squirl</span>
+              <span class="tag hot" id="pModeTag">应用内运行</span>
+              <span id="pStatePill"></span>
+              <span class="tag" id="pRoot">D:\Projects</span>
+            </div>
+          </div>
+          <div class="dh-acts">
+            <button class="btn btn-sm" id="copyPath"><span class="ic-slot" data-ic="copy"></span>复制路径</button>
+            <button class="btn btn-sm" id="openDir"><span class="ic-slot" data-ic="external"></span>打开目录</button>
+            <button class="btn btn-sm" id="switchMode"><span class="ic-slot" data-ic="split"></span><span id="switchLabel">切换为外部终端</span></button>
+            <button class="btn btn-primary btn-lg" id="runPrimary"><span class="ic-slot" data-ic="play"></span><span id="runLabel">启动 dev</span></button>
+          </div>
+        </div>
+
+        <div id="noticeHost"></div>
+
+        <div class="detail-grid">
+          <div class="dcol">
+            <div class="card">
+              <div class="card-head">
+                <h3>备注</h3><span class="sp"></span>
+                <span class="mono" id="noteState">自动保存</span>
+              </div>
+              <div class="card-body">
+                <div class="note-edit">
+                  <textarea id="note" placeholder="这个项目为什么存在？核心功能是什么？进行到哪一步了？"></textarea>
+                  <span class="hint" id="noteCount">0 / 20,000</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h3>命令</h3><span class="ct" id="cmdCount">3</span>
+                <span class="hint">只保存你显式确认过的命令</span>
+                <span class="sp"></span>
+                <button class="btn btn-sm" id="addCmd"><span class="ic-slot" data-ic="plus"></span>新增命令</button>
+              </div>
+              <div class="card-body" style="padding:0">
+                <div class="cmd-rows" id="cmdRows" style="border:0;border-radius:0"></div>
+                <div style="padding:10px 12px;border-top:1px solid var(--line-soft)">
+                  <div class="tempbar">
+                    <div class="ti"><input id="tmpInput" placeholder="临时运行一条命令，例如 pnpm lint --fix"></div>
+                    <select class="select" id="tmpMode" aria-label="临时命令执行方式">
+                      <option value="builtin">应用内</option>
+                      <option value="external">外部终端</option>
+                    </select>
+                    <button class="btn btn-run" id="tmpRun"><span class="ic-slot" data-ic="play"></span>运行</button>
+                    <button class="btn" id="tmpSave"><span class="ic-slot" data-ic="plus"></span>保存为命令</button>
+                  </div>
+                  <div class="mono mt8">临时命令直接执行、不写入台账；想留下就点「保存为命令」。</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="logpanel" id="logPanel">
+              <div class="lp-head">
+                <span id="logPill"></span>
+                <span class="t" id="logMeta">run 7f3a91c2 · dev · 应用内 · 2m 14s</span>
+                <span class="sp"></span>
+                <button class="iconbtn" id="logCopy" title="复制全部日志" aria-label="复制全部日志"><span class="ic-slot" data-ic="copy"></span></button>
+                <button class="iconbtn" id="logFold" title="折叠日志" aria-label="折叠日志"><span class="ic-slot" data-ic="chevronDown"></span></button>
+                <button class="btn btn-sm btn-danger" id="stopBtn"><span class="ic-slot" data-ic="stop"></span>停止</button>
+              </div>
+              <div class="lp-body" id="logBody"></div>
+              <div class="lp-foot">
+                <span>只读日志 · 环形缓冲 5,000 行 / 2MB</span>
+                <span class="sp"></span>
+                <span id="logTail">已跟随末尾</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="dcol">
+            <div class="card">
+              <div class="card-head"><h3>执行配置</h3><span class="sp"></span><span class="mono">覆盖全局默认</span></div>
+              <div class="card-body">
+                <div class="ov-row">
+                  <span class="k">启动方式</span>
+                  <select class="select wide" id="modeSel">
+                    <option value="builtin">应用内运行（可看日志）</option>
+                    <option value="external">外部终端（默认）</option>
+                  </select>
+                </div>
+                <div class="ov-row">
+                  <span class="k">终端模拟器</span>
+                  <select class="select wide" id="emuSel">
+                    <option>Windows Terminal</option>
+                    <option>PowerShell 控制台</option>
+                    <option>cmd.exe</option>
+                  </select>
+                </div>
+                <div class="ov-row">
+                  <span class="k">Shell</span>
+                  <select class="select wide" id="shellSel">
+                    <option>pwsh 7+</option>
+                    <option>Windows PowerShell 5.1</option>
+                    <option>Git Bash</option>
+                  </select>
+                </div>
+                <div class="ov-row">
+                  <span class="k">工作目录</span>
+                  <select class="select wide" id="cwdSel">
+                    <option>项目根目录</option>
+                    <option>自定义（子目录）</option>
+                  </select>
+                </div>
+                <div class="ov-row">
+                  <span class="k">附加参数</span>
+                  <select class="select wide" id="argSel">
+                    <option>不追加</option>
+                    <option>--port 5173</option>
+                    <option>--verbose</option>
+                  </select>
+                </div>
+                <div class="ov-eff" id="ovEff">wt.exe -d "D:\Code\AICreate\ZCode\squirl" pwsh -NoExit -Command "pnpm dev"</div>
+                <div class="mono mt8">转义由适配器模板负责；命令原文作为事实记录，后端不二次解析。</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3>信息</h3><span class="sp"></span><span class="mono" id="pId">p1</span></div>
+              <div class="card-body">
+                <div class="meta-row"><span class="k">路径</span><span class="v mono" id="mPath">D:\Code\AICreate\ZCode\squirl</span></div>
+                <div class="meta-row"><span class="k">所属根目录</span><span class="v" id="mRoot">D:\Projects</span></div>
+                <div class="meta-row"><span class="k">登记时间</span><span class="v" id="mCreated">2026-10-12</span></div>
+                <div class="meta-row"><span class="k">最近运行</span><span class="v" id="mLastRun">2 分钟前</span></div>
+                <div class="meta-row"><span class="k">启动次数</span><span class="v" id="mRuns">84 次</span></div>
+                <div class="meta-row"><span class="k">当前 run</span><span class="v mono" id="mRun">7f3a91c2</span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3>最近运行</h3><span class="sp"></span><a class="mono" href="03-run-states.html">全部 →</a></div>
+              <div class="card-body">
+                <div class="u-col g8" id="runRows"></div>
+              </div>
+            </div>
+
+            <div class="banner info">
+              <span class="ic-slot" data-ic="shield"></span>
+              <div><span class="bi">边界</span>应用内启动的进程在退出时全部收回；外部终端里启动的进程归终端所有，Squirl 不会去碰它。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/icons.js"></script>
+<script src="assets/mock.js"></script>
+<script src="assets/ui.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  var M = MOCK;
+  var pid = (location.search.match(/[?&]id=([^&]*)/) || [])[1] || 'p1';
+  var p = M.projectById(decodeURIComponent(pid));
+
+  var el = function (id) { return document.getElementById(id); };
+  var logLines = 0;
+  var logTimer = null;
+  var running = false;
+
+  /* ---------- 基本渲染 ---------- */
+  function rootPath() {
+    var r = M.roots.filter(function (x) { return x.id === p.rootId; })[0];
+    return r ? r.path : '手动登记（扫描不刷新）';
+  }
+
+  function renderHeader() {
+    el('pAvatar').textContent = p.name.slice(0, 1).toUpperCase();
+    el('pName').textContent = p.name;
+    el('pPath').textContent = p.path;
+    el('pPath').title = p.path;
+    el('pStatePill').innerHTML = Sq.statusPill(p.missing ? 'missing' : p.state);
+    el('pRoot').textContent = rootPath();
+    el('mPath').textContent = p.path;
+    el('mRoot').textContent = rootPath();
+    el('mCreated').textContent = p.createdAt;
+    el('mLastRun').textContent = p.lastRun || '未运行';
+    el('mRuns').textContent = p.runs + ' 次';
+    el('mRun').textContent = running ? '7f3a91c2' : '—';
+    el('pId').textContent = p.id;
+    renderMode();
+    el('note').value = p.note || '';
+    countNote();
+  }
+
+  function renderMode() {
+    var builtin = p.mode === 'builtin';
+    el('pModeTag').textContent = builtin ? '应用内运行' : '外部终端';
+    el('pModeTag').className = 'tag ' + (builtin ? 'hot' : '');
+    el('switchLabel').textContent = builtin ? '切换为外部终端' : '切换为应用内运行';
+    el('modeSel').value = builtin ? 'builtin' : 'external';
+    var primary = p.commands.filter(function (c) { return c.state === 'running' || c.state === 'starting'; })[0] ||
+      p.commands[0];
+    var line = primary ? primary.line : 'pnpm dev';
+    el('ovEff').textContent = builtin
+      ? 'pwsh -NoLogo -NoProfile -Command "' + line + '"   ·   Job Object / setsid 监管'
+      : 'wt.exe -d "' + p.path + '" pwsh -NoExit -Command "' + line + '"';
+    el('runLabel').textContent = (running ? '停止 ' : '启动 ') + (primary ? primary.name : '命令');
+  }
+
+  function countNote() {
+    var v = el('note').value;
+    el('noteCount').textContent = v.length.toLocaleString() + ' / 20,000';
+  }
+
+  /* ---------- 命令 ---------- */
+  function renderCommands() {
+    el('cmdCount').textContent = p.commands.length;
+    if (!p.commands.length) {
+      el('cmdRows').innerHTML = '<div class="cmd-empty">还没有保存命令。先在下方临时运行一条，跑通后点「保存为命令」。</div>';
+      return;
+    }
+    el('cmdRows').innerHTML = p.commands.map(function (c) {
+      return '<div class="cmd-row ' + (c.state === 'running' ? 'running' : '') + '" data-c="' + c.id + '">' +
+        '<div class="nm">' + Sq.esc(c.name) + '</div>' +
+        '<div class="ln" title="' + Sq.esc(c.line) + '">' + Sq.esc(c.line) + '</div>' +
+        (c.cwd ? '<div class="cwd" title="' + Sq.esc(c.cwd) + '">' + Sq.esc(c.cwd) + '</div>' : '') +
+        '<div class="tm">' + (c.lastRun || '未运行') + '</div>' +
+        '<div class="st">' + Sq.statusPill(c.state) + '</div>' +
+        '<div class="ca">' +
+          '<button class="iconbtn" data-run title="运行"><span class="ic-slot">' + icon('play') + '</span></button>' +
+          '<button class="iconbtn" data-edit title="编辑"><span class="ic-slot">' + icon('edit') + '</span></button>' +
+          '<button class="iconbtn danger" data-del title="删除"><span class="ic-slot">' + icon('trash') + '</span></button>' +
+        '</div></div>';
+    }).join('');
+
+    Sq.qa('[data-c]', el('cmdRows')).forEach(function (row) {
+      var c = p.commands.filter(function (x) { return x.id === row.dataset.c; })[0];
+      row.querySelector('[data-run]').addEventListener('click', function (e) { e.stopPropagation(); startRun(c); });
+      row.querySelector('[data-edit]').addEventListener('click', function (e) { e.stopPropagation(); editCmd(c); });
+      row.querySelector('[data-del]').addEventListener('click', function (e) { e.stopPropagation(); delCmd(c); });
+    });
+  }
+
+  function cmdDialog(c) {
+    var isNew = !c;
+    Sq.dialog({
+      title: isNew ? '新增命令' : '编辑命令',
+      desc: '命令原文会按你写的样子保存；按键触发与转义由启动适配器负责。',
+      body: '<div class="u-col g10">' +
+        '<label><span class="mono">名称</span><input class="input mt8" id="cdName" placeholder="dev / build / test" value="' + (c ? Sq.esc(c.name) : '') + '"></label>' +
+        '<label><span class="mono">命令行</span><input class="input mono-in mt8" id="cdLine" placeholder="pnpm dev" value="' + (c ? Sq.esc(c.line) : '') + '"></label>' +
+        '<label><span class="mono">工作目录（留空 = 项目根）</span><input class="input mono-in mt8" id="cdCwd" placeholder="留空即项目根目录" value="' + (c && c.cwd ? Sq.esc(c.cwd) : '') + '"></label>' +
+        '</div>',
+      ok: isNew ? '保存' : '更新',
+      onOk: function () {
+        var name = (el('cdName').value || 'cmd').trim();
+        var line = (el('cdLine').value || '').trim();
+        if (!line) { Sq.toast('命令行不能为空', 'bad'); return; }
+        if (isNew) {
+          p.commands.push({ id: 'c' + Date.now(), name: name, line: line, cwd: el('cdCwd').value.trim() || null, lastRun: null, exit: null, state: 'idle' });
+        } else {
+          c.name = name; c.line = line; c.cwd = el('cdCwd').value.trim() || null;
+        }
+        renderCommands(); renderMode();
+        Sq.toast(isNew ? '已保存命令 <b>' + name + '</b>' : '已更新 <b>' + name + '</b>', 'ok', '显式保存，不会因临时运行而自动写入');
+      }
+    });
+  }
+
+  function editCmd(c) { cmdDialog(c); }
+
+  function delCmd(c) {
+    Sq.dialog({
+      title: '删除命令「' + Sq.esc(c.name) + '」？',
+      desc: '只从台账中移除这条记录，不会影响项目目录内的任何文件。',
+      danger: true, ok: '删除',
+      onOk: function () {
+        p.commands = p.commands.filter(function (x) { return x.id !== c.id; });
+        renderCommands(); renderMode();
+        Sq.toast('已删除命令 <b>' + Sq.esc(c.name) + '</b>', 'ok');
+      }
+    });
+  }
+
+  Sq.bind(el('addCmd'), 'click', function () { cmdDialog(null); });
+
+  /* ---------- 日志 ---------- */
+  function logHead() {
+    var st = running ? 'running'
+      : p.state === 'failed' ? 'failed'
+      : p.state === 'killed' ? 'killed'
+      : p.state === 'idle' || p.state === 'missing' ? 'idle'
+      : 'exited';
+    el('logPill').innerHTML = Sq.statusPill(st);
+    el('logMeta').textContent = (running ? 'run 7f3a91c2 · ' : 'run c5d2f8a1 · ') +
+      (p.commands[0] ? p.commands[0].name : 'dev') + ' · ' + (p.mode === 'builtin' ? '应用内' : '外部终端') +
+      ' · ' + (running ? '2m 14s' : '18s');
+  }
+
+  function appendLog(lines, cls) {
+    var body = el('logBody');
+    var atBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 8;
+    lines.forEach(function (l) {
+      logLines++;
+      var d = document.createElement('div');
+      d.className = 'lp-line';
+      d.innerHTML = '<span class="sn">' + logLines + '</span><span class="tx ' + (l.c || cls || '') + '">' + Sq.esc(l.t) + '</span>';
+      body.appendChild(d);
+    });
+    if (atBottom) body.scrollTop = body.scrollHeight;
+    el('logTail').textContent = '跟随末尾 · ' + logLines + ' 行';
+  }
+
+  function seedLog() {
+    el('logBody').innerHTML = '';
+    logLines = 0;
+    M.log.forEach(function (l) { appendLog([l]); });
+    el('logBody').scrollTop = el('logBody').scrollHeight;
+  }
+
+  function startRun(c) {
+    if (!c) {
+      Sq.toast('这个项目还没有保存命令', 'info', '在下方临时运行一条，跑通后点「保存为命令」');
+      el('tmpInput').focus();
+      return;
+    }
+    running = true;
+    p.mode = 'builtin';
+    p.state = 'starting';
+    c.state = 'starting';
+    p.commands.forEach(function (x) { if (x !== c) x.state = 'idle'; });
+    renderHeader(); renderCommands();
+    el('runLabel').textContent = '停止 ' + c.name;
+    seedLog();
+    appendLog([{ c: 'lp-rule', t: '──── 启动 ' + c.name + ' · ' + c.line + ' ────────────────' }]);
+    appendLog([{ c: 'lp-dim', t: '正在派生进程 · Job Object 已创建 · 等待第一行输出…' }]);
+    logHead();
+    Sq.toast('正在启动 <b>' + c.name + '</b>', 'info', '应用内运行 · 等待首行输出（超时 3 秒会提示）');
+    setTimeout(function () {
+      if (!running) return;
+      p.state = 'running'; c.state = 'running';
+      renderHeader(); renderCommands();
+      appendLog([
+        { c: 'lp-ok', t: '  VITE v8.3.2  ready in 312 ms' },
+        { c: '', t: '' },
+        { c: 'lp-ok', t: '  ➜  Local:   http://localhost:5173/' }
+      ]);
+      logHead();
+      startStream();
+    }, 1000);
+  }
+
+  function startStream() {
+    clearInterval(logTimer);
+    var i = 0;
+    logTimer = setInterval(function () {
+      if (!running) return;
+      var l = M.newLogLines[i % M.newLogLines.length];
+      appendLog([l]);
+      i++;
+    }, 2200);
+  }
+
+  function stopRun(quiet) {
+    running = false;
+    clearInterval(logTimer);
+    p.state = 'killed';
+    p.commands.forEach(function (c) { if (c.state === 'running' || c.state === 'starting') c.state = 'killed'; });
+    renderHeader(); renderCommands(); logHead();
+    appendLog([
+      { c: 'lp-rule', t: '──── 进程树结束 ────────────────' },
+      { c: 'lp-warn', t: '  收到停止请求 · 3 个进程已结束 · exit code 143' },
+      { c: 'lp-dim', t: '  Job Object 回收完成，无残留子进程' }
+    ]);
+    el('runLabel').textContent = '启动 ' + (p.commands[0] ? p.commands[0].name : '命令');
+    if (!quiet) Sq.toast('已停止 <b>' + p.name + '</b>', 'ok', '整个进程树已结束（3 个进程）· 日志保留在本会话内存');
+  }
+
+  Sq.bind(el('stopBtn'), 'click', function () {
+    if (!running) { Sq.toast('当前没有运行中的会话', 'info'); return; }
+    Sq.dialog({
+      title: '结束这次运行？',
+      desc: '将结束整个进程树（含子进程）。应用内会话结束后日志仍可回看，直到应用退出。',
+      body: '<div class="banner warn"><span class="bi">影响范围</span>run <b>7f3a91c2</b> · pnpm dev · 3 个进程。外部终端里的进程不受影响。</div>',
+      danger: true, ok: '结束运行', cancel: '继续运行',
+      onOk: function () { stopRun(false); }
+    });
+  });
+
+  Sq.bind(el('runPrimary'), 'click', function () {
+    if (running) {
+      Sq.toast('运行中，请用日志面板的「停止」结束会话', 'info');
+      el('stopBtn').focus();
+      return;
+    }
+    startRun(p.commands[0] || null);
+  });
+  Sq.bind(el('logCopy'), 'click', function () {
+    var text = Array.prototype.map.call(el('logBody').querySelectorAll('.lp-line'), function (l) {
+      return l.textContent.replace(/^\s*\d+\s*/, '');
+    }).join('\n');
+    function done() { Sq.toast('已复制 <b>' + logLines + '</b> 行日志', 'ok', '仅复制当前会话内存中的内容'); }
+    try {
+      navigator.clipboard.writeText(text).then(done, done);
+    } catch (e) { done(); }
+  });
+
+  Sq.bind(el('logFold'), 'click', function () {
+    var body = el('logBody');
+    body.classList.toggle('collapsed');
+    this.style.transform = body.classList.contains('collapsed') ? 'rotate(180deg)' : '';
+    this.title = body.classList.contains('collapsed') ? '展开日志' : '折叠日志';
+  });
+
+  /* ---------- 临时命令 ---------- */
+  function tmpRun() {
+    var v = el('tmpInput').value.trim();
+    if (!v) { el('tmpInput').focus(); Sq.toast('先输入一条临时命令', 'info'); return; }
+    p.mode = el('tmpMode').value === 'builtin' ? 'builtin' : 'external';
+    renderMode();
+    appendLog([
+      { c: 'lp-rule', t: '──── 临时命令 · 不落库 ────────────────' },
+      { c: 'lp-dim', t: '$ ' + v },
+      { c: 'lp-ok', t: '  （原型示意）命令已在 ' + (p.mode === 'builtin' ? '应用内会话' : '外部终端') + ' 中执行' }
+    ]);
+    el('tmpInput').value = '';
+    Sq.toast('已运行临时命令', 'ok', '不会写入台账；需要复用请点「保存为命令」');
+  }
+  Sq.bind(el('tmpRun'), 'click', tmpRun);
+  el('tmpInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') tmpRun(); });
+
+  Sq.bind(el('tmpSave'), 'click', function () {
+    var v = el('tmpInput').value.trim();
+    if (!v) { el('tmpInput').focus(); Sq.toast('先输入一条临时命令，再保存', 'info'); return; }
+    Sq.dialog({
+      title: '保存为常用命令',
+      desc: '保存后它会出现在命令列表和台账卡片的命令胶囊里。',
+      body: '<div class="u-col g10">' +
+        '<label><span class="mono">名称</span><input class="input mt8" id="scName" value="' + Sq.esc(v.split(' ')[0]) + '"></label>' +
+        '<label><span class="mono">命令行</span><input class="input mono-in mt8" id="scLine" value="' + Sq.esc(v) + '"></label></div>',
+      ok: '保存',
+      onOk: function () {
+        var name = (el('scName').value || 'cmd').trim();
+        p.commands.push({ id: 'c' + Date.now(), name: name, line: el('scLine').value.trim(), cwd: null, lastRun: null, exit: null, state: 'idle' });
+        renderCommands(); renderMode();
+        el('tmpInput').value = '';
+        Sq.toast('已保存命令 <b>' + name + '</b>', 'ok');
+      }
+    });
+  });
+
+  /* ---------- 配置 ---------- */
+  function syncMode(v) {
+    p.mode = v;
+    renderMode();
+    Sq.toast('启动方式已切换为 <b>' + (v === 'builtin' ? '应用内运行' : '外部终端') + '</b>', 'ok',
+      v === 'builtin' ? '可实时查看日志，退出应用时进程会被收回' : '归终端所有，Squirl 不会回收该进程');
+  }
+  el('modeSel').addEventListener('change', function () { syncMode(this.value); });
+  Sq.bind(el('switchMode'), 'click', function () { syncMode(p.mode === 'builtin' ? 'external' : 'builtin'); });
+
+  ['emuSel', 'shellSel', 'cwdSel', 'argSel'].forEach(function (id) {
+    el(id).addEventListener('change', function () {
+      var primary = p.commands[0];
+      var line = primary ? primary.line : 'pnpm dev';
+      var builtin = p.mode === 'builtin';
+      el('ovEff').textContent = builtin
+        ? el('shellSel').value + ' -NoLogo -Command "' + line + (el('argSel').value !== '不追加' ? ' ' + el('argSel').value : '') + '"'
+        : el('emuSel').value + ' -d "' + p.path + '" ' + el('shellSel').value + ' -NoExit -Command "' + line + '"';
+      Sq.toast('执行配置已更新', 'ok', '仅作用于这个项目，不影响全局默认');
+    });
+  });
+
+  /* ---------- 备注 ---------- */
+  var noteTimer;
+  el('note').addEventListener('input', function () {
+    countNote();
+    el('noteState').textContent = '编辑中…';
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(function () {
+      p.note = el('note').value;
+      el('noteState').textContent = '已自动保存 · 本地';
+    }, 700);
+  });
+
+  /* ---------- 其它 ---------- */
+  Sq.bind(el('copyPath'), 'click', function () {
+    function done() { Sq.toast('已复制项目路径', 'ok', p.path); }
+    try { navigator.clipboard.writeText(p.path).then(done, done); } catch (e) { done(); }
+  });
+
+  Sq.bind(el('openDir'), 'click', function () {
+    Sq.toast('已在资源管理器中打开', 'ok', p.path);
+  });
+
+  function renderRuns() {
+    var rows = [
+      { s: 'running', n: 'dev', t: '2 分钟前' },
+      { s: 'exited', n: 'tauri:dev', t: '昨天 18:40' },
+      { s: 'killed', n: 'tauri:dev', t: '昨天 18:40' }
+    ];
+    el('runRows').innerHTML = rows.map(function (r) {
+      return '<div class="u-row g8" style="font-size:10.5px;padding:4px 0;border-bottom:1px solid var(--line-soft)">' +
+        Sq.statusPill(r.s) +
+        '<span class="mono" style="color:var(--ink-2)">' + r.n + '</span>' +
+        '<span class="sp"></span><span class="mono">' + r.t + '</span></div>';
+    }).join('');
+  }
+
+  function renderNotice() {
+    if (p.missing) {
+      el('noticeHost').innerHTML = '<div class="banner bad" style="margin-bottom:12px"><div><span class="bi">路径失效</span>' +
+        '这个项目登记的路径不存在。命令被禁用，重新定位后即可继续使用；台账记录不会自动删除。</div>' +
+        '<div class="bact"><button class="btn btn-sm" id="relocate">重新定位</button><button class="btn btn-sm btn-ghost" id="removeProj">移出台账</button></div></div>';
+      Sq.bind(el('relocate'), 'click', function () { Sq.toast('请选择新的项目目录', 'info', '原型示意：选择后将更新登记路径'); });
+      Sq.bind(el('removeProj'), 'click', function () {
+        Sq.dialog({ title: '移出台账？', desc: '只删除台账记录，项目目录不受影响。', danger: true, ok: '移出', onOk: function () { location.href = '01-home.html'; } });
+      });
+      return;
+    }
+    if (p.state === 'failed') {
+      el('noticeHost').innerHTML = '<div class="banner bad" style="margin-bottom:12px"><div><span class="bi">上次运行失败 · exit 1</span>' +
+        '进程在 18 秒后退出。日志末尾通常就是原因，修正后可直接重试。</div>' +
+        '<div class="bact"><button class="btn btn-sm" id="retry">查看错误并重试</button></div></div>';
+      Sq.bind(el('retry'), 'click', function () { Sq.toast('已定位到错误行', 'info', 'E09282 行：无法找到 C++ 构建工具链'); });
+    }
+  }
+
+  /* ---------- 启动 ---------- */
+  SqShell.mount({
+    active: 'project',
+    crumb: [{ label: 'Squirl' }, { label: '项目台账', href: '01-home.html' }, { label: p.name }],
+    search: '搜索项目…',
+    actions: '<a class="btn btn-sm btn-ghost" href="01-home.html">' + icon('chevronLeft') + '返回台账</a>'
+  });
+
+  document.querySelectorAll('[data-ic]').forEach(function (x) { x.innerHTML = icon(x.dataset.ic); });
+
+  // 先确定运行态，再渲染头部/命令/日志头，避免「项目运行中但信息卡与日志显示未运行」的自相矛盾
+  running = (p.state === 'running' || p.state === 'starting');
+
+  renderHeader();
+  renderCommands();
+  renderRuns();
+  renderNotice();
+  seedLog();
+  logHead();
+  if (running) startStream();
+
+  // 原型提示：说明这是可交互页面
+  setTimeout(function () {
+    Sq.toast('这是可交互原型', 'info', '点命令行的 ▶ 启动、切执行方式、改备注都会即时反馈');
+  }, 800);
+})();
+</script>
+</body>
+</html>

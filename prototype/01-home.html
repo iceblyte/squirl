@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Squirl · 项目台账</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="canvas" id="canvas">
+      <div class="page">
+        <div class="page-head">
+          <div class="pt">
+            <h1>项目台账</h1>
+            <div class="sub">
+              <span><b id="regNum">8</b> 个项目</span>
+              <span class="sep"></span>
+              <span>3 个根目录</span>
+              <span class="sep"></span>
+              <span>上次扫描 <span class="mono lg" id="scanAt">2 分钟前</span></span>
+              <span class="tag hot" id="scanHits">命中 37 个目录</span>
+            </div>
+          </div>
+          <div class="acts">
+            <select class="select" id="sortSel" aria-label="排序">
+              <option value="recent">最近运行优先</option>
+              <option value="name">按名称</option>
+              <option value="cmds">按命令数</option>
+              <option value="created">按登记时间</option>
+            </select>
+            <div class="seg" id="viewSeg" aria-label="视图切换">
+              <button class="on" data-value="grid"><span class="ic-slot" data-ic="grid"></span>卡片</button>
+              <button data-value="list"><span class="ic-slot" data-ic="list"></span>列表</button>
+            </div>
+            <button class="btn" id="scanBtn"><span class="ic-slot" data-ic="refresh"></span>扫描根目录</button>
+            <button class="btn btn-primary" id="newBtn"><span class="ic-slot" data-ic="plus"></span>登记项目</button>
+          </div>
+        </div>
+
+        <div id="bannerHost"></div>
+
+        <div class="sec-head">
+          <h2>已登记</h2>
+          <span class="ct" id="regCount">8</span>
+          <span class="hint">台账是事实：扫描只做发现，登记才写入数据库</span>
+          <span class="sp"></span>
+          <span class="hint mono" id="shown">显示全部</span>
+        </div>
+
+        <div class="grid-projects" id="grid"></div>
+        <div class="list-projects hide" id="list"></div>
+
+        <div class="empty hide" id="empty">
+          <div class="ic"><span class="ic-slot" data-ic="search"></span></div>
+          <h3>没有匹配的项目</h3>
+          <p>搜索覆盖项目名、路径、备注与已保存命令；换个关键词，或直接手动登记一个新项目。</p>
+          <div class="ea">
+            <button class="btn" id="clearQ">清空搜索</button>
+            <button class="btn btn-primary" id="emptyNew"><span class="ic-slot" data-ic="plus"></span>登记项目</button>
+          </div>
+        </div>
+
+        <section class="discovery">
+          <div class="dis-head">
+            <button class="dis-toggle" id="disToggle" aria-expanded="true" aria-controls="disBody">
+              <span class="cv" data-ic="chevronDown"></span>
+              <h2>本次发现</h2>
+            </button>
+            <span class="ct" id="disCount">10</span>
+            <span class="hint">扫描命中但尚未登记 · 会话结束即丢弃，不落库</span>
+            <span class="sp"></span>
+            <div class="acts">
+              <button class="btn btn-sm btn-ghost" id="disAll">全部登记</button>
+              <button class="btn btn-sm" id="disHide">收起</button>
+            </div>
+          </div>
+          <div class="dis-body" id="disBody"></div>
+          <div class="dis-more" id="disMore">已显示 10 / 37 · 深度 1 · 命中名单参与排除规则（node_modules / target / dist 等）</div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/icons.js"></script>
+<script src="assets/mock.js"></script>
+<script src="assets/ui.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  var M = MOCK;
+  var view = 'grid';
+  var sort = 'recent';
+  var q = (function () {
+    var m = location.search.match(/[?&]q=([^&]*)/);
+    return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+  })();
+
+  var grid = document.getElementById('grid');
+  var listEl = document.getElementById('list');
+  var empty = document.getElementById('empty');
+
+  function match(p) {
+    if (!q) return true;
+    var hay = [p.name, p.path, p.note || ''].concat(p.commands.map(function (c) { return c.name + ' ' + c.line; }))
+      .join(' ').toLowerCase();
+    return hay.indexOf(q.toLowerCase()) !== -1;
+  }
+
+  function sortList(a, b) {
+    if (sort === 'name') return a.name.localeCompare(b.name);
+    if (sort === 'cmds') return b.commands.length - a.commands.length;
+    if (sort === 'created') return b.createdAt.localeCompare(a.createdAt);
+    var ra = a.state === 'running' || a.state === 'starting' ? 2 : 0;
+    var rb = b.state === 'running' || b.state === 'starting' ? 2 : 0;
+    if (ra !== rb) return rb - ra;
+    return (b.lastRun || '').localeCompare(a.lastRun || '');
+  }
+
+  function render() {
+    var list = M.projects.filter(match).sort(sortList);
+    grid.innerHTML = list.map(Sq.projectCard).join('');
+    listEl.innerHTML = list.map(Sq.listRow).join('');
+
+    document.getElementById('regNum').textContent = M.projects.length;
+    document.getElementById('regCount').textContent = M.projects.length;
+    document.getElementById('shown').textContent = q ? ('匹配 ' + list.length + ' 项 · “' + q + '”') : '显示全部';
+
+    empty.classList.toggle('hide', list.length > 0);
+    grid.classList.toggle('hide', view !== 'grid' || !list.length);
+    listEl.classList.toggle('hide', view !== 'list' || !list.length);
+
+    bindCards();
+  }
+
+  function bindCards() {
+    Sq.qa('.pcard, .lrow', canvasEl()).forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        var chip = e.target.closest('[data-cmd]');
+        var p = M.projectById(el.dataset.id);
+        if (chip) {
+          e.stopPropagation();
+          if (chip.dataset.cmd === 'new') { Sq.goProject(p.id); return; }
+          var c = p.commands.filter(function (x) { return x.id === chip.dataset.cmd; })[0];
+          start(p, c);
+          return;
+        }
+        Sq.goProject(p.id);
+      });
+    });
+  }
+
+  function canvasEl() { return document.getElementById('canvas'); }
+
+  function start(p, c) {
+    if (!c) { Sq.goProject(p.id); return; }
+    p.state = 'running';
+    c.state = 'running';
+    p.lastRun = '刚刚';
+    p.runs += 1;
+    Sq.toast('已在外部终端启动 <b>' + p.name + '</b> · ' + c.name, 'ok', '命令：' + c.line + '　·　可在设置中改为应用内运行');
+    render();
+    updateNavCount();
+  }
+
+  function updateNavCount() {
+    var n = document.querySelector('.nav a[href="01-home.html"] .n');
+    if (n) n.textContent = M.projects.length;
+  }
+
+  /* 视图切换 */
+  Sq.bindSegs(document.getElementById('viewSeg'));
+  document.getElementById('viewSeg').addEventListener('segchange', function (e) {
+    view = e.detail.value;
+    render();
+  });
+
+  /* 排序 */
+  Sq.bind(document.getElementById('sortSel'), 'change', function (e) {
+    sort = e.target.value;
+    render();
+  });
+
+  /* 搜索（外壳注入的输入框） */
+  function setBannerScan(on) {
+    document.getElementById('bannerHost').innerHTML = on
+      ? '<div class="banner info" style="margin-bottom:14px"><span class="ic-slot" data-ic="refresh"></span>' +
+        '<div><span class="bi">扫描中</span>正在遍历 3 个根目录（深度 1），命中 500 条将暂停并等待你确认。</div></div>'
+      : '';
+    var slot = document.querySelector('#bannerHost [data-ic]');
+    if (slot) slot.innerHTML = icon(slot.dataset.ic);
+  }
+
+  document.getElementById('scanBtn').addEventListener('click', function () {
+    var btn = this;
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="ic-slot">' + icon('refresh') + '</span>扫描中…';
+    setBannerScan(true);
+    Sq.toast('扫描已开始', 'info', '后台任务 · 不阻塞界面 · 可随时暂停');
+    setTimeout(function () {
+      M.settings.lastScanAt = '刚刚';
+      M.settings.lastScanCount = 41;
+      document.getElementById('scanAt').textContent = '刚刚';
+      document.getElementById('scanHits').textContent = '命中 41 个目录';
+      btn.disabled = false;
+      btn.innerHTML = '<span class="ic-slot">' + icon('refresh') + '</span>扫描根目录';
+      setBannerScan(false);
+      Sq.toast('扫描完成 · 发现 <b>4</b> 个新目录', 'ok', '用时 386 ms · 已加入“本次发现”，登记后才会写入台账');
+      document.getElementById('disMore').textContent = '已显示 10 / 41 · 新增 4 条将在下一次渲染中出现';
+    }, 1500);
+  });
+
+  /* 清空搜索 */
+  function clearSearch() {
+    q = '';
+    var input = document.getElementById('sqSearch');
+    if (input) input.value = '';
+    render();
+  }
+  Sq.bind(document.getElementById('clearQ'), 'click', clearSearch);
+
+  /* 登记新项目 */
+  function newDialog() {
+    Sq.dialog({
+      title: '登记一个项目',
+      desc: '扫描之外的手动入口。登记只写应用自己的数据目录，不改动项目内的任何文件。',
+      body: '<div class="u-col g10">' +
+        '<label class="set-row" style="display:block;padding:0;border:0"><span class="sl"><b>项目名</b></span>' +
+        '<input class="input mt8" id="npName" placeholder="例如 notes-vault"></label>' +
+        '<label class="set-row" style="display:block;padding:0;border:0"><span class="sl"><b>项目路径</b></span>' +
+        '<input class="input mono-in mt8" id="npPath" placeholder="D:\\Projects\\notes-vault"></label>' +
+        '<label class="set-row" style="display:block;padding:0;border:0"><span class="sl"><b>备注（可留空）</b></span>' +
+        '<textarea class="input mt8" id="npNote" placeholder="记下它为什么在这里，未来会省下找回它的时间。"></textarea></label>' +
+        '</div>',
+      ok: '登记',
+      onOk: function () {
+        var name = (document.getElementById('npName').value || 'new-project').trim();
+        var path = (document.getElementById('npPath').value || 'D:\\Projects\\' + name).trim();
+        var note = document.getElementById('npNote').value.trim();
+        M.projects.unshift({
+          id: 'p' + (M.projects.length + 1), name: name, path: path, rootId: null, note: note,
+          mode: null, state: 'idle', lastRun: null, runs: 0, createdAt: '2026-11-01', commands: []
+        });
+        sqCalc();
+        render();
+        updateNavCount();
+        Sq.toast('已登记 <b>' + name + '</b>', 'ok', '下一步：在详情页保存一条命令，之后就能一键启动');
+      }
+    });
+    var f = document.getElementById('npName');
+    if (f) setTimeout(function () { f.focus(); }, 60);
+  }
+  Sq.bind(document.getElementById('newBtn'), 'click', newDialog);
+  Sq.bind(document.getElementById('emptyNew'), 'click', newDialog);
+
+  /* 本次发现 */
+  var disBody = document.getElementById('disBody');
+  function renderDiscovery() {
+    var pending = M.discovery.filter(function (d) { return !d.done; });
+    disBody.innerHTML = pending.map(Sq.discoveryRow).join('');
+    document.getElementById('disCount').textContent = pending.length;
+    document.getElementById('disMore').textContent = pending.length
+      ? '已显示 ' + pending.length + ' / 37 · 深度 1 · 排除 node_modules / target / dist / .venv 等目录'
+      : '本次发现的目录已全部登记 · 扫描会话结束';
+    Sq.qa('[data-reg]', disBody).forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        registerOne(b.dataset.reg);
+      });
+    });
+  }
+
+  function registerOne(id) {
+    var d = M.discovery.filter(function (x) { return x.id === id; })[0];
+    if (!d || d.done) return;
+    d.done = true;
+    var name = d.name;
+    var path = d.root + '\\' + d.rel.split('/').slice(1).join('\\');
+    M.projects.unshift({
+      id: 'p' + (M.projects.length + 1), name: name, path: path, rootId: null, note: '',
+      mode: null, state: 'idle', lastRun: null, runs: 0, createdAt: '2026-11-01',
+      commands: [], flags: d.flags
+    });
+    sqCalc();
+    render();
+    renderDiscovery();
+    updateNavCount();
+    Sq.toast('已登记 <b>' + name + '</b>', 'ok', '已从“本次发现”移入台账 · 可在详情页补充备注与命令');
+  }
+
+  Sq.bind(document.getElementById('disAll'), 'click', function () {
+    var added = [];
+    M.discovery.forEach(function (d) { if (!d.done) { d.done = true; added.push(d); } });
+    if (!added.length) { Sq.toast('没有待登记的目录', 'info'); return; }
+    added.forEach(function (d) {
+      M.projects.unshift({
+        id: 'p' + (M.projects.length + 1), name: d.name, path: d.root + '\\' + d.rel.split('/').slice(1).join('\\'),
+        rootId: null, note: '', mode: null, state: 'idle', lastRun: null, runs: 0,
+        createdAt: '2026-11-01', commands: [], flags: d.flags
+      });
+    });
+    sqCalc();
+    render();
+    renderDiscovery();
+    updateNavCount();
+    Sq.toast('已批量登记 <b>' + added.length + '</b> 个项目', 'ok', '备注与命令仍可在详情页逐个完善');
+  });
+
+  /* 折叠 / 展开 */
+  var disToggle = document.getElementById('disToggle');
+  var disHide = document.getElementById('disHide');
+  function setDis(open) {
+    disToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    disBody.classList.toggle('closed', !open);
+    disHide.textContent = open ? '收起' : '展开';
+  }
+  disToggle.addEventListener('click', function () {
+    setDis(this.getAttribute('aria-expanded') !== 'true');
+  });
+  Sq.bind(disHide, 'click', function () { setDis(disHide.textContent === '收起' ? false : true); });
+
+  /* 派生字段（mock 提供的同名逻辑，页面内重建） */
+  function sqCalc() {
+    M.projects.forEach(function (p) {
+      p.cmdCount = p.commands.length;
+      p.missing = p.state === 'missing';
+      p.badge = p.name.slice(0, 1).toUpperCase();
+    });
+  }
+
+  /* 挂载外壳 */
+  SqShell.mount({
+    active: 'ledger',
+    crumb: [{ label: 'Squirl' }, { label: '项目台账' }],
+    search: '搜索项目、路径、备注、命令…',
+    query: q,
+    onSearch: function (v) { q = v; render(); },
+    actions: '<a class="pill run" href="03-run-states.html" style="height:26px;padding:0 9px">' +
+      '<i></i>2 个会话活动</a>' +
+      '<button class="btn btn-sm btn-ghost" data-theme-quick>' + icon('sun') + '主题</button>'
+  });
+
+  // 顶栏的快捷主题按钮（与侧栏开关同一状态）
+  var tq = document.querySelector('[data-theme-quick]');
+  if (tq) tq.addEventListener('click', function () { SqShell.setTheme(SqShell.theme() === 'dark' ? 'light' : 'dark'); });
+
+  // 图标槽位
+  document.querySelectorAll('[data-ic]').forEach(function (el) { el.innerHTML = icon(el.dataset.ic); });
+
+  render();
+  renderDiscovery();
+  setDis(true);
+
+  // 首屏若无搜索词，给一个轻提示（仅首次进入）
+  if (!q) setTimeout(function () {
+    Sq.toast('试试点击卡片上的命令胶囊', 'info', '一键启动只认已保存的命令，临时命令不会进台账');
+  }, 900);
+})();
+</script>
+</body>
+</html>

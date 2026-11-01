@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Squirl · 设置</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="canvas" id="canvas">
+      <div class="page">
+        <div class="page-head">
+          <div class="pt">
+            <h1>设置</h1>
+            <div class="sub">
+              <span>所有更改即时保存</span>
+              <span class="sep"></span>
+              <span>数据目录 <span class="mono lg">%APPDATA%\squirl</span></span>
+              <span class="sep"></span>
+              <span>写入只发生在应用自己的数据目录</span>
+            </div>
+          </div>
+          <div class="acts">
+            <span class="pill ok" id="saveState" style="height:26px"><i></i>已保存</span>
+            <button class="btn" id="resetBtn"><span class="ic-slot" data-ic="refresh"></span>恢复默认</button>
+            <button class="btn btn-primary" id="openDataBtn"><span class="ic-slot" data-ic="folder"></span>打开数据目录</button>
+          </div>
+        </div>
+
+        <div id="topNotice"></div>
+
+        <div class="set-wrap">
+          <!-- 外观 -->
+          <div class="card">
+            <div class="card-head"><h3>外观</h3><span class="sp"></span><span class="mono">appearance</span></div>
+            <div class="card-body">
+              <div class="set-row">
+                <div class="sl"><b>主题</b><p>浅色为暖白纸感；深色保留同一套对比关系，不反转强调色语义。</p></div>
+                <div class="sc">
+                  <div class="seg" id="themeSeg">
+                    <button data-value="light">浅色</button>
+                    <button data-value="dark">深色</button>
+                    <button data-value="system">跟随系统</button>
+                  </div>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>强调色</b><p>橡果棕只用于选中态、主按钮与运行点，不铺满界面。</p></div>
+                <div class="sc">
+                  <span class="u-row g6"><span style="width:14px;height:14px;border-radius:4px;background:var(--acorn);border:1px solid var(--acorn-line)"></span>
+                    <span class="mono lg">橡果棕 #9C5A32</span><span class="tag hot">固定</span></span>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>默认视图</b><p>台账主页首次打开时的呈现方式，可随时手动切换。</p></div>
+                <div class="sc">
+                  <div class="seg" id="viewSeg">
+                    <button class="on" data-value="grid">卡片</button>
+                    <button data-value="list">列表</button>
+                  </div>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>信息密度</b><p>紧凑模式会收紧卡片内边距与行高，适合小屏笔记本电脑。</p></div>
+                <div class="sc">
+                  <div class="seg" id="densitySeg">
+                    <button class="on" data-value="normal">标准</button>
+                    <button data-value="compact">紧凑</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 常规 -->
+          <div class="card">
+            <div class="card-head"><h3>常规</h3><span class="sp"></span><span class="mono">general</span></div>
+            <div class="card-body">
+              <div class="set-row">
+                <div class="sl"><b>启动时恢复上次视图</b><p>回到上次停留的项目详情与视图模式，而不是每次打开主页。</p></div>
+                <div class="sc"><span class="tgl on" id="restoreTgl"></span></div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>关闭窗口后驻留托盘</b><p>P2 能力。MVP 关闭窗口即退出，并回收所有应用内进程。</p></div>
+                <div class="sc"><span class="tgl"></span><span class="tag">P2</span></div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>界面语言</b><p>MVP 仅有简体中文；文案与快捷键说明随语言切换。</p></div>
+                <div class="sc"><select class="select"><option>简体中文</option><option>English (P2)</option></select></div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>启动时检查更新</b><p>只在设置页展示版本信息，不静默下载安装包。</p></div>
+                <div class="sc"><span class="tgl on"></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 终端 -->
+          <div class="card">
+            <div class="card-head"><h3>终端与 Shell</h3><span class="sp"></span><span class="mono">execution</span></div>
+            <div class="card-body">
+              <div class="set-row">
+                <div class="sl"><b>默认启动方式</b><p>外部终端是默认；应用内运行可实时看日志，但退出时会被回收。</p></div>
+                <div class="sc">
+                  <div class="seg" id="modeSeg">
+                    <button class="on" data-value="external">外部终端</button>
+                    <button data-value="builtin">应用内运行</button>
+                  </div>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>终端模拟器</b><p>唤起外部终端时优先使用；不可用时回退到系统默认控制台。</p></div>
+                <div class="sc">
+                  <select class="select" id="emuSel">
+                    <option>Windows Terminal</option>
+                    <option>PowerShell 控制台</option>
+                    <option>cmd.exe</option>
+                  </select>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="sl">
+                  <b>Shell</b>
+                  <p>命令原文按各 shell 的转义规则传递；不在这里改写用户命令。</p>
+                  <div class="pathline" id="shellPath">C:\Program Files\PowerShell\7\pwsh.exe · 已检测到 pwsh 7.4</div>
+                </div>
+                <div class="sc">
+                  <select class="select" id="shellSel">
+                    <option>pwsh 7+</option>
+                    <option>Windows PowerShell 5.1</option>
+                    <option>Git Bash</option>
+                  </select>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>启动前载入 profile</b><p>把 profile 输出折叠成一行放在日志顶部，避免首屏被 7 行提示占满。</p></div>
+                <div class="sc"><span class="tgl on"></span><span class="tag hot">推荐</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 扫描 -->
+          <div class="card">
+            <div class="card-head">
+              <h3>扫描</h3><span class="sp"></span>
+              <button class="btn btn-sm btn-ghost" id="pauseDemo">模拟 500 条暂停</button>
+            </div>
+            <div class="card-body">
+              <div class="set-row">
+                <div class="sl"><b>扫描深度</b><p>默认深度 1：只认出根目录的直接子目录。每一层都会应用排除名单。</p></div>
+                <div class="sc">
+                  <div class="step" id="depthStep">
+                    <button data-d="-1" aria-label="减少">−</button>
+                    <span class="v" id="depthVal">1</span>
+                    <button data-d="1" aria-label="增加">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>启动时自动扫描</b><p>关闭时只在手动点击「扫描根目录」时遍历，避免启动瞬间占满磁盘。</p></div>
+                <div class="sc"><span class="tgl"></span></div>
+              </div>
+              <div class="set-row">
+                <div class="sl">
+                  <b>上次扫描</b>
+                  <p id="lastScan">2 分钟前 · 命中 37 个目录 · 用时 412 ms</p>
+                </div>
+                <div class="sc"><button class="btn" id="scanNow"><span class="ic-slot" data-ic="refresh"></span>立即扫描</button></div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>大批量暂停阈值</b><p>命中数超过阈值时暂停扫描，由你决定继续或缩小范围，不静默吞掉结果。</p></div>
+                <div class="sc"><select class="select" id="limitSel"><option>500 个目录</option><option>1,000 个目录</option><option>不暂停</option></select></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 根目录 -->
+          <div class="card set-full">
+            <div class="card-head">
+              <h3>扫描根目录</h3><span class="ct" id="rootCount">3</span>
+              <span class="hint">多根目录平级，不递归整盘；关闭的根目录保留记录但不再参与扫描</span>
+              <span class="sp"></span>
+              <button class="btn btn-sm" id="addRoot"><span class="ic-slot" data-ic="plus"></span>添加根目录</button>
+            </div>
+            <div class="card-body">
+              <div id="rootList"></div>
+              <div class="sec-head mt16" style="margin-bottom:6px">
+                <h2 style="font-size:11.5px">全局排除名单</h2>
+                <span class="hint">命中即跳过，不做深度遍历</span>
+                <span class="sp"></span>
+                <button class="btn btn-sm btn-ghost" id="editExcl">编辑</button>
+              </div>
+              <div class="excl" id="exclList"></div>
+              <div class="mk mt12" id="pauseHost"></div>
+            </div>
+          </div>
+
+          <!-- 数据与隐私 -->
+          <div class="card set-full">
+            <div class="card-head"><h3>数据与隐私</h3><span class="sp"></span><span class="mono">local-first</span></div>
+            <div class="card-body">
+              <div class="set-row">
+                <div class="sl">
+                  <b>数据目录</b>
+                  <p>SQLite（WAL）、配置与备份都写在这里；被管理的项目目录只读。</p>
+                  <div class="pathline">%APPDATA%\squirl\squirl.db · 12.4 MB · 上次备份 今天 09:20</div>
+                </div>
+                <div class="sc"><button class="btn" id="openData2"><span class="ic-slot" data-ic="folder"></span>打开</button></div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>滚动备份</b><p>每日快照保留 3 份；损坏时可在启动前恢复到最近可用版本。</p></div>
+                <div class="sc">
+                  <button class="btn btn-sm" id="backupNow">立即备份</button>
+                  <button class="btn btn-sm" id="restoreBtn">从备份恢复</button>
+                </div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>退出时回收应用内进程</b><p>关闭应用即结束所有应用内会话的进程树；外部终端里的进程不会被误杀。</p></div>
+                <div class="sc"><span class="tgl on"></span><span class="tag">INV-2</span></div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>进程回收宽限期</b><p>先请求正常退出，超时后强制结束；保证退出不挂起。</p></div>
+                <div class="sc"><select class="select"><option>2 秒（默认）</option><option>5 秒</option><option>立即强杀</option></select></div>
+              </div>
+              <div class="set-row">
+                <div class="sl"><b>清空台账数据</b><p>删除项目、命令与备注；不触碰任何项目目录，也不删除根目录配置。</p></div>
+                <div class="sc"><button class="btn btn-danger" id="clearBtn"><span class="ic-slot" data-ic="trash"></span>清空台账</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mono mt16">Squirl v0.1.0 · 原型 · 本页无真实写盘，刷新即恢复初始 mock 数据。</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/icons.js"></script>
+<script src="assets/mock.js"></script>
+<script src="assets/ui.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  var M = MOCK;
+  var el = function (id) { return document.getElementById(id); };
+  var rootList = el('rootList');
+  var excl = ['node_modules', '.git', 'dist', 'build', 'target', '.venv', 'vendor', '__pycache__'];
+
+  function saved() {
+    var s = el('saveState');
+    s.innerHTML = '<i></i>已保存';
+    s.className = 'pill ok';
+    s.style.height = '26px';
+    s.style.transition = 'opacity .2s';
+    s.style.opacity = '0.6';
+    setTimeout(function () { s.style.opacity = '1'; }, 320);
+  }
+  function change(msg, sub) {
+    saved();
+    Sq.toast(msg, 'ok', sub);
+  }
+
+  /* ---------- 根目录 ---------- */
+  function renderRoots() {
+    rootList.innerHTML = M.roots.map(function (r) {
+      return '<div class="root-line ' + (r.enabled ? '' : 'off') + '" data-root="' + r.id + '">' +
+        '<span class="tgl ' + (r.enabled ? 'on' : '') + '" data-enable data-manual="1" title="启用扫描"></span>' +
+        '<span class="rt" title="' + Sq.esc(r.path) + '">' + Sq.esc(r.path) + '</span>' +
+        '<span class="ct">' + r.count + ' 个项目</span>' +
+        '<button class="iconbtn" data-edit title="更换路径"><span class="ic-slot">' + icon('edit') + '</span></button>' +
+        '<button class="iconbtn danger" data-del title="移除根目录"><span class="ic-slot">' + icon('trash') + '</span></button>' +
+      '</div>';
+    }).join('');
+    el('rootCount').textContent = M.roots.length;
+
+    Sq.qa('[data-root]', rootList).forEach(function (line) {
+      var r = M.roots.filter(function (x) { return x.id === line.dataset.root; })[0];
+      line.querySelector('[data-enable]').addEventListener('click', function () {
+        r.enabled = !r.enabled;
+        line.classList.toggle('off', !r.enabled);
+        this.classList.toggle('on', r.enabled);
+        change(r.enabled ? '已启用 <b>' + Sq.esc(r.path) + '</b>' : '已暂停扫描 <b>' + Sq.esc(r.path) + '</b>',
+          r.enabled ? '下一次扫描会包含这个根目录' : '已登记项目保留，不会被删除');
+      });
+      line.querySelector('[data-edit]').addEventListener('click', function () {
+        Sq.dialog({
+          title: '更换根目录路径',
+          desc: '已登记的项目不会因为根目录变化而被删除，但它们可能变为「手动登记」。',
+          body: '<input class="input mono-in" id="rootPath" value="' + Sq.esc(r.path) + '">',
+          ok: '保存',
+          onOk: function () {
+            r.path = el('rootPath').value.trim() || r.path;
+            renderRoots();
+            change('根目录已更新', r.path);
+          }
+        });
+      });
+      line.querySelector('[data-del]').addEventListener('click', function () {
+        Sq.dialog({
+          title: '移除根目录？',
+          desc: '只停止扫描与刷新，不会删除已登记的项目，也不会删除该根目录下的任何文件。',
+          body: '<div class="banner warn"><span class="bi">影响</span><b>' + Sq.esc(r.path) + '</b> 下已登记的 ' + r.count + ' 个项目将变为手动登记，扫描不再刷新它们。</div>',
+          danger: true, ok: '移除',
+          onOk: function () {
+            M.roots = M.roots.filter(function (x) { return x.id !== r.id; });
+            M.projects.forEach(function (p) { if (p.rootId === r.id) p.rootId = null; });
+            renderRoots();
+            change('已移除根目录', r.path);
+          }
+        });
+      });
+    });
+  }
+
+  el('addRoot').addEventListener('click', function () {
+    Sq.dialog({
+      title: '添加扫描根目录',
+      desc: '只扫描该目录的直接子目录（深度 1），不会整盘遍历。',
+      body: '<div class="u-col g10">' +
+        '<label><span class="mono">目录路径</span><input class="input mono-in mt8" id="newRoot" placeholder="D:\\Projects"></label>' +
+        '<div class="u-row g8"><span class="tgl on" id="scanAfter"></span><span style="font-size:11px;color:var(--ink-2)">添加后立即扫描一次</span></div>' +
+        '</div>',
+      ok: '添加',
+      onOk: function () {
+        var path = (el('newRoot').value || '').trim();
+        if (!path) { Sq.toast('请输入目录路径', 'bad'); return; }
+        M.roots.push({ id: 'r' + Date.now(), path: path, enabled: true, count: 0 });
+        renderRoots();
+        Sq.bindTgls();
+        change('已添加根目录', path + ' · 正在后台扫描（深度 1）');
+      }
+    });
+    Sq.bindTgls();
+  });
+
+  el('editExcl').addEventListener('click', function () {
+    Sq.dialog({
+      title: '编辑排除名单',
+      desc: '每行一个目录名或通配符。命中即跳过，不再向其内部遍历。',
+      body: '<textarea class="input mono-in" id="exclArea" style="min-height:120px">' + excl.join('\n') + '</textarea>',
+      ok: '保存',
+      onOk: function () {
+        excl = el('exclArea').value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+        renderExcl();
+        change('排除名单已更新', excl.length + ' 项 · 下次扫描生效');
+      }
+    });
+  });
+
+  function renderExcl() {
+    el('exclList').innerHTML = excl.map(function (x) { return '<span class="tag">' + Sq.esc(x) + '</span>'; }).join('') +
+      '<span class="tag" style="border-style:dashed">+ 添加</span>';
+  }
+
+  /* ---------- 扫描 ---------- */
+  var depth = M.settings.scanDepth;
+  function renderDepth() { el('depthVal').textContent = depth; }
+  Sq.qa('#depthStep button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      depth = Math.max(1, Math.min(3, depth + Number(b.dataset.d)));
+      renderDepth();
+      change('扫描深度已设为 <b>' + depth + '</b>', depth === 1 ? '推荐值：只认根目录的直接子目录' : '更深的层数会显著增加扫描耗时');
+    });
+  });
+
+  el('scanNow').addEventListener('click', function () {
+    var btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="ic-slot">' + icon('refresh') + '</span>扫描中…';
+    setTimeout(function () {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="ic-slot">' + icon('refresh') + '</span>立即扫描';
+      el('lastScan').textContent = '刚刚 · 命中 41 个目录 · 用时 386 ms';
+      change('扫描完成', '发现 4 个新目录 · 已放入台账主页的「本次发现」');
+    }, 1400);
+  });
+
+  el('pauseDemo').addEventListener('click', function () {
+    el('pauseHost').innerHTML =
+      '<div class="banner warn">' +
+        '<span class="ic-slot" data-ic="alert"></span>' +
+        '<div><span class="bi">扫描已暂停 · 命中 500 条</span>' +
+          '已达到暂停阈值。本次发现只保留已命中的目录，不会静默丢弃，也不会写入数据库。' +
+          '<div class="prog mt8" style="max-width:320px"><i style="width:100%"></i></div>' +
+          '<div class="prog-label mt8" style="max-width:320px"><span>500 / 500</span><span>D:\GitHub · 剩余 12 个待遍历</span></div>' +
+        '</div>' +
+        '<div class="bact"><button class="btn btn-sm" id="pauseGo">继续</button><button class="btn btn-sm btn-ghost" id="pauseStop">停止</button></div>' +
+      '</div>';
+    el('pauseHost').querySelector('[data-ic]').innerHTML = icon('alert');
+    Sq.bind(el('pauseGo'), 'click', function () {
+      el('pauseHost').innerHTML = '';
+      change('已继续扫描', '剩余目录将继续遍历，命中仍受阈值保护');
+    });
+    Sq.bind(el('pauseStop'), 'click', function () {
+      el('pauseHost').innerHTML = '';
+      change('已停止扫描', '本次发现的结果保留在会话内存，登记后才落库');
+    });
+  });
+
+  /* ---------- 数据 ---------- */
+  el('backupNow').addEventListener('click', function () {
+    change('已创建数据库快照', 'VACUUM INTO · 保留最近 3 份 · 存放于数据目录 backups/');
+  });
+
+  el('restoreBtn').addEventListener('click', function () {
+    Sq.dialog({
+      title: '从备份恢复',
+      desc: '恢复会覆盖当前数据库。应用会在覆盖前自动留存一份当前状态的快照。',
+      body: '<div class="u-col g8">' +
+        '<div class="mk-row"><span class="t">2026-11-01 09:20 · 12.3 MB</span><span class="a">最近</span></div>' +
+        '<div class="mk-row"><span class="t">2026-10-31 21:05 · 12.1 MB</span><span class="a">完整</span></div>' +
+        '<div class="mk-row"><span class="t">2026-10-30 08:40 · 11.8 MB</span><span class="a">完整</span></div>' +
+        '<div class="banner warn"><span class="bi">校验</span>恢复前会执行 <b>PRAGMA integrity_check</b>，损坏的备份不会被应用。</div>' +
+        '</div>',
+      danger: true, ok: '恢复',
+      onOk: function () { change('已从备份恢复', 'integrity_check 通过 · 需要重启应用以加载新数据（原型不执行）'); }
+    });
+  });
+
+  el('clearBtn').addEventListener('click', function () {
+    Sq.dialog({
+      title: '清空台账数据？',
+      desc: '将删除所有项目、命令与备注。项目目录与根目录配置不受影响，外部文件不会被删除。',
+      body: '<div class="banner bad"><span class="bi">不可撤销</span>建议先执行一次「立即备份」。原型中此操作只会给出提示，不修改任何数据。</div>',
+      danger: true, ok: '清空台账',
+      onOk: function () { change('已清空台账（原型示意）', '实际实现会先备份再删除，并保留根目录配置'); }
+    });
+  });
+
+  /* ---------- 外观 / 终端 ---------- */
+  var themeSeg = el('themeSeg');
+  function markTheme() {
+    var cur = SqShell.theme();
+    var sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    Sq.qa('button', themeSeg).forEach(function (b) {
+      var v = b.dataset.value;
+      b.classList.toggle('on', v === 'system' ? cur === sys : v === cur);
+    });
+  }
+  Sq.bindSegs(themeSeg);
+  themeSeg.addEventListener('segchange', function (e) {
+    var v = e.detail.value;
+    if (v === 'system') {
+      var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      SqShell.setTheme(dark ? 'dark' : 'light');
+      change('主题已设为跟随系统', '当前系统为' + (dark ? '深色' : '浅色'));
+    } else {
+      SqShell.setTheme(v);
+      change('主题已切换为' + (v === 'dark' ? '深色' : '浅色'), '同一套 token，对比关系保持一致');
+    }
+    markTheme();
+  });
+  new MutationObserver(markTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  Sq.bindSegs(el('viewSeg'));
+  el('viewSeg').addEventListener('segchange', function (e) {
+    change('默认视图已设为' + (e.detail.value === 'grid' ? '卡片' : '列表'));
+  });
+  Sq.bindSegs(el('densitySeg'));
+  el('densitySeg').addEventListener('segchange', function (e) {
+    change(e.detail.value === 'compact' ? '已切换为紧凑密度' : '已恢复标准密度');
+  });
+  Sq.bindSegs(el('modeSeg'));
+  el('modeSeg').addEventListener('segchange', function (e) {
+    M.settings.defaultMode = e.detail.value;
+    change('默认启动方式已设为 <b>' + (e.detail.value === 'builtin' ? '应用内运行' : '外部终端') + '</b>',
+      e.detail.value === 'builtin' ? '退出应用时这些进程会被回收' : '进程归外部终端所有，Squirl 不接管');
+  });
+
+  el('emuSel').addEventListener('change', function () {
+    change('终端模拟器已设为 <b>' + this.value + '</b>', '下次唤起立即生效');
+  });
+  el('shellSel').addEventListener('change', function () {
+    var paths = {
+      'pwsh 7+': 'C:\\Program Files\\PowerShell\\7\\pwsh.exe · 已检测到 pwsh 7.4',
+      'Windows PowerShell 5.1': 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
+      'Git Bash': 'C:\\Program Files\\Git\\bin\\bash.exe'
+    };
+    el('shellPath').textContent = paths[this.value] || '';
+    change('Shell 已设为 <b>' + this.value + '</b>', '转义规则随之切换，已保存的命令原文不变');
+  });
+  el('limitSel').addEventListener('change', function () { change('暂停阈值已设为 ' + this.value); });
+
+  /* 恢复默认 */
+  el('resetBtn').addEventListener('click', function () {
+    Sq.dialog({
+      title: '恢复默认设置？',
+      desc: '会重置外观、终端、扫描与回收选项。台账、备注与命令不受影响。',
+      danger: true, ok: '恢复默认',
+      onOk: function () {
+        SqShell.setTheme('light');
+        markTheme();
+        el('lastScan').textContent = '2 分钟前 · 命中 37 个目录 · 用时 412 ms';
+        change('已恢复默认设置', '台账数据保持不变');
+      }
+    });
+  });
+
+  /* 打开数据目录 */
+  function openData() { change('已打开数据目录', '%APPDATA%\\squirl（原型示意）'); }
+  el('openDataBtn').addEventListener('click', openData);
+  el('openData2').addEventListener('click', openData);
+
+  /* ---------- 挂载 ---------- */
+  SqShell.mount({
+    active: 'settings',
+    crumb: [{ label: 'Squirl' }, { label: '设置' }],
+    search: '搜索设置项…',
+    onSearch: function (v) {
+      Sq.qa('.set-row').forEach(function (row) {
+        var show = !v || row.textContent.toLowerCase().indexOf(v.toLowerCase()) !== -1;
+        row.classList.toggle('hide', !show);
+      });
+    },
+    actions: '<a class="btn btn-sm btn-ghost" href="01-home.html">' + icon('chevronLeft') + '返回台账</a>'
+  });
+
+  document.querySelectorAll('[data-ic]').forEach(function (x) { x.innerHTML = icon(x.dataset.ic); });
+  Sq.bindTgls();
+  renderRoots();
+  renderExcl();
+  renderDepth();
+  markTheme();
+  saved();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Squirl · 关键流程</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="canvas" id="canvas">
+      <div class="page">
+        <div class="page-head">
+          <div class="pt">
+            <h1>关键流程串联</h1>
+            <div class="sub">
+              <span>3 条主线</span>
+              <span class="sep"></span>
+              <span>13 个界面步骤</span>
+              <span class="sep"></span>
+              <span>点击左侧任意步骤预览</span>
+            </div>
+          </div>
+          <div class="acts">
+            <button class="btn" id="resetFlow"><span class="ic-slot" data-ic="refresh"></span>从头开始</button>
+            <button class="btn btn-primary" id="autoBtn"><span class="ic-slot" data-ic="play"></span>自动演示</button>
+          </div>
+        </div>
+
+        <div class="flow-wrap">
+          <div>
+            <div class="flow-list" id="flowList"></div>
+
+            <div class="card mt12">
+              <div class="card-head">
+                <h3>本流程步骤</h3><span class="sp"></span>
+                <span class="mono" id="flowAc">AC1</span>
+              </div>
+              <div class="card-body" style="padding:7px 8px">
+                <div class="mk" id="stepList"></div>
+              </div>
+            </div>
+
+            <div class="banner info mt12">
+              <span class="ic-slot" data-ic="info"></span>
+              <div><span class="bi">阅读提示</span>流程里展示的是同一套组件在不同状态下的样子；右侧步骤可逐帧前进，和真实交互顺序一致。</div>
+            </div>
+          </div>
+
+          <div class="flow-stage">
+            <div class="stage-frame">
+              <div class="stage-bar">
+                <span class="td"></span><span class="td"></span><span class="td"></span>
+                <span class="t" id="stageTitle">1 / 4 · 首启空状态</span>
+                <span class="sp"></span>
+                <span class="mono" id="stageAc">AC1</span>
+              </div>
+              <div class="stage-body" id="stageBody"></div>
+            </div>
+
+            <div class="u-row g6">
+              <button class="btn btn-sm" id="prevBtn"><span class="ic-slot" data-ic="chevronLeft"></span>上一步</button>
+              <button class="btn btn-sm btn-primary" id="nextBtn">下一步<span class="ic-slot" data-ic="chevronRight"></span></button>
+              <span class="sp"></span>
+              <span class="mono" id="stepIdx">1 / 4</span>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3>这一步在做什么</h3><span class="sp"></span><span class="mono">design note</span></div>
+              <div class="card-body"><div class="stage-note" id="stageNote"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/icons.js"></script>
+<script src="assets/mock.js"></script>
+<script src="assets/ui.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  var M = MOCK;
+
+  var p1 = M.projects[0];
+  var card = Sq.projectCard(p1);
+
+  var flows = [
+    {
+      id: 'f1', no: '01', title: '首启 → 扫描 → 登记', fid: 'F1 · F2 · F3', ac: 'AC1',
+      desc: '从空台账到第一张卡片：添加根目录、后台扫描、本次发现、显式登记。',
+      steps: [
+        {
+          t: '首启空状态', ac: 'AC1', tags: ['W1', '空状态'],
+          body: '<div class="mk">' +
+            '<div class="mk-empty">' +
+              '<div class="ic">' + icon('tray') + '</div>' +
+              '<b>还没有登记任何项目</b>' +
+              '<p>添加一个扫描根目录，Squirl 只认它下面的直接子目录；不做整盘扫描。</p>' +
+              '<div class="u-row g6"><span class="btn btn-sm btn-primary">' + icon('plus') + '添加根目录</span>' +
+              '<span class="btn btn-sm">' + icon('edit') + '手动登记</span></div>' +
+            '</div>' +
+            '<div class="mk-line"><span class="k">原则</span><span class="v">识别是猜测，记录是事实——登记才写入台账</span></div>' +
+          '</div>',
+          note: '首启不弹教程、不自动全盘扫描。空状态只给两个明确出路：添加根目录，或手动登记一个已知路径。',
+          ac2: 'AC1：冷启动 ≤ 2s 可交互，空状态不阻塞任何操作。'
+        },
+        {
+          t: '添加根目录', ac: 'F1', tags: ['多根目录', '深度 1'],
+          body: '<div class="mk">' +
+            '<div class="mk-h">扫描根目录<span class="sp"></span><span class="tag">已添加 2 个</span></div>' +
+            '<div class="mk-line"><span class="dot ok"></span><span class="v">D:\\GitHub</span><span class="a">9</span></div>' +
+            '<div class="mk-line"><span class="dot ok"></span><span class="v">D:\\Projects</span><span class="a">5</span></div>' +
+            '<div class="mk-line"><span class="dot"></span><span class="v">C:\\Users\\ICE\\Documents</span><span class="a">已暂停</span></div>' +
+            '<div class="mk-h mt8">内置排除名单</div>' +
+            '<div class="mk-badges"><span class="tag">node_modules</span><span class="tag">.git</span><span class="tag">dist</span><span class="tag">target</span><span class="tag">+8</span></div>' +
+            '<div class="mk-line"><span class="k">深度</span><span class="v">1 层 · 每层都应用排除规则</span></div>' +
+          '</div>',
+          note: '根目录平级、可启用/暂停。关闭某个根目录只停止刷新，不删除已登记的项目——台账不能因配置变化而丢数据。',
+          ac2: 'F1：多根目录扫描，默认深度 1，内置排除名单。'
+        },
+        {
+          t: '扫描进行中', ac: 'F2', tags: ['后台任务', '不阻塞'],
+          body: '<div class="mk">' +
+            '<div class="mk-h">正在扫描 D:\\GitHub …<span class="sp"></span><span class="mono">89 / 140</span></div>' +
+            '<div class="prog"><i style="width:64%"></i></div>' +
+            '<div class="prog-label"><span>已遍历 89 个目录</span><span>命中 12</span></div>' +
+            '<div class="mk-log">' + Sq.logLines([
+              { c: 'lp-dim', t: 'walk D:\\GitHub depth=1 …' },
+              { c: 'lp-ok', t: '  + awesome-go      (go.mod, .git)' },
+              { c: 'lp-ok', t: '  + rust-by-example (Cargo.toml, .git)' },
+              { c: 'lp-warn', t: '  skip node_modules/ (excluded)' },
+              { c: 'lp-dim', t: '  500 条命中时将暂停并等待确认' }
+            ], 1) + '</div>' +
+            '<div class="u-row g6"><span class="btn btn-sm btn-ghost">暂停</span><span class="mono">后台任务 · 界面可继续操作</span></div>' +
+          '</div>',
+          note: '扫描是后台任务，进度与命中通过事件推送；界面只渲染，不阻塞。命中达到 500 条会暂停，而不是悄悄截断。',
+          ac2: 'F2：500 项 < 1s；500 条暂停协议。'
+        },
+        {
+          t: '本次发现 → 登记', ac: 'F3', tags: ['同页两分区', '不落库'],
+          body: '<div class="mk">' +
+            '<div class="mk-h">本次发现<span class="sp"></span><span class="tag hot">登记后写入数据库</span></div>' +
+            '<div class="mk-row"><span class="t">GitHub/awesome-go</span><span class="tag">go.mod</span><span class="a">登记</span></div>' +
+            '<div class="mk-row"><span class="t">GitHub/tauri-samples</span><span class="tag">package.json</span><span class="a">登记</span></div>' +
+            '<div class="mk-row"><span class="t">Projects/blog-engine</span><span class="tag">pyproject.toml</span><span class="a">登记</span></div>' +
+            '<div class="mk-row"><span class="t">Projects/old-scraper</span><span class="tag">无标志文件</span><span class="a">登记</span></div>' +
+            '<div class="banner info"><span class="bi">边界</span>本次发现只存在于扫描会话内存；会话结束即丢弃，不写数据库。</div>' +
+          '</div>',
+          note: '已登记区与本次发现同页但两个分区：上面是你的台账（可搜索、带备注），下面只是候选。登记是唯一写入动作。',
+          ac2: 'F3：发现区不进入全局搜索，会话结束即丢弃。'
+        }
+      ]
+    },
+    {
+      id: 'f2', no: '02', title: '一键启动（双模式）', fid: 'F4 · F5 · F6', ac: 'AC4',
+      desc: '从卡片上的命令胶囊到命令真正跑起来：模式选择、进程派生、日志镜像。',
+      steps: [
+        {
+          t: '卡片上的命令胶囊', ac: 'F4', tags: ['常驻保存', '显式'],
+          body: '<div class="mk">' + card +
+            '<div class="mk-line"><span class="k">来源</span><span class="v">命令胶囊只来自「显式保存」，临时运行不会自动入库</span></div>' +
+            '<div class="mk-line"><span class="k">无命令</span><span class="v">显示「加一条命令」，不猜测 npm / cargo / go 的启动方式</span></div>' +
+          '</div>',
+          note: '卡片把「怎么跑」直接放在最容易点的地方。命令是用户写下的原文，应用不做技术栈推断。',
+          ac2: 'F4：命令显式保存，常驻保存按钮；不因临时运行自动写入。'
+        },
+        {
+          t: '选择执行方式', ac: 'F5', tags: ['外部默认', '应用内可选'],
+          body: '<div class="mk">' +
+            '<div class="mk-line"><span class="k">项目</span><span class="v">' + Sq.esc(p1.name) + ' · ' + Sq.esc(p1.path) + '</span></div>' +
+            '<div class="mk-line"><span class="k">命令</span><span class="v">pnpm dev</span></div>' +
+            '<div class="mk-line"><span class="k">启动方式</span><span class="v"><span class="seg"><button class="on">外部终端</button><button>应用内运行</button></span></span></div>' +
+            '<div class="mk-line"><span class="k">模拟器</span><span class="v">Windows Terminal · pwsh 7+</span></div>' +
+            '<div class="mk-log"><span class="lp-line"><span class="tx">wt.exe -d "D:\\Code\\AICreate\\ZCode\\squirl" pwsh -NoExit -Command "pnpm dev"</span></span></div>' +
+            '<div class="banner warn"><span class="bi">两条路径不得混同</span>外部终端进程归终端所有；应用内进程才进入 run 注册表与回收流程。</div>' +
+          '</div>',
+          note: '默认在用户惯用的终端里执行；切换应用内后可以看日志，但也意味着应用要负责回收这个进程树。',
+          ac2: 'F5 / F6：双模式；INV-2 外部进程不进入 Job Object。'
+        },
+        {
+          t: '启动中 → 运行中', ac: 'F6', tags: ['run_id', '首行输出'],
+          body: '<div class="mk">' +
+            '<div class="mk-h">run 7f3a91c2<span class="sp"></span><span class="pill starting"><i></i>启动中</span></div>' +
+            '<div class="mk-log">' + Sq.logLines([
+              { c: 'lp-dim', t: '派生进程 · Job Object 已创建 …' },
+              { c: 'lp-dim', t: '等待第一行输出（超时 3s）…' },
+              { c: 'lp-ok', t: '  VITE v8.3.2  ready in 312 ms' },
+              { c: 'lp-ok', t: '  ➜  Local:   http://localhost:5173/' }
+            ], 1) + '</div>' +
+            '<div class="mk-line"><span class="k">状态</span><span class="v">starting → running（首行输出到达）</span></div>' +
+            '<div class="mk-line"><span class="k">归属</span><span class="v">run_id 唯一标识本次会话，日志/停止都按它索引</span></div>' +
+          '</div>',
+          note: 'starting 是诚实的状态：进程已派生但还没有输出。3 秒超时提示「疑似等待输入」，而不是假装运行正常。',
+          ac2: 'F6：六状态机；run_id 会话内唯一。'
+        },
+        {
+          t: '应用内日志面板', ac: 'F6', tags: ['只读', '环形缓冲'],
+          body: '<div class="mk">' +
+            '<div class="u-row g6"><span class="pill run"><i></i>运行中</span><span class="mono">run 7f3a91c2 · 应用内 · 2m 14s</span><span class="sp"></span><span class="btn btn-sm btn-danger">' + icon('stop') + '停止</span></div>' +
+            '<div class="mk-log" style="max-height:196px">' + Sq.logLines(M.log.slice(2, 14), 1) + '</div>' +
+            '<div class="mk-h"><span class="mono">只读 · 环形缓冲 5,000 行 / 2MB</span><span class="sp"></span><span class="mono">跟随末尾</span></div>' +
+          '</div>',
+          note: '日志面板固定在详情页底部，不抢主内容的视线；只读、不做交互式终端（xterm 属于 P2）。',
+          ac2: 'AC6：日志缓冲 5,000 行 / 2MB 硬顶，前端按 seq 同步裁剪。'
+        }
+      ]
+    },
+    {
+      id: 'f3', no: '03', title: '停止与退出回收', fid: 'F6 · AC9', ac: 'AC9',
+      desc: '会话结束时到底发生了什么：人工停止、确认、状态落定、退出时逐会话回收。',
+      steps: [
+        {
+          t: '运行中 · 人工停止', ac: 'F6', tags: ['手动停止', '进程树'],
+          body: '<div class="mk">' +
+            '<div class="u-row g6"><span class="pill run"><i></i>运行中</span><span class="mono">3 个进程 · pnpm dev</span><span class="sp"></span><span class="btn btn-sm btn-danger">' + icon('stop') + '停止</span></div>' +
+            '<div class="mk-log">' + Sq.logLines([
+              { c: 'lp-ok', t: '  ➜  Local:   http://localhost:5173/' },
+              { c: 'lp-dim', t: '  hmr update /src/App.tsx  (18 ms)' },
+              { c: 'lp-warn', t: '  [vite] warning: sourcemap is enabled in production build' }
+            ], 1) + '</div>' +
+            '<div class="mk-line"><span class="k">范围</span><span class="v">整个进程树，不只是顶层 shell</span></div>' +
+          '</div>',
+          note: '「停止」从来不是杀一个 PID：pnpm / vite 会派生多层子进程，必须整棵树一起结束。',
+          ac2: 'AC9：手动停止后无残留子进程。'
+        },
+        {
+          t: '停止确认', ac: 'F6', tags: ['确认', '影响范围'],
+          body: '<div class="mk">' +
+            '<div class="mk-desk" style="max-width:320px;margin:0 auto">' +
+              '<div class="mk-h">结束这次运行？</div>' +
+              '<div class="mk-line" style="background:var(--amber-wash);border-color:var(--amber-line)"><span class="v">run 7f3a91c2 · pnpm dev · 3 个进程</span></div>' +
+              '<div class="mk-line"><span class="k">影响</span><span class="v">只结束应用内会话；外部终端不受影响</span></div>' +
+              '<div class="u-row g6" style="justify-content:flex-end"><span class="btn btn-sm">继续运行</span><span class="btn btn-sm btn-danger">结束运行</span></div>' +
+            '</div>' +
+          '</div>',
+          note: '确认框只写清影响范围与 run_id，不吓唬人；破坏性动作的按钮用砖红，而不是强调色。',
+          ac2: '交互：破坏性操作需显式确认。'
+        },
+        {
+          t: '已停止', ac: 'F6', tags: ['killed', 'exit 143'],
+          body: '<div class="mk">' +
+            '<div class="u-row g6"><span class="pill warn"><i></i>已停止</span><span class="mono">exit 143 · 3 个进程已结束</span></div>' +
+            '<div class="mk-log">' + Sq.logLines([
+              { c: 'lp-rule', t: '──── 进程树结束 ────────────────' },
+              { c: 'lp-warn', t: '  收到停止请求 · 3 个进程已结束 · exit code 143' },
+              { c: 'lp-dim', t: '  Job Object 回收完成，无残留子进程' }
+            ], 1) + '</div>' +
+            '<div class="mk-line"><span class="k">保留</span><span class="v">日志留在会话内存，可回看直到应用退出</span></div>' +
+          '</div>',
+          note: 'killed 与 failed 明确区分：前者是你主动结束，后者是命令自己退出失败；重试动作相同，语气不同。',
+          ac2: 'F6：killed / failed 语义区分。'
+        },
+        {
+          t: '应用退出 · 回收汇总', ac: 'AC9', tags: ['退出', 'INV-2'],
+          body: '<div class="mk">' +
+            '<div class="mk-h">应用退出 · 回收 2 个会话</div>' +
+            '<div class="mk-row"><span class="dot run"></span><span class="t">squirl · dev</span><span class="pill warn">已回收</span></div>' +
+            '<div class="mk-row"><span class="dot run"></span><span class="t">owl-runner · api</span><span class="pill warn">已回收</span></div>' +
+            '<div class="mk-row"><span class="dot ok"></span><span class="t">wt.exe · pnpm dev（外部）</span><span class="pill ok">未受影响</span></div>' +
+            '<div class="mk-line"><span class="k">保证</span><span class="v">≤ 2 秒宽限后强杀；崩溃由 Job Object / PDEATHSIG 兜底</span></div>' +
+          '</div>',
+          note: '退出时只遍历 run 注册表。外部终端窗口不在注册表里，因此永远不会被误杀——这是架构级不变量。',
+          ac2: 'AC9：应用退出后应用内进程全部收回，外部终端不受影响。'
+        }
+      ]
+    }
+  ];
+
+  var fi = 0, si = 0, timer = null;
+
+  var flowList = document.getElementById('flowList');
+  var stepList = document.getElementById('stepList');
+  var stageBody = document.getElementById('stageBody');
+
+  function renderFlows() {
+    flowList.innerHTML = flows.map(function (f, i) {
+      return '<button class="flow-item ' + (i === fi ? 'on' : '') + '" data-f="' + i + '">' +
+        '<span class="sn">' + f.no + '</span>' +
+        '<span class="ft"><b>' + f.title + '</b><p>' + f.desc + '</p></span>' +
+        '<span class="fid">' + f.fid + '</span>' +
+      '</button>';
+    }).join('');
+    Sq.qa('[data-f]', flowList).forEach(function (b) {
+      b.addEventListener('click', function () {
+        fi = Number(b.dataset.f);
+        si = 0;
+        stopAuto();
+        renderAll();
+      });
+    });
+  }
+
+  function renderSteps() {
+    var f = flows[fi];
+    document.getElementById('flowAc').textContent = f.ac;
+    stepList.innerHTML = f.steps.map(function (s, i) {
+      return '<button class="mk-row" data-s="' + i + '" style="cursor:pointer;text-align:left;' +
+        (i === si ? 'border-color:var(--acorn-line);background:var(--acorn-wash)' : '') + '">' +
+        '<span class="sn" style="font-family:var(--mono);font-size:9px;color:var(--ink-4);width:18px">' + (i + 1) + '</span>' +
+        '<span class="t" style="' + (i === si ? 'color:var(--acorn-deep);font-weight:600' : '') + '">' + s.t + '</span>' +
+        '<span class="a">' + s.tags[0] + '</span>' +
+      '</button>';
+    }).join('');
+    Sq.qa('[data-s]', stepList).forEach(function (b) {
+      b.addEventListener('click', function () {
+        si = Number(b.dataset.s);
+        stopAuto();
+        renderAll();
+      });
+    });
+  }
+
+  function renderStage() {
+    var f = flows[fi];
+    var s = f.steps[si];
+    document.getElementById('stageTitle').textContent = (si + 1) + ' / ' + f.steps.length + ' · ' + s.t;
+    document.getElementById('stageAc').textContent = s.ac;
+    document.getElementById('stepIdx').textContent = (si + 1) + ' / ' + f.steps.length;
+    stageBody.innerHTML = s.body;
+    document.getElementById('stageNote').innerHTML = '<div>' + s.note + '</div>' +
+      '<div class="tagline">' + s.tags.map(function (t) { return '<span class="tag">' + t + '</span>'; }).join('') + '</div>' +
+      '<div class="mono mt8">' + s.ac2 + '</div>';
+    document.getElementById('prevBtn').classList.toggle('off', si === 0);
+    document.getElementById('nextBtn').innerHTML = (si === f.steps.length - 1 ? '完成' : '下一步') +
+      '<span class="ic-slot">' + icon(si === f.steps.length - 1 ? 'check' : 'chevronRight') + '</span>';
+  }
+
+  function renderAll() { renderFlows(); renderSteps(); renderStage(); }
+
+  function next() {
+    var f = flows[fi];
+    if (si < f.steps.length - 1) { si++; }
+    else if (fi < flows.length - 1) { fi++; si = 0; }
+    else { stopAuto(); Sq.toast('三条流程已走完', 'ok', '可以回到台账页继续交互'); }
+    renderAll();
+  }
+  function prev() {
+    if (si > 0) si--;
+    else if (fi > 0) { fi--; si = flows[fi].steps.length - 1; }
+    renderAll();
+  }
+
+  function startAuto() {
+    clearInterval(timer);
+    timer = setInterval(next, 3200);
+    var b = document.getElementById('autoBtn');
+    b.innerHTML = '<span class="ic-slot">' + icon('stop') + '</span>停止演示';
+    b.classList.remove('btn-primary');
+  }
+  function stopAuto() {
+    clearInterval(timer);
+    timer = null;
+    var b = document.getElementById('autoBtn');
+    if (b) {
+      b.innerHTML = '<span class="ic-slot">' + icon('play') + '</span>自动演示';
+      b.classList.add('btn-primary');
+    }
+  }
+
+  document.getElementById('nextBtn').addEventListener('click', function () {
+    stopAuto(); next();
+  });
+  document.getElementById('prevBtn').addEventListener('click', function () {
+    stopAuto(); prev();
+  });
+  document.getElementById('resetFlow').addEventListener('click', function () {
+    stopAuto(); fi = 0; si = 0; renderAll(); Sq.toast('已回到第一步', 'info');
+  });
+  document.getElementById('autoBtn').addEventListener('click', function () {
+    if (timer) { stopAuto(); } else { startAuto(); }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' && !e.metaKey && !e.ctrlKey) { stopAuto(); next(); }
+    if (e.key === 'ArrowLeft' && !e.metaKey && !e.ctrlKey) { stopAuto(); prev(); }
+  });
+
+  /* 挂载外壳 */
+  SqShell.mount({
+    active: 'flows',
+    crumb: [{ label: 'Squirl' }, { label: '关键流程' }],
+    search: '搜索流程…',
+    onSearch: function (v) {
+      Sq.qa('[data-f]', flowList).forEach(function (b) {
+        var show = !v || b.textContent.toLowerCase().indexOf(v.toLowerCase()) !== -1;
+        b.classList.toggle('hide', !show);
+      });
+    },
+    actions: '<a class="btn btn-sm btn-ghost" href="01-home.html">' + icon('chevronLeft') + '返回台账</a>'
+  });
+
+  document.querySelectorAll('[data-ic]').forEach(function (x) { x.innerHTML = icon(x.dataset.ic); });
+  renderAll();
+})();
+</script>
+</body>
+</html>

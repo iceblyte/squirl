@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Squirl · 扩展能力形态</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="canvas" id="canvas">
+      <div class="page">
+        <div class="page-head">
+          <div class="pt">
+            <h1>扩展能力形态预览</h1>
+            <div class="sub">
+              <span>P2 / P3 能力</span>
+              <span class="sep"></span>
+              <span>只给形态与边界，不进入 MVP 范围</span>
+            </div>
+          </div>
+          <div class="acts">
+            <span class="tag">P2 本轮不做</span>
+            <span class="tag">P3 观察</span>
+            <a class="btn" href="05-flows.html"><span class="ic-slot" data-ic="wf"></span>查看核心流程</a>
+          </div>
+        </div>
+
+        <div class="banner info" style="margin-bottom:14px">
+          <span class="ic-slot" data-ic="info"></span>
+          <div><span class="bi">范围声明</span>
+            以下六个方向在需求文档中明确列为 P2 / P3。这里只做界面形态与交互边界预览，用于判断后续投入是否值得，
+            不代表 MVP 承诺，也不为它们提前引入依赖。
+          </div>
+        </div>
+
+        <div class="ext-grid">
+          <!-- 1 托盘 -->
+          <div class="ext-card">
+            <div class="eh">
+              <span class="ic-slot" data-ic="tray"></span><b>托盘常驻与快捷操作</b>
+              <span class="pn"><span class="pill"><i></i>P2</span></span>
+            </div>
+            <div class="ext-mock">
+              <div class="mk-desk">
+                <div class="mk-h">
+                  <span class="sb-logo" style="width:20px;height:20px;border-radius:6px"><span class="ic-slot" data-ic="logo"></span></span>
+                  Squirl<span class="sp"></span><span class="mono">2 运行中</span>
+                </div>
+                <div class="mk-row"><span class="dot run"></span><span class="t">squirl · dev</span><span class="a">2m 14s</span></div>
+                <div class="mk-row"><span class="dot run"></span><span class="t">owl-runner · api</span><span class="a">40s</span></div>
+                <div class="mk-row" style="justify-content:space-between;border-style:dashed">
+                  <button class="btn btn-sm btn-ghost" data-demo="打开主界面（原型示意）">打开主界面</button>
+                  <button class="btn btn-sm btn-danger" data-demo="托盘里也能逐会话停止，不用回到窗口">全部停止</button>
+                </div>
+              </div>
+            </div>
+            <div class="ext-foot">窗口关闭后驻留托盘，托盘菜单可直接停止单个会话。MVP 关闭窗口即退出，并回收全部应用内进程。</div>
+          </div>
+
+          <!-- 2 命令面板 -->
+          <div class="ext-card">
+            <div class="eh">
+              <span class="ic-slot" data-ic="keyboard"></span><b>全局命令面板</b>
+              <span class="pn"><span class="pill"><i></i>P2</span></span>
+            </div>
+            <div class="ext-mock">
+              <div class="mk-desk">
+                <div class="mk-search"><span class="ic-slot" data-ic="search"></span><span>squ</span><span class="sp"></span><span class="mono">Esc</span></div>
+                <div class="mk-row" data-demo="回车打开项目详情"><span class="t">squirl</span><span class="a">项目</span></div>
+                <div class="mk-row" data-demo="直接启动这条已保存的命令"><span class="t">squirl · dev</span><span class="a">pnpm dev</span></div>
+                <div class="mk-row" data-demo="跨项目搜索命令，而不是只搜项目名"><span class="t">studio-site · preview</span><span class="a">pnpm preview</span></div>
+                <div class="mono" style="padding:1px 4px">↑↓ 选择 · Enter 执行 · Tab 切换作用域</div>
+              </div>
+            </div>
+            <div class="ext-foot">全局快捷键唤起，按项目与命令两级搜索。它复用的是同一份台账数据，不是另一套索引。</div>
+          </div>
+
+          <!-- 3 多会话日志 -->
+          <div class="ext-card">
+            <div class="eh">
+              <span class="ic-slot" data-ic="layers"></span><b>多会话日志标签</b>
+              <span class="pn"><span class="pill"><i></i>P2</span></span>
+            </div>
+            <div class="ext-mock">
+              <div class="mk">
+                <div class="mk-tabs">
+                  <span class="mk-tab on" data-demo="标签页按 run_id 隔离，切换不重载">dev ×</span>
+                  <span class="mk-tab" data-demo="每个标签独立滚动位置与缓冲">tauri:dev ×</span>
+                  <span class="mk-tab" data-demo="非活动会话继续后台缓冲">api</span>
+                  <span class="sp"></span>
+                  <span class="mono">3 / 6</span>
+                </div>
+                <div class="mk-log"></div>
+              </div>
+            </div>
+            <div class="ext-foot">同一项目多条命令并行时，用标签切换而不是把日志混在一起；缓冲上限仍按每个 run 计算。</div>
+          </div>
+
+          <!-- 4 README × 配置 -->
+          <div class="ext-card">
+            <div class="eh">
+              <span class="ic-slot" data-ic="split"></span><b>README × 配置双栏</b>
+              <span class="pn"><span class="pill"><i></i>P3</span></span>
+            </div>
+            <div class="ext-mock">
+              <div class="mk">
+                <div class="mk-2col">
+                  <div class="mk-pane">
+                    <div class="pt">README.md</div>
+                    <div class="ln">## Quick start</div>
+                    <div class="ln">cp .env.example .env</div>
+                    <div class="ln hi">pnpm install</div>
+                    <div class="ln">pnpm dev</div>
+                    <div class="ln">## Environment</div>
+                  </div>
+                  <div class="mk-pane">
+                    <div class="pt">.env.example</div>
+                    <div class="ln">DATABASE_URL=</div>
+                    <div class="ln hi">REDIS_HOST=</div>
+                    <div class="ln">PORT=5173</div>
+                    <div class="ln">LOG_LEVEL=info</div>
+                    <div class="ln">…</div>
+                  </div>
+                </div>
+                <div class="mk-row"><span class="dot warn"></span><span class="t">缺失 3 个必填键</span><span class="a">只读比对</span></div>
+              </div>
+            </div>
+            <div class="ext-foot">跑通开源项目的真实痛点。P3 只做「对照与提示」，不生成、不改写项目内的配置文件。</div>
+          </div>
+
+          <!-- 5 技术栈徽章 -->
+          <div class="ext-card">
+            <div class="eh">
+              <span class="ic-slot" data-ic="tag"></span><b>技术栈徽章与锁文件感知</b>
+              <span class="pn"><span class="pill"><i></i>P2</span></span>
+            </div>
+            <div class="ext-mock">
+              <div class="mk">
+                <div class="mk-badges">
+                  <span class="tag hot">pnpm</span><span class="tag">node 18</span>
+                  <span class="tag">rust</span><span class="tag">tauri 2</span><span class="tag">py 3.12</span>
+                </div>
+                <div class="mk-row"><span class="t">package.json → pnpm dev</span><span class="a">建议</span></div>
+                <div class="mk-row"><span class="t">Cargo.toml → cargo run</span><span class="a">建议</span></div>
+                <div class="mk-line"><span class="k">边界</span><span class="v">只探测与组装，不建 venv、不改锁文件</span></div>
+              </div>
+            </div>
+            <div class="ext-foot">徽章是「读到的线索」，不是事实来源；启动命令始终以用户显式保存的为准。</div>
+          </div>
+
+          <!-- 6 端口雷达 -->
+          <div class="ext-card">
+            <div class="eh">
+              <span class="ic-slot" data-ic="radar"></span><b>端口雷达</b>
+              <span class="pn"><span class="pill"><i></i>P3</span></span>
+            </div>
+            <div class="ext-mock">
+              <div class="mk">
+                <div class="mk-row"><span class="tag hot">5173</span><span class="t">vite · squirl</span>
+                  <button class="btn btn-sm btn-ghost" data-demo="按 run_id 结束占用进程（仅应用内会话可操作）">结束</button></div>
+                <div class="mk-row"><span class="tag">8010</span><span class="t">uvicorn · owl-runner</span>
+                  <button class="btn btn-sm btn-ghost" data-demo="打开本地地址（原型示意）">打开</button></div>
+                <div class="mk-row"><span class="tag">5432</span><span class="t">postgres · 外部进程</span><span class="a">只读</span></div>
+                <div class="mk-line"><span class="k">探测</span><span class="v">只列出监听端口与归属，不自动做端口冲突处理</span></div>
+              </div>
+            </div>
+            <div class="ext-foot">「我的服务到底起没起来」的可视化补充。外部进程只展示，不提供结束入口。</div>
+          </div>
+        </div>
+
+        <div class="sec-head mt26">
+          <h2>能力边界与投入顺序</h2>
+          <span class="sp"></span>
+          <span class="tag">建议</span>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding:6px 8px 8px">
+            <table class="table">
+              <thead><tr><th>能力</th><th>优先级</th><th>依赖前提</th><th>明确不做</th></tr></thead>
+              <tbody>
+                <tr><td class="k">托盘常驻</td><td><span class="tag">P2</span></td><td>退出回收链路稳定（AC9 通过）</td><td>不做开机自启默认开启</td></tr>
+                <tr><td class="k">全局命令面板</td><td><span class="tag">P2</span></td><td>台账搜索与命令模型冻结</td><td>不引入第二套索引</td></tr>
+                <tr><td class="k">多会话日志标签</td><td><span class="tag">P2</span></td><td>日志缓冲按 run_id 隔离</td><td>不做交互式终端（xterm）</td></tr>
+                <tr><td class="k">技术栈徽章</td><td><span class="tag">P2</span></td><td>扫描时读取标志文件即可</td><td>不改锁文件、不建环境</td></tr>
+                <tr><td class="k">README × 配置双栏</td><td><span class="tag">P3</span></td><td>只读解析 + 缺失键提示</td><td>不写入项目目录（AC8）</td></tr>
+                <tr><td class="k">端口雷达</td><td><span class="tag">P3</span></td><td>进程归属映射成熟</td><td>不结束非应用内进程</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="banner warn mt12">
+          <span class="ic-slot" data-ic="shield"></span>
+          <div><span class="bi">不变量优先</span>
+            任何扩展都不能破坏两条底线：应用对被管理项目目录只读；外部终端进程永不进入回收链路。
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/icons.js"></script>
+<script src="assets/mock.js"></script>
+<script src="assets/ui.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+(function () {
+  var M = MOCK;
+  var lines = [
+    { c: 'lp-ok', t: '  VITE v8.3.2  ready in 312 ms' },
+    { c: 'lp-dim', t: '  hmr update /src/App.tsx  (18 ms)' },
+    { c: 'lp-warn', t: '  [vite] warning: sourcemap is enabled' },
+    { c: 'lp-dim', t: '  hmr update /src/styles.css  (42 ms)' }
+  ];
+
+  SqShell.mount({
+    active: 'extended',
+    crumb: [{ label: 'Squirl' }, { label: '扩展能力' }],
+    search: '搜索扩展能力…',
+    onSearch: function (v) {
+      Sq.qa('.ext-card').forEach(function (c) {
+        c.classList.toggle('hide', !!v && c.textContent.toLowerCase().indexOf(v.toLowerCase()) === -1);
+      });
+    },
+    actions: '<a class="btn btn-sm btn-ghost" href="00-index.html">' + icon('tray') + '原型导览</a>'
+  });
+
+  document.querySelectorAll('[data-ic]').forEach(function (x) { x.innerHTML = icon(x.dataset.ic); });
+
+  // 多会话日志示例
+  var log = document.querySelector('.mk-log');
+  if (log) log.innerHTML = Sq.logLines(lines, 1);
+
+  Sq.qa('[data-demo]').forEach(function (el) {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', function () {
+      if (el.tagName === 'BUTTON') {
+        Sq.toast(el.dataset.demo, 'info', '扩展形态预览 · 未接入真实实现');
+      } else {
+        Sq.toast('『' + el.textContent.trim() + '』', 'info', el.dataset.demo);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
