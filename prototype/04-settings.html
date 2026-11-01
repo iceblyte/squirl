@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Squirl · 设置</title>
+<link rel="icon" href="assets/logo-128.png" type="image/png">
 <link rel="stylesheet" href="assets/tokens.css">
 <link rel="stylesheet" href="assets/pages.css">
 </head>
@@ -148,7 +149,7 @@
           <div class="card">
             <div class="card-head">
               <h3>扫描</h3><span class="sp"></span>
-              <button class="btn btn-sm btn-ghost" id="pauseDemo">模拟 500 条暂停</button>
+              <span class="mono">scan</span>
             </div>
             <div class="card-body">
               <div class="set-row">
@@ -170,7 +171,10 @@
                   <b>上次扫描</b>
                   <p id="lastScan">2 分钟前 · 命中 37 个目录 · 用时 412 ms</p>
                 </div>
-                <div class="sc"><button class="btn" id="scanNow"><span class="ic-slot" data-ic="refresh"></span>立即扫描</button></div>
+                <div class="sc">
+                  <button class="btn btn-sm btn-ghost" id="pauseDemo">模拟 500 条暂停</button>
+                  <button class="btn" id="scanNow"><span class="ic-slot" data-ic="refresh"></span>立即扫描</button>
+                </div>
               </div>
               <div class="set-row">
                 <div class="sl"><b>大批量暂停阈值</b><p>命中数超过阈值时暂停扫描，由你决定继续或缩小范围，不静默吞掉结果。</p></div>

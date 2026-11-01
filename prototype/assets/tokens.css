@@ -125,9 +125,10 @@ code{font-family:var(--mono)}
   display:flex;flex-direction:column;padding:12px 9px 9px;min-height:0;overflow:auto;gap:2px;
 }
 .sb-brand{display:flex;align-items:center;gap:9px;padding:5px 8px 13px;flex:none}
-.sb-logo{width:29px;height:29px;border-radius:9px;background:var(--acorn);color:#fff;display:grid;place-items:center;flex:none;
-  box-shadow:0 1px 2px rgba(23,22,20,.18)}
-.sb-logo svg{width:17px;height:17px}
+.sb-logo{width:29px;height:29px;border-radius:8px;overflow:hidden;flex:none;
+  box-shadow:0 1px 3px rgba(23,22,20,.16);background:var(--surface-2)}
+.sb-logo img{width:112%;height:112%;margin:-6%;display:block;object-fit:cover}
+
 .sb-name{font-size:13.5px;font-weight:640;letter-spacing:-.014em;line-height:1.15;display:block}
 .sb-sub{font-size:9.5px;color:var(--ink-3);letter-spacing:.04em;display:block;margin-top:1px}
 
@@ -140,6 +141,10 @@ code{font-family:var(--mono)}
 .nav a.on svg{opacity:.94}
 .nav a .n{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-4);letter-spacing:.02em}
 .nav a.on .n{color:var(--canvas);opacity:.72}
+/* 暗色下「反相高亮」会变成一块刺眼的白板：改用抬升面 + 左侧橡果竖条表达选中 */
+html[data-theme="dark"] .nav a.on{background:var(--surface-3);color:var(--ink);box-shadow:inset 2px 0 0 var(--acorn)}
+html[data-theme="dark"] .nav a.on .n{color:var(--ink-3)}
+html[data-theme="dark"] .nav a.on svg{opacity:.9;color:var(--acorn)}
 
 .sb-sec{margin:15px 0 5px;padding:0 9px;font-family:var(--mono);font-size:9px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--ink-4);display:flex;align-items:center;gap:6px;flex:none}
@@ -232,6 +237,9 @@ code{font-family:var(--mono)}
 .iconbtn svg{width:13px;height:13px}
 .iconbtn:hover{background:var(--surface);border-color:var(--line);color:var(--ink)}
 .iconbtn.danger:hover{color:var(--brick);border-color:var(--brick-line);background:var(--brick-wash)}
+/* 运行中的行，主动作是「停止」而不是「再启一个」——给一点颜色，和播放按钮区分开 */
+.iconbtn.stop{color:var(--acorn)}
+.iconbtn.stop:hover{color:#fff;background:var(--brick);border-color:var(--brick)}
 
 /* ============================== 输入 / 选择 / 开关 ============================== */
 .input{
@@ -295,6 +303,9 @@ html[data-theme="dark"] .tgl.on::after{background:#141312}
 .pill.warn{background:var(--amber-wash);border-color:var(--amber-line);color:var(--amber)}
 .pill.warn i{background:var(--amber)}
 .pill.starting i{background:var(--ink-3);animation:breath 1s ease-in-out infinite}
+/* 「启动中」和「未运行」原本都是同一块中性灰，只有小圆点在动，静态看几乎分不出。
+   用虚线描边表达「正在过渡」，不新增颜色。 */
+.pill.starting{background:transparent;border-style:dashed;border-color:var(--line-strong);color:var(--ink-2)}
 @keyframes breath{0%,100%{opacity:1}50%{opacity:.3}}
 @media (prefers-reduced-motion:reduce){.pill.run i,.pill.starting i{animation:none}}
 

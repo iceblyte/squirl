@@ -1,7 +1,6 @@
 /* Squirl · 内联 SVG 图标集（无图标库依赖） */
 (function () {
   var P = {
-    logo: '<path d="M12 21.2c-2.9-1.7-4.5-4.4-4.5-7.4 0-2 .6-3.9 1.5-5.3h6c.9 1.4 1.5 3.3 1.5 5.3 0 3-1.6 5.7-4.5 7.4Z" stroke="currentColor" stroke-width="1.4"/><path d="M8 8.6c1.4-.9 2.6-1.3 4-1.3s2.6.4 4 1.3" stroke="currentColor" stroke-width="1.3"/><path d="M12 7.3V5.2M12 5.2h2" stroke="currentColor" stroke-width="1.3"/>',
     ledger: '<path d="M4.5 6h15M4.5 12h15M4.5 18h9" stroke="currentColor" stroke-width="1.5"/><circle cx="18.5" cy="18" r="2" stroke="currentColor" stroke-width="1.4"/>',
     terminal: '<rect x="3" y="4.5" width="18" height="15" rx="2.6" stroke="currentColor" stroke-width="1.4"/><path d="m7 9.6 2.4 2.4L7 14.4M12.6 15h4.2" stroke="currentColor" stroke-width="1.4"/>',
     settings: '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M12 3.6v2.1M12 18.3v2.1M4.6 12h2.1M17.3 12h2.1M6.5 6.5l1.5 1.5M16 16l1.5 1.5M17.5 6.5 16 8M8 16l-1.5 1.5" stroke="currentColor" stroke-width="1.4"/>',

@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Squirl · UI 原型提案 v0.2（方向已确认）</title>
+<link rel="icon" href="assets/logo-128.png" type="image/png">
 <style>
   :root{
     /* 本页自身也按最终采用的 C 方案渲染，便于与原型集对照 */
@@ -581,6 +582,35 @@
     </div>
   </section>
 
+
+    <!-- 品牌标记 -->
+    <div style="margin-top:26px;border:1px solid var(--line);border-radius:var(--r-l);background:var(--surface);overflow:hidden">
+      <div style="display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--line-soft)">
+        <b style="font-size:12px;font-weight:650">品牌标记</b>
+        <span class="mono" style="font-size:9px;color:var(--ink-4)">logo · png / 512</span>
+        <span style="flex:1"></span>
+        <span style="font-size:10px;color:var(--ink-4)">松鼠抱着橡果，站在文件夹前</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:0">
+        <div style="padding:22px 20px;border-right:1px solid var(--line-soft);display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+          <div style="box-shadow:0 14px 30px -16px rgba(23,22,20,.45);border-radius:16px;overflow:hidden"><img src="assets/logo-256.png" alt="Squirl" width="76" height="76" style="width:76px;height:76px;display:block;"></div>
+          <div style="box-shadow:0 8px 18px -10px rgba(23,22,20,.4);border-radius:9px;overflow:hidden"><img src="assets/logo-128.png" alt="Squirl" width="40" height="40" style="width:40px;height:40px;display:block;"></div>
+          <div style="border-radius:6px;overflow:hidden"><img src="assets/logo-64.png" alt="Squirl" width="24" height="24" style="width:24px;height:24px;display:block;"></div>
+          <div style="border-radius:4px;overflow:hidden"><img src="assets/logo-32.png" alt="Squirl" width="16" height="16" style="width:16px;height:16px;display:block;"></div>
+          <div style="width:100%;display:flex;align-items:center;gap:9px;padding-top:8px">
+            <span style="border-radius:5px;overflow:hidden"><img src="assets/logo-128.png" alt="Squirl" width="26" height="26" style="width:26px;height:26px;display:block;"></span>
+            <span style="font-size:19px;font-weight:660;letter-spacing:-.03em">Squirl</span>
+            <span class="mono" style="font-size:9px;color:var(--ink-4);margin-left:2px">本地项目台账</span>
+          </div>
+        </div>
+        <div style="padding:20px;font-size:11px;color:var(--ink-2);line-height:1.75">
+          <p style="margin:0 0 8px"><strong>构图照原图严格还原。</strong>松鼠在左、抱着橡果，右侧是带播放三角的文件夹，右上两道橙色动势线；底色为暖奶油圆角方。</p>
+          <p style="margin:0 0 8px"><strong>为什么用位图而不是重画。</strong>原图是带渐变、交叉纹理与高光的插画，手写 SVG 无法做到「严格还原」，重画只会得到一个像又不像的仿制品。因此直接以原图为母版导出多尺寸透明 PNG。</p>
+          <p style="margin:0;color:var(--ink-3)"><strong>文件：</strong><span class="mono">assets/logo-512/256/128/64/32.png</span>（RGBA）。侧栏 29px 用 128、favicon 用 128、文档大图用 512。若要矢量版（可任意缩放、可换色），需要原始 AI/Figma 源文件或描摹，那是另一条路。</p>
+        </div>
+      </div>
+    </div>
+
   <!-- ============ 3 设计变量 ============ -->
   <section id="tokens">
     <div class="sec-h"><span class="n">03</span><h2>设计变量（Design Tokens）</h2></div>
@@ -938,7 +968,7 @@
         <div class="wf-canvas" style="min-height:340px">
           <div class="wbar"><span class="bmark"></span><span class="bname">SQUIRL</span><div style="flex:1"></div><span class="wbox" style="padding:3px 7px">设置</span></div>
           <div class="wbody" style="align-items:center;justify-content:center;text-align:center;gap:14px;padding:34px 20px">
-            <div style="width:54px;height:54px;border-radius:50%;border:1px dashed var(--line-strong);background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--ink-4);font-family:var(--mono);font-size:9px">logo</div>
+            <div style="width:54px;height:54px;line-height:0"><svg viewBox="0 0 24 24" width="54" height="54"><rect width="24" height="24" rx="5.6" fill="#FDF7EE"/><path d="M8.8 19.2C5.2 18.3 2.9 15 3.7 11.6 4.5 8.1 7.8 5.9 10.9 7.1" fill="none" stroke="#D96D28" stroke-width="3.4" stroke-linecap="round"/><path d="M8.8 19.2C5.2 18.3 2.9 15 3.7 11.6 4.5 8.1 7.8 5.9 10.9 7.1" fill="none" stroke="#E8873A" stroke-width="1.7" stroke-linecap="round"/><ellipse cx="10.8" cy="15.5" rx="4.5" ry="4.4" fill="#EE8C3C"/><circle cx="13.4" cy="10.5" r="3.3" fill="#EE8C3C"/><path d="M12.2 7.6c-.2-1.6.6-2.6 1.6-2.5 1 .1 1.6 1.1 1.3 2.5Z" fill="#D96D28"/><path d="M12.9 7.5c-.1-.9.3-1.5.9-1.5.6 0 .9.6.8 1.5Z" fill="#F9D3AA"/><ellipse cx="15.9" cy="11.3" rx="1.5" ry="1.25" fill="#F9D3AA"/><circle cx="14.2" cy="10" r=".58" fill="#2B2119"/><circle cx="17.1" cy="11" r=".45" fill="#2B2119"/><path d="M10.4 17.9c0-1 1-1.8 2.2-1.8s2.2.8 2.2 1.8-1 1.7-2.2 1.7-2.2-.7-2.2-1.7Z" fill="#C98A4B"/><path d="M9.9 15.9c0-.8 1.15-1.45 2.7-1.45s2.7.65 2.7 1.45-1.15 1.35-2.7 1.35-2.7-.55-2.7-1.35Z" fill="#8B5A2B"/><ellipse cx="10.7" cy="16.4" rx="1.1" ry="1.3" fill="#EE8C3C"/></svg></div>
             <div style="max-width:420px">
               <div style="font-size:17px;font-weight:640;letter-spacing:-.022em;margin-bottom:6px">先把一个文件夹交给 Squirl</div>
               <div style="font-size:11.5px;color:var(--ink-2);line-height:1.65">它会按你的深度设置扫一遍，把里面的项目列成清单。<br>扫描只读，不会在你的项目目录里写任何文件。</div>

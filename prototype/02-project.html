@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Squirl · 项目详情</title>
+<link rel="icon" href="assets/logo-128.png" type="image/png">
 <link rel="stylesheet" href="assets/tokens.css">
 <link rel="stylesheet" href="assets/pages.css">
 </head>
@@ -207,6 +208,14 @@
     renderMode();
     el('note').value = p.note || '';
     countNote();
+    growNote();
+  }
+
+  /* 备注框跟着内容长：一行字就别占四行的高度，超过上限再滚动 */
+  function growNote() {
+    var t = el('note');
+    t.style.height = 'auto';
+    t.style.height = Math.min(t.scrollHeight, 200) + 'px';
   }
 
   function renderMode() {
@@ -218,9 +227,14 @@
     var primary = p.commands.filter(function (c) { return c.state === 'running' || c.state === 'starting'; })[0] ||
       p.commands[0];
     var line = primary ? primary.line : 'pnpm dev';
-    el('ovEff').textContent = builtin
-      ? 'pwsh -NoLogo -NoProfile -Command "' + line + '"   ·   Job Object / setsid 监管'
+    var cmdText = builtin
+      ? 'pwsh -NoLogo -NoProfile -Command "' + line + '"'
       : 'wt.exe -d "' + p.path + '" pwsh -NoExit -Command "' + line + '"';
+    var metaText = builtin
+      ? 'Job Object / setsid 监管 · 退出码写回台账'
+      : '进程归终端所有 · 不记录退出码';
+    el('ovEff').innerHTML = '<span class="ln">' + Sq.esc(cmdText) + '</span>' +
+      '<span class="mt">' + metaText + '</span>';
     el('runLabel').textContent = (running ? '停止 ' : '启动 ') + (primary ? primary.name : '命令');
   }
 
@@ -237,14 +251,17 @@
       return;
     }
     el('cmdRows').innerHTML = p.commands.map(function (c) {
-      return '<div class="cmd-row ' + (c.state === 'running' ? 'running' : '') + '" data-c="' + c.id + '">' +
+      var isLive = c.state === 'running' || c.state === 'starting';
+      return '<div class="cmd-row ' + (isLive ? 'running' : '') + '" data-c="' + c.id + '">' +
         '<div class="nm">' + Sq.esc(c.name) + '</div>' +
         '<div class="ln" title="' + Sq.esc(c.line) + '">' + Sq.esc(c.line) + '</div>' +
         (c.cwd ? '<div class="cwd" title="' + Sq.esc(c.cwd) + '">' + Sq.esc(c.cwd) + '</div>' : '') +
         '<div class="tm">' + (c.lastRun || '未运行') + '</div>' +
         '<div class="st">' + Sq.statusPill(c.state) + '</div>' +
         '<div class="ca">' +
-          '<button class="iconbtn" data-run title="运行"><span class="ic-slot">' + icon('play') + '</span></button>' +
+          (isLive
+            ? '<button class="iconbtn stop" data-stop title="停止这条命令"><span class="ic-slot">' + icon('stop') + '</span></button>'
+            : '<button class="iconbtn" data-run title="运行"><span class="ic-slot">' + icon('play') + '</span></button>') +
           '<button class="iconbtn" data-edit title="编辑"><span class="ic-slot">' + icon('edit') + '</span></button>' +
           '<button class="iconbtn danger" data-del title="删除"><span class="ic-slot">' + icon('trash') + '</span></button>' +
         '</div></div>';
@@ -252,7 +269,10 @@
 
     Sq.qa('[data-c]', el('cmdRows')).forEach(function (row) {
       var c = p.commands.filter(function (x) { return x.id === row.dataset.c; })[0];
-      row.querySelector('[data-run]').addEventListener('click', function (e) { e.stopPropagation(); startRun(c); });
+      var stopEl = row.querySelector('[data-stop]');
+      var runEl = row.querySelector('[data-run]');
+      if (stopEl) stopEl.addEventListener('click', function (e) { e.stopPropagation(); stopRun(); });
+      if (runEl) runEl.addEventListener('click', function (e) { e.stopPropagation(); startRun(c); });
       row.querySelector('[data-edit]').addEventListener('click', function (e) { e.stopPropagation(); editCmd(c); });
       row.querySelector('[data-del]').addEventListener('click', function (e) { e.stopPropagation(); delCmd(c); });
     });
@@ -491,6 +511,7 @@
   /* ---------- 备注 ---------- */
   var noteTimer;
   el('note').addEventListener('input', function () {
+    growNote();
     countNote();
     el('noteState').textContent = '编辑中…';
     clearTimeout(noteTimer);

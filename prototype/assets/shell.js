@@ -83,7 +83,7 @@
     }).join('');
 
     return '<div class="sb-brand">' +
-        '<div class="sb-logo">' + icon('logo') + '</div>' +
+        '<div class="sb-logo"><img src="assets/logo-128.png" alt="Squirl" width="29" height="29"></div>' +
         '<div><span class="sb-name">Squirl</span><span class="sb-sub">本地项目台账</span></div>' +
       '</div>' +
       '<nav class="nav" aria-label="主导航">' + nav + '</nav>' +

@@ -31,23 +31,31 @@
     var live = p.state === 'running' || p.state === 'starting';
     var cls = 'pcard' + (live ? ' running' : '') + (p.missing ? ' missing' : '');
     var cmds = p.commands.slice(0, 2).map(function (c) {
-      return '<span class="chip" data-cmd="' + c.id + '">' + icon('play') + '<span>' + esc(c.name) + '</span></span>';
+      return '<button class="chip" type="button" data-cmd="' + c.id + '">' + icon('play') + '<span>' + esc(c.name) + '</span></button>';
     }).join('');
     if (p.commands.length > 2) cmds += '<span class="tag">+' + (p.commands.length - 2) + '</span>';
-    if (!p.commands.length) cmds = '<span class="chip add" data-cmd="new">' + icon('plus') + '<span>加一条命令</span></span>';
+    if (!p.commands.length) cmds = '<button class="chip add" type="button" data-cmd="new">' + icon('plus') + '<span>加一条命令</span></button>';
 
-    return '<article class="' + cls + '" data-id="' + p.id + '" tabindex="0" role="button">' +
+    /* 运行中显示的是「这次跑了多久」，不是「上次什么时候跑的」——后者对正在跑的项目没有信息量 */
+    var liveRun = live ? (M.runs || []).filter(function (r) {
+      return r.project === p.name && (r.state === 'running' || r.state === 'starting');
+    })[0] : null;
+    var when = liveRun
+      ? '<span class="live">运行 ' + esc(liveRun.elapsed) + '</span>'
+      : '<span>' + (p.lastRun || '未运行') + '</span>';
+
+    return '<article class="' + cls + '" data-id="' + p.id + '">' +
       '<div class="ph">' +
         '<div class="avatar">' + esc(p.badge) + '</div>' +
         '<div style="min-width:0;flex:1">' +
-          '<div class="nm">' + esc(p.name) + '</div>' +
+          '<button class="nm" type="button" data-open>' + esc(p.name) + '</button>' +
           '<div class="pth" title="' + esc(p.path) + '">' + esc(p.path) + '</div>' +
         '</div>' +
         '<div class="kt">' + Sq.statusPill(p.missing ? 'missing' : p.state) + '</div>' +
       '</div>' +
       '<div class="note' + (p.note ? '' : ' nil') + '">' + (p.note ? esc(p.note) : '还没有备注。记下它为什么存在，下个月你会感谢自己。') + '</div>' +
       '<div class="cf">' + cmds +
-        '<div class="rt"><span>' + (p.lastRun || '未运行') + '</span><span>·</span><span>' + p.runs + ' 次</span></div>' +
+        '<div class="rt">' + when + '<span>·</span><span>' + p.runs + ' 次</span></div>' +
       '</div>' +
     '</article>';
   };
@@ -55,12 +63,12 @@
   /* 列表行 */
   Sq.listRow = function (p) {
     var cmds = p.commands.slice(0, 2).map(function (c) {
-      return '<span class="chip" data-cmd="' + c.id + '">' + icon('play') + '<span>' + esc(c.name) + '</span></span>';
+      return '<button class="chip" type="button" data-cmd="' + c.id + '">' + icon('play') + '<span>' + esc(c.name) + '</span></button>';
     }).join('');
     if (p.commands.length > 2) cmds += '<span class="tag">+' + (p.commands.length - 2) + '</span>';
-    return '<div class="lrow" data-id="' + p.id + '" tabindex="0" role="button">' +
+    return '<div class="lrow" data-id="' + p.id + '">' +
       '<div class="avatar">' + esc(p.badge) + '</div>' +
-      '<div class="nm">' + esc(p.name) + '</div>' +
+      '<button class="nm" type="button" data-open>' + esc(p.name) + '</button>' +
       '<div class="pth" title="' + esc(p.path) + '">' + esc(p.path) + '</div>' +
       '<div class="cmds">' + (cmds || '<span class="tag">无命令</span>') + '</div>' +
       '<div class="st">' + Sq.statusPill(p.missing ? 'missing' : p.state) + '</div>' +
@@ -203,4 +211,15 @@
 
   /* 页面间跳转 */
   Sq.goProject = function (id) { location.href = '02-project.html?id=' + encodeURIComponent(id || 'p1'); };
+
+  /* 卡片/列表行是 tabindex=0 + role=button 的自绘控件，
+     浏览器不会替我们发 click，必须自己把 Enter / Space 转成一次点击，
+     否则键盘用户能聚焦却按不动。用事件委托，卡片重渲染后依然有效。 */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    var el = e.target && e.target.closest ? e.target.closest('.pcard[tabindex], .lrow[tabindex]') : null;
+    if (!el || e.target.closest('.chip, button, a')) return;
+    e.preventDefault();
+    el.click();
+  });
 })();
