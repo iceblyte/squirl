@@ -43,17 +43,14 @@ fn sink() -> Arc<CollectSink> {
 }
 
 fn pwsh() -> ShellSpec {
-    ShellSpec {
-        kind: ShellKind::Pwsh,
-        program: locate_on_path("pwsh").expect("pwsh 必须在位"),
-    }
+    ShellSpec::new(ShellKind::Pwsh, locate_on_path("pwsh").expect("pwsh 必须在位"))
 }
 
 fn git_bash() -> ShellSpec {
-    ShellSpec {
-        kind: ShellKind::Bash,
-        program: squirl::engine::shell::resolve_git_bash().expect("Git Bash 必须在位"),
-    }
+    ShellSpec::new(
+        ShellKind::Bash,
+        squirl::engine::shell::resolve_git_bash().expect("Git Bash 必须在位"),
+    )
 }
 
 fn args(command_line: &str, cwd: &Path, shell: ShellSpec, env: Vec<(String, String)>) -> StartArgs {

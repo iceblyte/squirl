@@ -83,6 +83,8 @@ pub fn run() {
                         .map_err(|e| AppError::Engine(format!("DB 线程失败: {e}")))?
                 })
             }?;
+            // ADR-4：清扫上次运行残留的 pwsh 启动脚本（数据目录 tmp）
+            crate::engine::adapter::sweep_script_dir(&data_dir.join("tmp"));
             tracing::info!(target: "db_record", path = %data_dir.display(), "数据库已打开");
             emit_recovery(&handle, event);
 
@@ -108,6 +110,13 @@ pub fn run() {
             commands::projects::relocate_project,
             commands::projects::delete_project,
             commands::projects::get_project_command_count,
+            commands::command_crud::add_command,
+            commands::command_crud::update_command,
+            commands::command_crud::delete_command,
+            commands::command_crud::list_commands,
+            commands::run::get_effective_execution_config,
+            commands::run::start_command,
+            commands::run::start_temp_command,
         ])
         .run(tauri::generate_context!())
         .expect("Squirl 启动失败");

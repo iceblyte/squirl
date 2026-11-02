@@ -45,6 +45,14 @@ pub struct ShellSpec {
     pub kind: ShellKind,
     /// 解析到的可执行文件路径（设置页展示「实际解析到的 shell 路径」）。
     pub program: String,
+    /// F7 设置：是否加载 profile（false → pwsh -NoProfile / bash 去 -l）。
+    pub load_profile: bool,
+}
+
+impl ShellSpec {
+    pub fn new(kind: ShellKind, program: impl Into<String>) -> Self {
+        Self { kind, program: program.into(), load_profile: true }
+    }
 }
 
 impl ShellSpec {
@@ -61,8 +69,22 @@ impl ShellSpec {
     /// 组装 shell 自身参数（不含模拟器包装）。`script` 为 quoting 装配产物。
     pub fn spawn_args(&self, script: &str, keep_open: bool) -> Vec<String> {
         match self.kind {
-            ShellKind::Pwsh => vec!["-Login".into(), "-NoLogo".into(), "-Command".into(), script.into()],
-            ShellKind::PowerShell5 => vec!["-NoLogo".into(), "-Command".into(), script.into()],
+            ShellKind::Pwsh => {
+                let mut v = vec!["-NoLogo".into(), "-Command".into(), script.into()];
+                if self.load_profile {
+                    v.insert(0, "-Login".into());
+                } else {
+                    v.insert(0, "-NoProfile".into());
+                }
+                v
+            }
+            ShellKind::PowerShell5 => {
+                let mut v = vec!["-NoLogo".into(), "-Command".into(), script.into()];
+                if !self.load_profile {
+                    v.insert(1, "-NoProfile".into());
+                }
+                v
+            }
             // cmd：脚本与 /c、/k 同元素 raw 传递（见 quoting::cmd_arg）
             ShellKind::Cmd => vec![quoting::cmd_arg(keep_open, script)],
             ShellKind::Bash | ShellKind::Zsh => {
@@ -95,13 +117,13 @@ impl Probe for EnvProbe {
 /// Windows 解析链。
 pub fn resolve_windows(probe: &dyn Probe) -> Result<ShellSpec> {
     if let Some(p) = probe.locate("pwsh") {
-        return Ok(ShellSpec { kind: ShellKind::Pwsh, program: p });
+        return Ok(ShellSpec::new(ShellKind::Pwsh, p));
     }
     if let Some(p) = probe.locate("powershell") {
-        return Ok(ShellSpec { kind: ShellKind::PowerShell5, program: p });
+        return Ok(ShellSpec::new(ShellKind::PowerShell5, p));
     }
     if let Some(p) = probe.locate("cmd") {
-        return Ok(ShellSpec { kind: ShellKind::Cmd, program: p });
+        return Ok(ShellSpec::new(ShellKind::Cmd, p));
     }
     Err(AppError::ShellUnsupported(
         "Windows 未找到 pwsh / powershell / cmd 任何一个".into(),
@@ -122,7 +144,7 @@ pub fn resolve_unix(probe: &dyn Probe) -> Result<ShellSpec> {
             return fallback_unix(probe);
         }
         if base == "bash" || base == "zsh" {
-            return Ok(ShellSpec { kind: if base == "bash" { ShellKind::Bash } else { ShellKind::Zsh }, program: s });
+            return Ok(ShellSpec::new(if base == "bash" { ShellKind::Bash } else { ShellKind::Zsh }, s));
         }
     }
     fallback_unix(probe)
@@ -130,10 +152,10 @@ pub fn resolve_unix(probe: &dyn Probe) -> Result<ShellSpec> {
 
 fn fallback_unix(probe: &dyn Probe) -> Result<ShellSpec> {
     if let Some(p) = probe.locate("zsh") {
-        return Ok(ShellSpec { kind: ShellKind::Zsh, program: p });
+        return Ok(ShellSpec::new(ShellKind::Zsh, p));
     }
     if let Some(p) = probe.locate("bash") {
-        return Ok(ShellSpec { kind: ShellKind::Bash, program: p });
+        return Ok(ShellSpec::new(ShellKind::Bash, p));
     }
     Err(AppError::ShellUnsupported("未找到 zsh / bash".into()))
 }
@@ -272,9 +294,9 @@ mod tests {
 
     #[test]
     fn spawn_args_shape_per_shell() {
-        let pwsh = ShellSpec { kind: ShellKind::Pwsh, program: "pwsh".into() };
+        let pwsh = ShellSpec::new(ShellKind::Pwsh, "pwsh");
         assert_eq!(pwsh.spawn_args("SCRIPT", false), vec!["-Login", "-NoLogo", "-Command", "SCRIPT"]);
-        let cmd = ShellSpec { kind: ShellKind::Cmd, program: "cmd".into() };
+        let cmd = ShellSpec::new(ShellKind::Cmd, "cmd");
         assert_eq!(cmd.spawn_args("echo a", true), vec!["/k echo a"]);
     }
 

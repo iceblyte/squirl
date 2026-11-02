@@ -376,7 +376,7 @@ mod tests {
 
     fn job(kind: ShellKind) -> LaunchJob {
         LaunchJob {
-            shell: ShellSpec { kind, program: format!("{kind:?}.exe").to_lowercase() },
+            shell: ShellSpec::new(kind, format!("{kind:?}").to_lowercase()),
             command_line: "echo hi".into(),
             cwd: PathBuf::from(r"C:\proj"),
             keep_open: true,

@@ -47,6 +47,16 @@ impl RunState {
     }
 }
 
+/// `RunInfo`（契约 §5.4.1：StartResult.run / list_active_runs 出参）。
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RunInfo {
+    pub run_id: String,
+    pub command_id: Option<String>,
+    pub state: String,
+    pub command_line: String,
+}
+
 /// 启动参数（内置模式）。
 #[derive(Debug, Clone)]
 pub struct StartArgs {

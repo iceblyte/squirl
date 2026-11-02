@@ -80,23 +80,23 @@ impl Drop for TempCase {
 }
 
 fn pwsh_shell() -> ShellSpec {
-    ShellSpec { kind: ShellKind::Pwsh, program: "pwsh".into() }
+    ShellSpec::new(ShellKind::Pwsh, "pwsh")
 }
 
 fn ps51_shell() -> ShellSpec {
-    ShellSpec {
-        kind: ShellKind::PowerShell5,
-        program: r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe".into(),
-    }
+    ShellSpec::new(
+        ShellKind::PowerShell5,
+        r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
+    )
 }
 
 fn cmd_shell() -> ShellSpec {
-    ShellSpec { kind: ShellKind::Cmd, program: r"C:\Windows\System32\cmd.exe".into() }
+    ShellSpec::new(ShellKind::Cmd, r"C:\Windows\System32\cmd.exe")
 }
 
 fn git_bash_shell() -> ShellSpec {
     let program = resolve_git_bash().expect("Git Bash 必须可定位");
-    ShellSpec { kind: ShellKind::Bash, program }
+    ShellSpec::new(ShellKind::Bash, program)
 }
 
 fn wt() -> WindowsTerminalAdapter {

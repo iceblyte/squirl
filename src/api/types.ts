@@ -31,6 +31,27 @@ export interface ProjectCard {
   pathMissing: boolean;
   lastRunAt: string | null;
   runCount: number;
+  /** ADR-12：卡片快启（G3）数据源 */
+  commands: CommandRow[];
+}
+
+/** StartResult 判别联合（DR-16③） */
+export type StartResult =
+  | {
+      mode: "builtin";
+      run: { runId: string; commandId: string | null; state: string; commandLine: string };
+    }
+  | { mode: "external"; launched: boolean };
+
+/** get_effective_execution_config 出参 */
+export interface EffectiveExecConfig {
+  mode: "external" | "builtin";
+  shell: string;
+  shellPath: string;
+  emulator: string | null;
+  warnings: string[];
+  supported: boolean;
+  loadProfile: boolean;
 }
 
 export interface ScanTicket {

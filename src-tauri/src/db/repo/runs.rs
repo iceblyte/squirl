@@ -26,6 +26,29 @@ pub enum RunOutcome {
     LaunchedExternal,
 }
 
+/// 外部模式启动成功写回（DR-16①：last_run_at 更新 + run_count +1，exit 恒 NULL）。
+pub fn record_external_launch(
+    conn: &mut Connection,
+    command_id: Option<Uuid>,
+    project_id: &str,
+) -> Result<()> {
+    let tx = conn.transaction().map_err(AppError::Db)?;
+    if let Some(cid) = command_id {
+        tx.execute(
+            "UPDATE commands SET last_run_at=?1 WHERE id=?2",
+            rusqlite::params![crate::clock::now_rfc3339(), cid.to_string()],
+        )
+        .map_err(AppError::Db)?;
+    }
+    tx.execute(
+        "UPDATE projects SET run_count = run_count + 1 WHERE id=?1",
+        rusqlite::params![project_id],
+    )
+    .map_err(AppError::Db)?;
+    tx.commit().map_err(AppError::Db)?;
+    Ok(())
+}
+
 /// 终态写回（退出四步串行的第②步，DR-14）。
 pub fn write_back_finals(conn: &mut Connection, finals: &[RunFinal]) -> Result<()> {
     let tx = conn.transaction().map_err(AppError::Db)?;

@@ -20,6 +20,9 @@ pub struct ProjectCard {
     pub path_missing: bool,
     pub last_run_at: Option<String>,
     pub run_count: i64,
+    /// ADR-12（契约 v1.1a additive）：卡片快启（G3）数据源。
+    #[serde(default)]
+    pub commands: Vec<CommandRow>,
 }
 
 /// 登记项目（发现区「登记」与手动注册同入口，契约 register_project）。
@@ -27,6 +30,9 @@ pub struct ProjectCard {
 pub fn register_project(conn: &Connection, path: &Path, note: Option<&str>) -> Result<ProjectCard> {
     if !path.exists() {
         return Err(AppError::PathNotFound(path.to_string_lossy().into_owned()));
+    }
+    if !path.is_dir() {
+        return Err(AppError::InvalidInput("仅支持登记文件夹".into()));
     }
     let display = crate::paths::canonical(path)?;
     let norm = crate::paths::normalize_key(path)?;
@@ -66,6 +72,7 @@ pub fn register_project(conn: &Connection, path: &Path, note: Option<&str>) -> R
         path_missing: false,
         last_run_at: None,
         run_count: 0,
+        commands: Vec::new(),
     })
 }
 
@@ -84,6 +91,38 @@ fn attribution_for(project_norm: &str, conn: &Connection) -> Option<String> {
 }
 
 /// 台账列表（含归属、失效标记；每次调用内存派生，≤500 项目 × ≤10 根）。
+/// 全量命令一次取回按项目分组（卡片快启 G3 数据源，ADR-12）。
+fn fetch_all_commands_grouped(
+    conn: &Connection,
+) -> Result<std::collections::HashMap<String, Vec<CommandRow>>> {
+    let mut stmt = conn
+        .prepare("SELECT project_id, id, name, command_line, cwd, last_run_at, last_exit_code FROM commands")
+        .map_err(AppError::Db)?;
+    let rows = stmt
+        .query_map([], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                CommandRow {
+                    id: r.get(1)?,
+                    project_id: r.get(0)?,
+                    name: r.get(2)?,
+                    command_line: r.get(3)?,
+                    cwd: r.get(4)?,
+                    last_run_at: r.get(5)?,
+                    last_exit_code: r.get(6)?,
+                },
+            ))
+        })
+        .map_err(AppError::Db)?;
+    let mut map: std::collections::HashMap<String, Vec<CommandRow>> =
+        std::collections::HashMap::new();
+    for row in rows {
+        let (pid, cmd) = row.map_err(AppError::Db)?;
+        map.entry(pid).or_default().push(cmd);
+    }
+    Ok(map)
+}
+
 pub fn list_projects(conn: &Connection) -> Result<Vec<ProjectCard>> {
     let mut stmt = conn
         .prepare("SELECT id, path, name, note, last_run_at, run_count FROM projects ORDER BY last_run_at IS NULL, last_run_at DESC")
@@ -100,6 +139,8 @@ pub fn list_projects(conn: &Connection) -> Result<Vec<ProjectCard>> {
             ))
         })
         .map_err(AppError::Db)?;
+    let mut cmds = fetch_all_commands_grouped(conn)?;
+
     let mut out = Vec::new();
     for row in rows {
         let (id, path, name, note, last_run_at, run_count) = row.map_err(AppError::Db)?;
@@ -107,6 +148,7 @@ pub fn list_projects(conn: &Connection) -> Result<Vec<ProjectCard>> {
         out.push(ProjectCard {
             root_id: attribution_for(&norm, conn),
             path_missing: !Path::new(&path).exists(),
+            commands: cmds.remove(&id).unwrap_or_default(),
             id,
             path,
             name,
@@ -143,6 +185,7 @@ pub fn search_projects(conn: &Connection, query: &str) -> Result<Vec<ProjectCard
             ))
         })
         .map_err(AppError::Db)?;
+    let mut cmds = fetch_all_commands_grouped(conn)?;
     let mut out = Vec::new();
     for row in rows {
         let (id, path, name, note, last_run_at, run_count) = row.map_err(AppError::Db)?;
@@ -150,6 +193,7 @@ pub fn search_projects(conn: &Connection, query: &str) -> Result<Vec<ProjectCard
         out.push(ProjectCard {
             root_id: attribution_for(&norm, conn),
             path_missing: !Path::new(&path).exists(),
+            commands: cmds.remove(&id).unwrap_or_default(),
             id,
             path,
             name,
@@ -166,11 +210,18 @@ pub fn search_projects(conn: &Connection, query: &str) -> Result<Vec<ProjectCard
 #[serde(rename_all = "camelCase")]
 pub struct CommandRow {
     pub id: String,
+    pub project_id: String,
     pub name: String,
     pub command_line: String,
     pub cwd: Option<String>,
     pub last_run_at: Option<String>,
     pub last_exit_code: Option<i32>,
+}
+
+impl CommandRow {
+    pub fn project_id(&self) -> &str {
+        &self.project_id
+    }
 }
 
 /// `ProjectDetail`（契约 get_project 出参：卡片 + 命令列表）。
@@ -189,17 +240,18 @@ pub fn get_project(conn: &Connection, id: &str) -> Result<ProjectDetail> {
         .find(|c| c.id == id)
         .ok_or_else(|| AppError::InvalidInput(format!("项目不存在: {id}")))?;
     let mut stmt = conn
-        .prepare("SELECT id, name, command_line, cwd, last_run_at, last_exit_code FROM commands WHERE project_id=?1 ORDER BY rowid")
+        .prepare("SELECT id, project_id, name, command_line, cwd, last_run_at, last_exit_code FROM commands WHERE project_id=?1 ORDER BY rowid")
         .map_err(AppError::Db)?;
     let commands = stmt
         .query_map(rusqlite::params![id], |r| {
             Ok(CommandRow {
                 id: r.get(0)?,
-                name: r.get(1)?,
-                command_line: r.get(2)?,
-                cwd: r.get(3)?,
-                last_run_at: r.get(4)?,
-                last_exit_code: r.get(5)?,
+                project_id: r.get(1)?,
+                name: r.get(2)?,
+                command_line: r.get(3)?,
+                cwd: r.get(4)?,
+                last_run_at: r.get(5)?,
+                last_exit_code: r.get(6)?,
             })
         })
         .map_err(AppError::Db)?

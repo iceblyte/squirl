@@ -2,12 +2,15 @@
 import { invoke } from "@tauri-apps/api/core";
 
 import type {
+  CommandRow,
   DiscoveryEntry,
+  EffectiveExecConfig,
   ProjectCard,
   ProjectDetail,
   Root,
   ScanTicket,
   Settings,
+  StartResult,
 } from "./types";
 
 export const api = {
@@ -40,4 +43,19 @@ export const api = {
     invoke<ProjectCard>("relocate_project", { id, newPath }),
   deleteProject: (id: string) => invoke<void>("delete_project", { id }),
   getProjectCommandCount: (id: string) => invoke<number>("get_project_command_count", { id }),
+
+  // commands（S4）
+  addCommand: (projectId: string, name: string, commandLine: string, cwd?: string) =>
+    invoke<CommandRow>("add_command", { projectId, name, commandLine, cwd }),
+  updateCommand: (id: string, patch: { name: string; commandLine: string; cwd?: string }) =>
+    invoke<CommandRow>("update_command", { id, patch }),
+  deleteCommand: (id: string) => invoke<void>("delete_command", { id }),
+
+  // run（S4）
+  startCommand: (commandId: string, forceNew?: boolean) =>
+    invoke<StartResult>("start_command", { commandId, forceNew }),
+  startTempCommand: (args: { projectId?: string; commandLine: string; cwd?: string }) =>
+    invoke<StartResult>("start_temp_command", args),
+  getEffectiveExecutionConfig: (projectId?: string) =>
+    invoke<EffectiveExecConfig>("get_effective_execution_config", { projectId }),
 };

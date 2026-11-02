@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/api/client";
-import type { CommandRow } from "@/api/types";
+import { CommandEditor, CommandListItems } from "@/components/CommandsSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +29,7 @@ export function ProjectPage() {
 
   const detail = useQuery({
     queryKey: ["project", activeProjectId],
-    queryFn: () => api.getProject(activeProjectId!),
+    queryFn: () => api.getProject(activeProjectId ?? ""),
     enabled: activeProjectId !== null,
   });
 
@@ -44,7 +44,7 @@ export function ProjectPage() {
   };
 
   const saveNote = useMutation({
-    mutationFn: () => api.updateProject(activeProjectId!, { note }),
+    mutationFn: () => api.updateProject(activeProjectId ?? "", { note }),
     onSuccess: () => {
       toast.success(t("noteSaved", { defaultValue: "备注已保存" }));
       invalidate();
@@ -56,7 +56,7 @@ export function ProjectPage() {
     mutationFn: async () => {
       const picked = await pickFolder({ directory: true, multiple: false });
       if (typeof picked !== "string") return null;
-      return api.relocateProject(activeProjectId!, picked);
+      return api.relocateProject(activeProjectId ?? "", picked);
     },
     onSuccess: (card) => {
       if (card) {
@@ -69,13 +69,13 @@ export function ProjectPage() {
 
   const count = useQuery({
     queryKey: ["project", activeProjectId, "cmdCount"],
-    queryFn: () => api.getProjectCommandCount(activeProjectId!),
+    queryFn: () => api.getProjectCommandCount(activeProjectId ?? ""),
     enabled: activeProjectId !== null,
   });
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const remove = useMutation({
-    mutationFn: () => api.deleteProject(activeProjectId!),
+    mutationFn: () => api.deleteProject(activeProjectId ?? ""),
     onSuccess: () => {
       toast.success(t("deleted", { defaultValue: "已删除" }));
       setConfirmDelete(false);
@@ -133,23 +133,11 @@ export function ProjectPage() {
         </div>
       </section>
 
-      {/* 命令列表（S4：CRUD + 运行/停止） */}
+      {/* 命令列表 + 常驻保存编辑器（F3/F4 外部半） */}
       <section className="space-y-1.5">
         <h2 className="text-sm font-medium text-muted-foreground">{t("commands")}</h2>
-        {card.commands.length === 0 ? (
-          <div className="rounded-md border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
-            S4
-          </div>
-        ) : (
-          <ul className="space-y-1">
-            {card.commands.map((cmd: CommandRow) => (
-              <li key={cmd.id} className="rounded-md border bg-card px-3 py-2 text-sm">
-                <span className="font-medium">{cmd.name}</span>
-                <code className="ml-2 text-xs text-muted-foreground">{cmd.commandLine}</code>
-              </li>
-            ))}
-          </ul>
-        )}
+        <CommandListItems projectId={card.id} commands={card.commands} />
+        <CommandEditor projectId={card.id} />
       </section>
 
       {/* 危险区（G1） */}
