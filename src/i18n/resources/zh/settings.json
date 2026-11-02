@@ -6,5 +6,10 @@
   "emulator": "终端模拟器",
   "shell": "Shell",
   "loadProfile": "加载 shell profile",
-  "scanDepth": "扫描深度"
+  "scanDepth": "扫描深度",
+  "saved": "设置已保存",
+  "detected": "探测结果",
+  "autoDetect": "自动",
+  "loadProfileHint": "启动 shell 时加载 profile（nvm / conda 等依赖它）",
+  "depthHint": "1 = 只列一级子文件夹"
 }

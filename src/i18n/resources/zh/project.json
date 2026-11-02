@@ -3,5 +3,18 @@
   "commands": "命令",
   "addCommand": "添加命令",
   "executionOverride": "执行方式覆盖",
-  "log": "日志"
+  "log": "日志",
+  "note": "备注",
+  "noteSaved": "备注已保存",
+  "relocated": "已重新定位",
+  "deleted": "已删除",
+  "dangerZone": "危险区",
+  "dangerHint": "删除项目将同时删除其全部命令",
+  "deleteConfirmTitle": "删除项目？",
+  "commandName": "命令名称",
+  "commandLine": "命令行原文（如 npm run dev）",
+  "commandCwd": "工作目录（默认项目根）",
+  "commandSaved": "命令已保存",
+  "unnamed": "未命名命令",
+  "launchedExternal": "已在外部终端打开"
 }

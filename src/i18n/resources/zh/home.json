@@ -8,5 +8,12 @@
   "emptyGuide": "先添加一个根目录，Squirl 会扫描其中的项目",
   "register": "登记",
   "scanning": "扫描中…",
-  "refreshHint": "点击刷新扫描"
+  "refreshHint": "点击刷新扫描",
+  "pathMissing": "路径不存在",
+  "lastRun": "最近使用",
+  "neverRun": "未运行过",
+  "noSearchResult": "没有匹配的项目",
+  "emptyProjects": "从下方「本次发现」登记项目，或手动注册任意文件夹",
+  "registeredOk": "已登记",
+  "launchedExternal": "已在外部终端打开"
 }
