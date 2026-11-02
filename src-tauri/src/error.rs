@@ -60,6 +60,9 @@ pub enum AppError {
     #[error("路径不存在: {0}")]
     PathNotFound(String),
 
+    #[error("路径已登记: {0}")]
+    DuplicatePath(String),
+
     #[error("引擎错误: {0}")]
     Engine(String),
 
@@ -89,6 +92,7 @@ impl AppError {
             AppError::MigrationBlocked(_) => "E_MIGRATION_BLOCKED",
             AppError::Path(_) => "E_PATH",
             AppError::PathNotFound(_) => "E_PATH_NOT_FOUND",
+            AppError::DuplicatePath(_) => "E_DUPLICATE_PATH",
             AppError::Engine(_) => "E_ENGINE",
             AppError::LaunchFailed(_) => "E_LAUNCH_FAILED",
             AppError::ShellUnsupported(_) => "E_SHELL_UNSUPPORTED",

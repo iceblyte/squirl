@@ -54,7 +54,7 @@ pub fn normalize_key(path: &Path) -> Result<String> {
 /// 归属派生（设计 §5.1.4，不落库）：
 /// 归属根 = `path_norm` 命中的最长根前缀；前缀匹配必须落在分隔符边界
 /// （防 `D:\GitHub` 误吞 `D:\GitHub2`）；无命中 → None（无归属）。
-pub fn attribution<'a>(path_norm: &str, roots: &'a [(String, &'a str)]) -> Option<&'a str> {
+pub fn attribution<'a>(path_norm: &str, roots: &'a [(String, String)]) -> Option<&'a str> {
     roots
         .iter()
         .filter(|(root_norm, _)| {
@@ -66,7 +66,7 @@ pub fn attribution<'a>(path_norm: &str, roots: &'a [(String, &'a str)]) -> Optio
                     && path_norm.starts_with(&format!("{root_norm}/")))
         })
         .max_by_key(|(root_norm, _)| root_norm.len())
-        .map(|(_, root_id)| *root_id)
+        .map(|(_, root_id)| root_id.as_str())
 }
 
 /// Windows：fs 访问用——长度 > 260 加 `\\?\` 前缀（已带前缀或 UNC 时不动）。
@@ -164,8 +164,8 @@ mod tests {
     #[test]
     fn attribution_longest_root_wins() {
         let roots = vec![
-            (r"c:\github".to_string(), "root-1"),
-            (r"c:\github\deep".to_string(), "root-2"),
+            (r"c:\github".to_string(), "root-1".to_string()),
+            (r"c:\github\deep".to_string(), "root-2".to_string()),
         ];
         assert_eq!(
             attribution(r"c:\github\deep\project", &roots),

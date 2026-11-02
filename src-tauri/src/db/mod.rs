@@ -24,6 +24,7 @@ pub enum RecoveryEvent {
     RebuiltEmpty,
 }
 
+#[derive(Clone)]
 pub struct Db {
     conn: Arc<Mutex<Connection>>,
     path: PathBuf,

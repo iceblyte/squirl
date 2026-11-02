@@ -10,6 +10,7 @@ pub mod engine;
 pub mod error;
 pub mod models;
 pub mod paths;
+pub mod scanner;
 
 // 依赖类型再导出：集成测试与上层（Tauri commands）共用同一版本
 pub use rusqlite;
@@ -84,11 +85,22 @@ pub fn run() {
             emit_recovery(&handle, event);
 
             app.manage(db);
+            app.manage(crate::scanner::SharedSession::default());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::settings::get_settings,
             commands::settings::update_settings,
+            commands::roots::list_roots,
+            commands::roots::add_root,
+            commands::roots::remove_root,
+            commands::roots::set_root_enabled,
+            commands::scan::start_scan,
+            commands::scan::resolve_scan_pause,
+            commands::scan::get_discovery,
+            commands::projects::register_project,
+            commands::projects::list_projects,
+            commands::projects::search_projects,
         ])
         .run(tauri::generate_context!())
         .expect("Squirl 启动失败");
