@@ -1,6 +1,9 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "css": {
+    "parser": { "tailwindDirectives": true }
+  },
   "files": {
     "includes": ["src/**", "*.json", "*.ts"]
   },
@@ -12,7 +15,9 @@
   },
   "linter": {
     "enabled": true,
-    "rules": { "recommended": true }
+    "rules": {
+      "preset": "recommended"
+    }
   },
   "javascript": {
     "formatter": { "quoteStyle": "double", "semicolons": "always" }

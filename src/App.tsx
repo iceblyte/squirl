@@ -1,17 +1,14 @@
-import { useTranslation } from "react-i18next";
+import { HomePage } from "@/components/HomePage";
+import { useNavStore } from "@/stores/scan";
 
-/**
- * S1 骨架占位视图：S2 起替换为 HomePage 两分区结构（设计 §5.5.1）。
- * 此处验证 i18n + Tailwind + Provider 链路。
- */
+/** 视图切换（DR-4：无路由，navStore）；project/settings 视图随 S3/S5 接入 */
 export default function App() {
-  const { t } = useTranslation("home");
-  const { t: tc } = useTranslation("common");
+  const view = useNavStore((s) => s.view);
   return (
-    <main className="flex h-screen flex-col items-center justify-center gap-2 bg-neutral-50">
-      <h1 className="text-3xl font-semibold text-neutral-800">{t("title")}</h1>
-      <p className="text-sm text-neutral-500">{t("tagline")}</p>
-      <p className="mt-6 text-xs text-neutral-400">{tc("save")}</p>
+    <main className="h-screen">
+      {view === "home" && <HomePage />}
+      {view === "project" && <div className="p-6 text-sm text-muted-foreground">S3</div>}
+      {view === "settings" && <div className="p-6 text-sm text-muted-foreground">S5</div>}
     </main>
   );
 }

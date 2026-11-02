@@ -5,5 +5,8 @@
   "discovery": "本次发现",
   "addRoot": "添加根目录",
   "manualRegister": "手动注册",
-  "emptyGuide": "先添加一个根目录，Squirl 会扫描其中的项目"
+  "emptyGuide": "先添加一个根目录，Squirl 会扫描其中的项目",
+  "register": "登记",
+  "scanning": "扫描中…",
+  "refreshHint": "点击刷新扫描"
 }

@@ -1,10 +1,15 @@
 /// <reference types="vitest" />
+
+import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 // Tauri 前端构建（设计 §4.2）：Vite 8，端口固定 5173 与 tauri.conf.json 对齐
 export default defineConfig({
+  resolve: {
+    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+  },
   plugins: [react(), tailwindcss()],
   clearScreen: false,
   server: {
