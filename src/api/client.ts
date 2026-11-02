@@ -1,7 +1,14 @@
 // invoke 封装（契约 §5.4.1）：命令名与出入参以冻结表为准，前端不做二次转换
 import { invoke } from "@tauri-apps/api/core";
 
-import type { DiscoveryEntry, ProjectCard, Root, ScanTicket, Settings } from "./types";
+import type {
+  DiscoveryEntry,
+  ProjectCard,
+  ProjectDetail,
+  Root,
+  ScanTicket,
+  Settings,
+} from "./types";
 
 export const api = {
   // settings
@@ -26,4 +33,11 @@ export const api = {
     invoke<ProjectCard>("register_project", { path, note }),
   listProjects: () => invoke<ProjectCard[]>("list_projects"),
   searchProjects: (query: string) => invoke<ProjectCard[]>("search_projects", { query }),
+  getProject: (id: string) => invoke<ProjectDetail>("get_project", { id }),
+  updateProject: (id: string, patch: { note?: string }) =>
+    invoke<ProjectCard>("update_project", { id, patch }),
+  relocateProject: (id: string, newPath: string) =>
+    invoke<ProjectCard>("relocate_project", { id, newPath }),
+  deleteProject: (id: string) => invoke<void>("delete_project", { id }),
+  getProjectCommandCount: (id: string) => invoke<number>("get_project_command_count", { id }),
 };

@@ -70,3 +70,16 @@ export interface ScanCompleted {
 export interface DbRestored {
   kind: "restored_from_backup" | "rebuilt_empty";
 }
+
+export interface CommandRow {
+  id: string;
+  name: string;
+  commandLine: string;
+  cwd: string | null;
+  lastRunAt: string | null;
+  lastExitCode: number | null;
+}
+
+export interface ProjectDetail extends ProjectCard {
+  commands: CommandRow[];
+}

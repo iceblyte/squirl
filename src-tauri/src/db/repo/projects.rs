@@ -161,6 +161,124 @@ pub fn search_projects(conn: &Connection, query: &str) -> Result<Vec<ProjectCard
     Ok(out)
 }
 
+/// `CommandRow`（get_project 出参内嵌；S4 扩展 CRUD）。
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CommandRow {
+    pub id: String,
+    pub name: String,
+    pub command_line: String,
+    pub cwd: Option<String>,
+    pub last_run_at: Option<String>,
+    pub last_exit_code: Option<i32>,
+}
+
+/// `ProjectDetail`（契约 get_project 出参：卡片 + 命令列表）。
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectDetail {
+    #[serde(flatten)]
+    pub card: ProjectCard,
+    pub commands: Vec<CommandRow>,
+}
+
+pub fn get_project(conn: &Connection, id: &str) -> Result<ProjectDetail> {
+    let cards = list_projects(conn)?;
+    let card = cards
+        .into_iter()
+        .find(|c| c.id == id)
+        .ok_or_else(|| AppError::InvalidInput(format!("项目不存在: {id}")))?;
+    let mut stmt = conn
+        .prepare("SELECT id, name, command_line, cwd, last_run_at, last_exit_code FROM commands WHERE project_id=?1 ORDER BY rowid")
+        .map_err(AppError::Db)?;
+    let commands = stmt
+        .query_map(rusqlite::params![id], |r| {
+            Ok(CommandRow {
+                id: r.get(0)?,
+                name: r.get(1)?,
+                command_line: r.get(2)?,
+                cwd: r.get(3)?,
+                last_run_at: r.get(4)?,
+                last_exit_code: r.get(5)?,
+            })
+        })
+        .map_err(AppError::Db)?
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(AppError::Db)?;
+    Ok(ProjectDetail { card, commands })
+}
+
+/// 更新备注（契约 update_project 的 note 半；execution_override 归 S4/S5）。
+pub fn update_note(conn: &Connection, id: &str, note: &str) -> Result<ProjectCard> {
+    let n = conn
+        .execute(
+            "UPDATE projects SET note=?1 WHERE id=?2",
+            rusqlite::params![note, id],
+        )
+        .map_err(AppError::Db)?;
+    if n == 0 {
+        return Err(AppError::InvalidInput(format!("项目不存在: {id}")));
+    }
+    list_projects(conn)?
+        .into_iter()
+        .find(|c| c.id == id)
+        .ok_or_else(|| AppError::InvalidInput(format!("项目不存在: {id}")))
+}
+
+/// 重新定位（G2）：规范化 + 唯一校验；name 默认取新文件夹名、可手改。
+pub fn relocate_project(conn: &Connection, id: &str, new_path: &Path) -> Result<ProjectCard> {
+    if !new_path.exists() {
+        return Err(AppError::PathNotFound(new_path.to_string_lossy().into_owned()));
+    }
+    let display = crate::paths::canonical(new_path)?;
+    let norm = crate::paths::normalize_key(new_path)?;
+    let dup: i64 = conn
+        .query_row(
+            "SELECT count(*) FROM projects WHERE path_normalized=?1 AND id != ?2",
+            rusqlite::params![norm, id],
+            |r| r.get(0),
+        )
+        .map_err(AppError::Db)?;
+    if dup > 0 {
+        return Err(AppError::DuplicatePath(display.to_string_lossy().into_owned()));
+    }
+    let name = display
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| display.to_string_lossy().into_owned());
+    conn.execute(
+        "UPDATE projects SET path=?1, path_normalized=?2, name=?3 WHERE id=?4",
+        rusqlite::params![display.to_string_lossy(), norm, name, id],
+    )
+    .map_err(AppError::Db)?;
+    list_projects(conn)?
+        .into_iter()
+        .find(|c| c.id == id)
+        .ok_or_else(|| AppError::InvalidInput(format!("项目不存在: {id}")))
+}
+
+/// 删除项目（G1）：级联删除命令（FK ON DELETE CASCADE + foreign_keys=ON）。
+/// TODO(S6)：任一命令内置模式运行中 → E_PROJECT_RUNNING_NO_DELETE（run 注册表在 S6 落地）。
+pub fn delete_project(conn: &Connection, id: &str) -> Result<()> {
+    let n = conn
+        .execute("DELETE FROM projects WHERE id=?1", rusqlite::params![id])
+        .map_err(AppError::Db)?;
+    if n == 0 {
+        return Err(AppError::InvalidInput(format!("项目不存在: {id}")));
+    }
+    Ok(())
+}
+
+/// 项目的命令数（删除确认框「将同时删除 N 条命令」）。
+pub fn command_count(conn: &Connection, id: &str) -> Result<i64> {
+    conn.query_row(
+        "SELECT count(*) FROM commands WHERE project_id=?1",
+        rusqlite::params![id],
+        |r| r.get(0),
+    )
+    .map_err(AppError::Db)
+}
+
 pub fn insert_project(
     conn: &Connection,
     path: &std::path::Path,

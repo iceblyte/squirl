@@ -15,6 +15,7 @@ pub mod scanner;
 // 依赖类型再导出：集成测试与上层（Tauri commands）共用同一版本
 pub use rusqlite;
 pub use rusqlite_migration;
+pub use uuid;
 
 use crate::db::RecoveryEvent;
 use crate::error::AppError;
@@ -102,6 +103,11 @@ pub fn run() {
             commands::projects::register_project,
             commands::projects::list_projects,
             commands::projects::search_projects,
+            commands::projects::get_project,
+            commands::projects::update_project,
+            commands::projects::relocate_project,
+            commands::projects::delete_project,
+            commands::projects::get_project_command_count,
         ])
         .run(tauri::generate_context!())
         .expect("Squirl 启动失败");

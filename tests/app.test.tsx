@@ -20,7 +20,7 @@ describe("S2 主页骨架", () => {
   it("以中文渲染标题与分区标题（F8：UI 文案中文）", () => {
     renderHome();
     expect(screen.getByText("Squirl")).toBeTruthy();
-    expect(screen.getByText("已登记")).toBeTruthy();
+    expect(screen.getAllByText("已登记").length).toBeGreaterThan(0);
     expect(screen.getByText("本次发现")).toBeTruthy();
   });
 
