@@ -37,18 +37,24 @@ pub async fn start_scan(
     }
 
     // 读取配置与启用根（阻塞线程）
-    let (depth, roots) = {
+    let (depth, roots, custom_excludes) = {
         let db = db.inner().clone();
-        tokio::task::spawn_blocking(move || -> Result<(u32, Vec<(String, std::path::PathBuf)>), AppError> {
-            let conn = db.conn();
-            let settings = repo::get_settings(&conn)?;
-            let roots = repo::roots::list_roots(&conn)?
-                .into_iter()
-                .filter(|r| r.enabled)
-                .map(|r| (r.id, std::path::PathBuf::from(r.path)))
-                .collect();
-            Ok((settings.scan_depth, roots))
-        })
+        tokio::task::spawn_blocking(
+            move || -> Result<(u32, Vec<crate::scanner::RootScanInput>, Vec<String>), AppError> {
+                let conn = db.conn();
+                let settings = repo::get_settings(&conn)?;
+                let roots = repo::roots::list_roots(&conn)?
+                    .into_iter()
+                    .filter(|r| r.enabled)
+                    .map(|r| (r.id, std::path::PathBuf::from(r.path), r.scan_depth))
+                    .collect();
+                Ok((
+                    settings.scan_depth,
+                    roots,
+                    settings.custom_excludes.unwrap_or_default(),
+                ))
+            },
+        )
         .await
         .map_err(|e| IpcError::new("E_ENGINE", format!("线程失败: {e}")))??
     };
@@ -92,6 +98,7 @@ pub async fn start_scan(
                 );
                 decision_rx.recv().unwrap_or(PauseDecision::Cancel)
             },
+            &custom_excludes,
         );
         let app_done = app.clone();
         match result {

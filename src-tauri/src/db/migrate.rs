@@ -55,9 +55,36 @@ pub const SCHEMA_V1_SQL: &str = r#"
         CREATE INDEX idx_commands_project ON commands(project_id);
         "#;
 
-/// Schema v1 迁移链。
+/// Schema v1 迁移链（兼容旧调用与测试）。
 pub fn schema_v1_migrations() -> Migrations<'static> {
     Migrations::new(vec![M::up(SCHEMA_V1_SQL)])
+}
+
+/// Schema v2（P1 扩展，DR-19/20/21）：settings 增 tray_enabled / custom_excludes；
+/// roots 增 scan_depth（NULL = 跟随全局）；commands 表重建使 project_id 可空
+/// （全局命令，DR-20）。子表重建且存量行均有合法外键，FK 开启下安全。
+pub const SCHEMA_V2_SQL: &str = r#"
+ALTER TABLE settings ADD COLUMN tray_enabled INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE settings ADD COLUMN custom_excludes TEXT;
+ALTER TABLE roots ADD COLUMN scan_depth INTEGER;
+CREATE TABLE commands_v2 (
+  id TEXT PRIMARY KEY,
+  project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  command_line TEXT NOT NULL,
+  cwd TEXT,
+  last_run_at TEXT,
+  last_exit_code INTEGER
+);
+INSERT INTO commands_v2 SELECT id, project_id, name, command_line, cwd, last_run_at, last_exit_code FROM commands;
+DROP TABLE commands;
+ALTER TABLE commands_v2 RENAME TO commands;
+CREATE INDEX idx_commands_project ON commands(project_id);
+"#;
+
+/// 全量迁移链（生产打开入口使用；含 v2）。
+pub fn schema_migrations() -> Migrations<'static> {
+    Migrations::new(vec![M::up(SCHEMA_V1_SQL), M::up(SCHEMA_V2_SQL)])
 }
 
 pub fn user_version(conn: &Connection) -> u32 {

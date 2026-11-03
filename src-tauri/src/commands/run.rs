@@ -175,29 +175,33 @@ pub async fn start_command(
     let cmd_id =
         Uuid::parse_str(&command_id).map_err(|e| IpcError::new("E_INVALID_INPUT", e.to_string()))?;
 
-    // 解析命令与模式（阻塞查询）
+    // 解析命令与模式（阻塞查询）；全局命令（DR-20）mode 取全局设置、root=主目录
     let (cmd, mode) = {
         let conn = db.conn();
         let cmd = repo::get_command(&conn, &command_id)?;
-        let eff = crate::engine::effective::resolve(&conn, Some(cmd.project_id()))?;
+        let eff = crate::engine::effective::resolve(&conn, cmd.project_id())?;
         (cmd, eff.mode)
     };
-    let project_root: std::path::PathBuf = {
-        let conn = db.conn();
-        let path: String = conn
-            .query_row(
-                "SELECT path FROM projects WHERE id=?1",
-                rusqlite::params![cmd.project_id()],
-                |r| r.get(0),
-            )
-            .map_err(|e| match e {
-                rusqlite::Error::QueryReturnedNoRows => {
-                    IpcError::new("E_PATH_NOT_FOUND", format!("项目不存在: {}", cmd.project_id()))
-                }
-                other => IpcError::from(AppError::Db(other)),
-            })?;
-        std::path::PathBuf::from(path)
+    let project_root: std::path::PathBuf = match cmd.project_id() {
+        Some(pid) => {
+            let conn = db.conn();
+            let path: String = conn
+                .query_row(
+                    "SELECT path FROM projects WHERE id=?1",
+                    rusqlite::params![pid],
+                    |r| r.get(0),
+                )
+                .map_err(|e| match e {
+                    rusqlite::Error::QueryReturnedNoRows => {
+                        IpcError::new("E_PATH_NOT_FOUND", format!("项目不存在: {pid}"))
+                    }
+                    other => IpcError::from(AppError::Db(other)),
+                })?;
+            std::path::PathBuf::from(path)
+        }
+        None => home_dir(),
     };
+    let project_uuid = cmd.project_id().and_then(|p| Uuid::parse_str(p).ok());
 
     match mode.as_str() {
         "builtin" => {
@@ -218,10 +222,7 @@ pub async fn start_command(
                 launch_external(
                     &db,
                     Some(cmd_id),
-                    Some(
-                        Uuid::parse_str(cmd.project_id())
-                            .map_err(|e| AppError::InvalidInput(e.to_string()))?,
-                    ),
+                    project_uuid,
                     cmd.command_line.clone(),
                     cmd.cwd.as_deref(),
                     &project_root,
@@ -234,6 +235,14 @@ pub async fn start_command(
             Ok(StartResult::External { launched: true })
         }
     }
+}
+
+/// 主目录（DR-20 全局命令默认 cwd；Windows = %USERPROFILE%）。
+fn home_dir() -> std::path::PathBuf {
+    std::env::var_os("USERPROFILE")
+        .or_else(|| std::env::var_os("HOME"))
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
 }
 
 /// `start_temp_command` — `({ project_id?, command_line, cwd })` → `StartResult`。

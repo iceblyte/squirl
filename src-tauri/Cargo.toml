@@ -29,7 +29,7 @@ tauri-build = { version = "=2.7.4", features = [] }
 
 # 依赖版本按设计文档 §4.6（2026-11-01 实测）pin 成精确版本；升级走独立评审。
 [dependencies]
-tauri = { version = "=2.12.5", features = [] }
+tauri = { version = "=2.12.5", features = ["tray-icon"] }
 tauri-plugin-single-instance = "=2.5.5"
 tauri-plugin-log = "=2.10.1"
 tauri-plugin-opener = "=2.7.2"

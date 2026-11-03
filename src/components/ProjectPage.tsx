@@ -6,6 +6,19 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/api/client";
 import { CommandEditor, CommandListItems } from "@/components/CommandsSection";
+
+function IdeButton({ path, ide, label }: { path: string; ide: string; label: string }) {
+  const onOpen = useMutation({
+    mutationFn: () => api.openInIde(path, ide),
+    onError: (e) => toast.error(String(e)),
+  });
+  return (
+    <Button size="sm" variant="outline" disabled={onOpen.isPending} onClick={() => onOpen.mutate()}>
+      {label}
+    </Button>
+  );
+}
+
 import { LogPanel } from "@/components/LogPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -150,6 +163,22 @@ export function ProjectPage() {
         <h2 className="text-sm font-medium text-muted-foreground">{t("commands")}</h2>
         <CommandListItems projectId={card.id} commands={card.commands} />
         <CommandEditor projectId={card.id} />
+      </section>
+
+      {/* DR-22：IDE 一键打开 */}
+      <section className="space-y-1.5">
+        <h2 className="text-sm font-medium text-muted-foreground">
+          {t("openInIde", { defaultValue: "在 IDE 中打开" })}
+        </h2>
+        <div className="flex gap-1.5">
+          <IdeButton path={card.path} ide="vscode" label="VS Code" />
+          <IdeButton path={card.path} ide="cursor" label="Cursor" />
+          <IdeButton
+            path={card.path}
+            ide="explorer"
+            label={t("fileManager", { defaultValue: "文件管理器" })}
+          />
+        </div>
       </section>
 
       {/* 危险区（G1） */}

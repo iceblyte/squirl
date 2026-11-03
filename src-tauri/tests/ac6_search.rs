@@ -8,7 +8,7 @@ use squirl::rusqlite::Connection;
 #[test]
 fn ac6_search_100_projects_under_200ms() {
     let mut conn = Connection::open_in_memory().unwrap();
-    squirl::db::migrate::schema_v1_migrations()
+    squirl::db::migrate::schema_migrations()
         .to_latest(&mut conn)
         .unwrap();
 

@@ -5,6 +5,11 @@ use tauri::{Emitter, Manager};
 
 use crate::engine::pipeline::{EventSink, LogBatch, RunStateEvent};
 
+/// 托盘可用性（setup 时判定；false = Linux 降级 / 未开启）。
+pub struct TrayState {
+    pub available: bool,
+}
+
 pub struct TauriEventSink {
     app: tauri::AppHandle,
 }

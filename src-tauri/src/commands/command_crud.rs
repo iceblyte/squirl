@@ -17,7 +17,7 @@ pub async fn add_command(
     let db = db.inner().clone();
     tokio::task::spawn_blocking(move || {
         let conn = db.conn();
-        repo::add_command(&conn, &project_id, &name, &command_line, cwd.as_deref())
+        repo::add_command(&conn, Some(&project_id), &name, &command_line, cwd.as_deref())
     })
     .await
     .map_err(|e| IpcError::new("E_ENGINE", format!("线程失败: {e}")))?
@@ -76,4 +76,53 @@ pub async fn list_commands(
     .await
     .map_err(|e| IpcError::new("E_ENGINE", format!("线程失败: {e}")))?
     .map_err(IpcError::from)
+}
+
+/// `list_global_commands` — → `Command[]`（DR-20：project_id IS NULL）。
+#[tauri::command]
+pub async fn list_global_commands(
+    db: tauri::State<'_, crate::db::Db>,
+) -> std::result::Result<Vec<repo::projects::CommandRow>, IpcError> {
+    let db = db.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let conn = db.conn();
+        repo::list_global_commands(&conn)
+    })
+    .await
+    .map_err(|e| IpcError::new("E_ENGINE", format!("线程失败: {e}")))?
+    .map_err(IpcError::from)
+}
+
+/// DR-22：可用 IDE 探测（PATH 上 code / cursor）。
+#[tauri::command]
+pub fn list_available_ides() -> std::result::Result<Vec<String>, IpcError> {
+    let mut out = Vec::new();
+    for (name, probe) in [("vscode", "code"), ("cursor", "cursor")] {
+        if crate::engine::shell::locate_on_path(probe).is_some() {
+            out.push(name.to_string());
+        }
+    }
+    Ok(out)
+}
+
+/// DR-22：在 IDE 中打开项目文件夹（fire-and-forget；Windows 经 cmd /c 解析 .cmd shim）。
+#[tauri::command]
+pub fn open_in_ide(
+    path: String,
+    ide: String,
+) -> std::result::Result<(), IpcError> {
+    use std::os::windows::process::CommandExt;
+    let probe = match ide.as_str() {
+        "vscode" => "code",
+        "cursor" => "cursor",
+        other => return Err(IpcError::new("E_INVALID_INPUT", format!("未知 IDE: {other}"))),
+    };
+    let program = crate::engine::shell::locate_on_path(probe)
+        .ok_or_else(|| IpcError::new("E_NO_EMULATOR", format!("未找到 {probe}")))?;
+    let mut cmd = std::process::Command::new("cmd");
+    cmd.args(["/c", &program, &path])
+        .creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    cmd.spawn()
+        .map_err(|e| IpcError::new("E_LAUNCH_FAILED", format!("IDE 启动失败: {e}")))?;
+    Ok(())
 }

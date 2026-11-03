@@ -47,8 +47,12 @@ export const api = {
   getProjectCommandCount: (id: string) => invoke<number>("get_project_command_count", { id }),
 
   // commands（S4）
-  addCommand: (projectId: string, name: string, commandLine: string, cwd?: string) =>
+  addCommand: (projectId: string | null, name: string, commandLine: string, cwd?: string) =>
     invoke<CommandRow>("add_command", { projectId, name, commandLine, cwd }),
+  listGlobalCommands: () => invoke<CommandRow[]>("list_global_commands"),
+  setRootDepth: (id: string, depth: number | null) => invoke<void>("set_root_depth", { id, depth }),
+  listAvailableIdes: () => invoke<string[]>("list_available_ides"),
+  openInIde: (path: string, ide: string) => invoke<void>("open_in_ide", { path, ide }),
   updateCommand: (id: string, patch: { name: string; commandLine: string; cwd?: string }) =>
     invoke<CommandRow>("update_command", { id, patch }),
   deleteCommand: (id: string) => invoke<void>("delete_command", { id }),

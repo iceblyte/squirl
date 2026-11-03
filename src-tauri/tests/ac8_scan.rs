@@ -82,11 +82,12 @@ fn ac8_scan_leaves_project_dirs_untouched() {
     ));
     let outcome = scan(
         &session,
-        &[("r1".to_string(), root.clone())],
+        &[("r1".to_string(), root.clone(), None)],
         DEFAULT_DEPTH.max(3),
         CancellationToken::new(),
         |_, _, _| {},
         || squirl::scanner::PauseDecision::Continue,
+        &[],
     )
     .unwrap();
     assert!(outcome.count >= 2, "扫描应发现 proj 与 deep");

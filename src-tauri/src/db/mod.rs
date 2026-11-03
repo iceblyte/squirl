@@ -39,7 +39,7 @@ impl std::fmt::Debug for Db {
 impl Db {
     /// 打开（含恢复与迁移）。阻塞调用，上层须在 spawn_blocking 中执行（DR-6）。
     pub fn open(path: &Path) -> Result<(Self, RecoveryEvent)> {
-        Self::open_with_migrations(path, &migrate::schema_v1_migrations())
+        Self::open_with_migrations(path, &migrate::schema_migrations())
     }
 
     /// 测试钩子：注入自定义迁移链（C3 演练用）。
@@ -218,7 +218,7 @@ mod tests {
             .unwrap();
         assert_eq!(mode, "external");
         // user_version 到位
-        assert_eq!(migrate::user_version(&conn), 1);
+        assert_eq!(migrate::user_version(&conn), 2, "v2 迁移到位");
         // WAL 生效
         let mode: String = conn.query_row("PRAGMA journal_mode", [], |r| r.get(0)).unwrap();
         assert_eq!(mode.to_lowercase(), "wal");

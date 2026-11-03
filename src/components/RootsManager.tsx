@@ -43,6 +43,12 @@ export function RootsManager() {
     onSuccess: invalidate,
   });
 
+  const setDepth = useMutation({
+    mutationFn: ({ id, depth }: { id: string; depth: number | null }) =>
+      api.setRootDepth(id, depth),
+    onSuccess: invalidate,
+  });
+
   return (
     <section aria-label="roots" className="space-y-2">
       <div className="flex items-center justify-between">
@@ -70,6 +76,24 @@ export function RootsManager() {
               <span className="truncate text-foreground" title={root.path}>
                 {root.path}
               </span>
+              <select
+                aria-label="depth"
+                className="h-6 rounded border border-input bg-transparent px-1 text-xs"
+                value={root.scanDepth ?? ""}
+                onChange={(e) =>
+                  setDepth.mutate({
+                    id: root.id,
+                    depth: e.target.value === "" ? null : Number(e.target.value),
+                  })
+                }
+              >
+                <option value="">跟随全局</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <Button

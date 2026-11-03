@@ -6,12 +6,18 @@ export interface Settings {
   defaultShell: string | null;
   loadShellProfile: boolean;
   scanDepth: number;
+  /** DR-19：托盘开关（改后重启生效） */
+  trayEnabled: boolean;
+  /** DR-21：自定义排除名单 */
+  customExcludes: string[] | null;
 }
 
 export interface Root {
   id: string;
   path: string;
   enabled: boolean;
+  /** DR-21：每根独立深度；null = 跟随全局 */
+  scanDepth: number | null;
 }
 
 export interface DiscoveryEntry {
@@ -94,6 +100,8 @@ export interface DbRestored {
 
 export interface CommandRow {
   id: string;
+  /** DR-20：null = 全局命令 */
+  projectId: string | null;
   name: string;
   commandLine: string;
   cwd: string | null;

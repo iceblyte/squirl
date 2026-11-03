@@ -55,7 +55,7 @@ fn ac3_external_window_within_2s_and_command_runs() {
     add_root(&db.conn(), &proj_dir).unwrap();
     let cmd = squirl::db::repo::add_command(
         &db.conn(),
-        &card.id,
+        Some(&card.id),
         "ac3",
         "Set-Content -LiteralPath 'ac3-result.txt' -Value 'ac3-ok'",
         None,

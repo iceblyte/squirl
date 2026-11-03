@@ -17,9 +17,14 @@ pub use rusqlite;
 pub use rusqlite_migration;
 pub use uuid;
 
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use crate::db::RecoveryEvent;
 use crate::error::AppError;
 use tauri::{Emitter, Manager};
+
+/// 应用退出中标志：区分「用户点关闭」与「托盘退出/app.exit」。
+static EXITING: AtomicBool = AtomicBool::new(false);
 
 /// 单实例回调：二次启动唤起已有主窗口（需求 A 节「单实例运行」）。
 fn focus_main_window(app: &tauri::AppHandle) {
@@ -88,13 +93,60 @@ pub fn run() {
             tracing::info!(target: "db_record", path = %data_dir.display(), "数据库已打开");
             emit_recovery(&handle, event);
 
+            let tray_enabled = {
+                let conn = db.conn();
+                crate::db::repo::get_settings(&conn)
+                    .map(|s| s.tray_enabled)
+                    .unwrap_or(false)
+            };
+
             app.manage(db.clone());
             app.manage(crate::scanner::SharedSession::default());
             // S6：内置模式进程监管（事件直达前端，ADR-2 生产消费端）；
             // 持 DB 句柄做终态实时写回（DR-16②）
             let sink = std::sync::Arc::new(crate::commands::sink::TauriEventSink::new(handle.clone()));
             app.manage(crate::engine::supervisor::Supervisor::with_db(sink, db));
+
+            // DR-19：托盘（默认关；Linux 初始化失败自动降级）
+            let mut tray_available = false;
+            if tray_enabled {
+                use tauri::menu::{Menu, MenuItem};
+                use tauri::tray::TrayIconBuilder;
+                let show = MenuItem::with_id(app, "show", "显示主窗口", true, None::<&str>)?;
+                let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
+                let menu = Menu::with_items(app, &[&show, &quit])?;
+                match TrayIconBuilder::with_id("squirl-tray")
+                    .icon(app.default_window_icon().cloned().unwrap_or_else(|| {
+                        tauri::image::Image::new_owned(vec![0; 4], 1, 1)
+                    }))
+                    .tooltip("Squirl")
+                    .menu(&menu)
+                    .show_menu_on_left_click(false)
+                    .build(app)
+                {
+                    Ok(_tray) => tray_available = true,
+                    Err(e) => {
+                        // Linux 降级：无 libappindicator 等环境 → 普通窗口应用
+                        tracing::warn!(target: "app", error = %e, "托盘初始化失败，降级为普通窗口应用");
+                    }
+                }
+            }
+            app.manage(crate::commands::sink::TrayState { available: tray_available });
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // DR-19：托盘开启且可用时，用户关窗 = 隐藏；退出中标志直通
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let tray_on = window
+                    .app_handle()
+                    .try_state::<crate::commands::sink::TrayState>()
+                    .map(|t| t.available)
+                    .unwrap_or(false);
+                if tray_on && !EXITING.load(Ordering::SeqCst) {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::settings::get_settings,
@@ -118,6 +170,8 @@ pub fn run() {
             commands::command_crud::update_command,
             commands::command_crud::delete_command,
             commands::command_crud::list_commands,
+            commands::command_crud::list_global_commands,
+            commands::command_crud::open_in_ide,
             commands::run::get_effective_execution_config,
             commands::run::start_command,
             commands::run::start_temp_command,
@@ -134,6 +188,23 @@ pub fn run() {
             //    此处无需重复；语义等价性：备份必然包含全部终态（单连接 Mutex 串行）
             // ③ VACUUM INTO 常规备份（失败仅记日志，不阻断退出）
             // ④ 回调返回 = 放行退出
+            // DR-19：托盘菜单事件
+            if let tauri::RunEvent::MenuEvent(menu_event) = &event {
+                match menu_event.id().as_ref() {
+                    "show" => {
+                        if let Some(w) = app.get_webview_window("main") {
+                            let _ = w.show();
+                            let _ = w.set_focus();
+                        }
+                    }
+                    "quit" => {
+                        EXITING.store(true, Ordering::SeqCst);
+                        app.exit(0); // ExitRequested → DR-14 四步回收
+                    }
+                    _ => {}
+                }
+            }
+
             if let tauri::RunEvent::ExitRequested { .. } = event {
                 let started = std::time::Instant::now();
                 let db = app.state::<crate::db::Db>().inner().clone();

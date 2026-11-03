@@ -80,9 +80,11 @@ impl PauseDecision {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 struct WalkCfg {
     depth: u32,
+    /// DR-21：自定义排除（与内置并集；随 cfg 传入闭包）。
+    excludes: Vec<String>,
 }
 
 enum RootFlow {
@@ -162,19 +164,22 @@ impl Walker {
         let root_len = root_display.len();
         let depth = cfg.depth as usize;
 
+        let cfg_excludes = cfg.excludes.clone();
         let walk = jwalk::WalkDir::new(root)
             .follow_links(false)
             .sort(false)
             .min_depth(1)
             .max_depth(depth)
-            .process_read_dir(|_depth, _path, _state, children| {
+            .process_read_dir(move |_depth, _path, _state, children| {
                 children.retain(|e| match e {
                     Ok(entry) => {
                         let ft = entry.file_type();
-                        // 只保留目录与符号链接（链接目标在迭代时手动解析）
+                        // 只保留目录与符号链接（链接目标在迭代时手动解析）；
+                        // 排除 = 内置名单 ∪ 自定义名单（DR-21），整个子树不入队
+                        let name = entry.file_name().to_string_lossy().into_owned();
                         (ft.is_dir() || ft.is_symlink())
-                            && !EXCLUDED_DIRS
-                                .contains(&entry.file_name().to_string_lossy().as_ref())
+                            && !EXCLUDED_DIRS.contains(&name.as_str())
+                            && !cfg_excludes.iter().any(|x| x == &name)
                     }
                     Err(_) => false,
                 });
@@ -207,7 +212,7 @@ impl Walker {
                     let flow = self.walk_one(
                         root_id,
                         &target,
-                        WalkCfg { depth: remain },
+                        WalkCfg { depth: remain, excludes: cfg.excludes.clone() },
                         on_progress,
                         roots_done,
                         roots_total,
@@ -269,19 +274,24 @@ pub struct ScanOutcome {
     pub cancelled: bool,
 }
 
+/// `RootScanInput`：DR-21 逐根深度（None = 跟随全局）。
+pub type RootScanInput = (String, PathBuf, Option<u32>);
+
 /// 执行一次全量扫描（阻塞，须在 spawn_blocking 中调用）。
+/// `custom_excludes` 与内置名单并集生效（DR-21）。
 pub fn scan(
     session: &SharedSession,
-    roots: &[(String, PathBuf)],
+    roots: &[RootScanInput],
     depth: u32,
     cancel: CancellationToken,
     on_progress: impl FnMut(usize, u32, u32) + Send,
     on_pause: impl FnMut() -> PauseDecision + Send,
+    custom_excludes: &[String],
 ) -> Result<ScanOutcome> {
     let started = Instant::now();
     let root_norms = roots
         .iter()
-        .map(|(_, p)| crate::paths::normalize_key(p).unwrap_or_default())
+        .map(|(_, p, _)| crate::paths::normalize_key(p).unwrap_or_default())
         .collect();
     let mut walker = Walker::new(cancel, root_norms);
     let total = roots.len() as u32;
@@ -302,11 +312,16 @@ pub fn scan(
     let mut progress = on_progress;
     let mut pause = on_pause;
     let mut reduced = false;
-    for (i, (root_id, root)) in roots.iter().enumerate() {
+    for (i, (root_id, root, root_depth)) in roots.iter().enumerate() {
         let roots_done = i as u32;
         loop {
             let cfg = WalkCfg {
-                depth: if reduced { 1 } else { depth.min(MAX_DEPTH) },
+                depth: if reduced {
+                    1
+                } else {
+                    root_depth.unwrap_or(depth).min(MAX_DEPTH)
+                },
+                excludes: custom_excludes.to_vec(),
             };
             match walker.walk_one(root_id, root, cfg, &mut progress, roots_done, total, &mut pause) {
                 RootFlow::Aborted => {
@@ -347,11 +362,12 @@ mod tests {
         let session: SharedSession = Arc::default();
         let outcome = scan(
             &session,
-            &[("r1".to_string(), root.clone())],
+            &[("r1".to_string(), root.clone(), None)],
             1, // 默认深度：只列一级
             CancellationToken::new(),
             |_, _, _| {},
             always_continue(),
+            &[],
         )
         .unwrap();
 
@@ -381,11 +397,12 @@ mod tests {
         let session: SharedSession = Arc::default();
         scan(
             &session,
-            &[("r1".to_string(), root)],
+            &[("r1".to_string(), root, None)],
             2,
             CancellationToken::new(),
             |_, _, _| {},
             always_continue(),
+            &[],
         )
         .unwrap();
         let names: Vec<String> = {
@@ -417,11 +434,12 @@ mod tests {
         let session: SharedSession = Arc::default();
         scan(
             &session,
-            &[("r1".to_string(), root.clone())],
+            &[("r1".to_string(), root.clone(), None)],
             3,
             CancellationToken::new(),
             |_, _, _| {},
             always_continue(),
+            &[],
         )
         .unwrap();
         let entries = session.lock().unwrap();
@@ -466,7 +484,7 @@ mod tests {
         let mut pauses = 0;
         let outcome = scan(
             &session,
-            &[("r1".to_string(), root)],
+            &[("r1".to_string(), root, None)],
             1,
             CancellationToken::new(),
             |_, _, _| {},
@@ -474,6 +492,7 @@ mod tests {
                 pauses += 1;
                 PauseDecision::Continue
             },
+            &[],
         )
         .unwrap();
         assert_eq!(pauses, 1, "命中上限暂停一次，Continue 后不再暂停");
@@ -492,11 +511,12 @@ mod tests {
         let session: SharedSession = Arc::default();
         let outcome = scan(
             &session,
-            &[("r1".to_string(), root)],
+            &[("r1".to_string(), root, None)],
             1,
             CancellationToken::new(),
             |_, _, _| {},
             || PauseDecision::Cancel,
+            &[],
         )
         .unwrap();
         assert!(outcome.cancelled);
@@ -514,11 +534,12 @@ mod tests {
         let session: SharedSession = Arc::default();
         let outcome = scan(
             &session,
-            &[("r1".to_string(), root)],
+            &[("r1".to_string(), root, None)],
             2,
             CancellationToken::new(),
             |_, _, _| {},
             || PauseDecision::ReduceDepth,
+            &[],
         )
         .unwrap();
         // 已扫 500 条不回滚；ReduceDepth 只影响后续遍历（本 fixture 一级即全部）

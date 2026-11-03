@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { DiscoverySection } from "@/components/DiscoverySection";
+import { GlobalCommandsSection } from "@/components/GlobalCommandsSection";
 import { RegisteredGrid } from "@/components/RegisteredGrid";
 import { RootsManager } from "@/components/RootsManager";
+import { RunsList } from "@/components/RunsList";
 import { ScanPauseDialog } from "@/components/ScanPauseDialog";
 import { TopBar } from "@/components/TopBar";
 import { useScanEvents } from "@/hooks/useScanEvents";
@@ -26,6 +28,9 @@ export function HomePage() {
       <RootsManager />
 
       <RegisteredGrid searchQuery={searchQuery} />
+
+      <RunsList />
+      <GlobalCommandsSection />
 
       <DiscoverySection />
       <ScanPauseDialog />

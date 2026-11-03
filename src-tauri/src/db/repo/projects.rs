@@ -210,7 +210,8 @@ pub fn search_projects(conn: &Connection, query: &str) -> Result<Vec<ProjectCard
 #[serde(rename_all = "camelCase")]
 pub struct CommandRow {
     pub id: String,
-    pub project_id: String,
+    /// DR-20：None = 全局命令（不绑项目，cwd 默认主目录）。
+    pub project_id: Option<String>,
     pub name: String,
     pub command_line: String,
     pub cwd: Option<String>,
@@ -219,8 +220,8 @@ pub struct CommandRow {
 }
 
 impl CommandRow {
-    pub fn project_id(&self) -> &str {
-        &self.project_id
+    pub fn project_id(&self) -> Option<&str> {
+        self.project_id.as_deref()
     }
 }
 
@@ -374,7 +375,7 @@ mod tests {
 
     fn setup() -> Connection {
         let mut conn = Connection::open_in_memory().unwrap();
-        crate::db::migrate::schema_v1_migrations()
+        crate::db::migrate::schema_migrations()
             .to_latest(&mut conn)
             .unwrap();
         conn

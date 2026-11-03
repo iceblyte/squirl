@@ -6,10 +6,10 @@ use uuid::Uuid;
 use crate::db::repo::projects::CommandRow;
 use crate::error::{AppError, Result};
 
-/// 新增命令（add_command；cwd=None = 项目根）。
+/// 新增命令（add_command；cwd=None = 项目根/主目录；project_id=None = 全局命令 DR-20）。
 pub fn add_command(
     conn: &Connection,
-    project_id: &str,
+    project_id: Option<&str>,
     name: &str,
     command_line: &str,
     cwd: Option<&str>,
@@ -22,7 +22,7 @@ pub fn add_command(
     .map_err(AppError::Db)?;
     Ok(CommandRow {
         id,
-        project_id: project_id.to_string(),
+        project_id: project_id.map(String::from),
         name: name.to_string(),
         command_line: command_line.to_string(),
         cwd: cwd.map(String::from),
@@ -121,6 +121,28 @@ pub fn list_commands(conn: &Connection, project_id: &str) -> Result<Vec<CommandR
         .map_err(AppError::Db)
 }
 
+/// 全局命令列表（DR-20：project_id IS NULL）。
+pub fn list_global_commands(conn: &Connection) -> Result<Vec<CommandRow>> {
+    let mut stmt = conn
+        .prepare("SELECT id, project_id, name, command_line, cwd, last_run_at, last_exit_code FROM commands WHERE project_id IS NULL ORDER BY rowid")
+        .map_err(AppError::Db)?;
+    let rows = stmt
+        .query_map([], |r| {
+            Ok(CommandRow {
+                id: r.get(0)?,
+                project_id: r.get(1)?,
+                name: r.get(2)?,
+                command_line: r.get(3)?,
+                cwd: r.get(4)?,
+                last_run_at: r.get(5)?,
+                last_exit_code: r.get(6)?,
+            })
+        })
+        .map_err(AppError::Db)?;
+    rows.collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(AppError::Db)
+}
+
 /// 项目最近使用命令 id（卡片快启 G3：主按钮 = 最近使用命令）。
 pub fn last_used_command(conn: &Connection, project_id: &str) -> Result<Option<String>> {
     conn.query_row(
@@ -142,7 +164,7 @@ mod tests {
 
     fn setup() -> (Connection, String) {
         let mut conn = Connection::open_in_memory().unwrap();
-        crate::db::migrate::schema_v1_migrations()
+        crate::db::migrate::schema_migrations()
             .to_latest(&mut conn)
             .unwrap();
         let tmp = tempfile::tempdir().unwrap();
@@ -155,7 +177,7 @@ mod tests {
     #[test]
     fn crud_roundtrip() {
         let (conn, pid) = setup();
-        let c = add_command(&conn, &pid, "dev", "npm run dev", None).unwrap();
+        let c = add_command(&conn, Some(&pid), "dev", "npm run dev", None).unwrap();
         assert_eq!(c.name, "dev");
         assert_eq!(c.cwd, None);
 
@@ -184,8 +206,8 @@ mod tests {
     fn last_used_prefers_recent() {
         let (conn, pid) = setup();
         assert_eq!(last_used_command(&conn, &pid).unwrap(), None);
-        let a = add_command(&conn, &pid, "a", "a", None).unwrap();
-        let _b = add_command(&conn, &pid, "b", "b", None).unwrap();
+        let a = add_command(&conn, Some(&pid), "a", "a", None).unwrap();
+        let _b = add_command(&conn, Some(&pid), "b", "b", None).unwrap();
         conn.execute(
             "UPDATE commands SET last_run_at='2026-11-01T00:00:00Z' WHERE id=?1",
             rusqlite::params![a.id],

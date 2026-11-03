@@ -15,5 +15,10 @@
   "noSearchResult": "没有匹配的项目",
   "emptyProjects": "从下方「本次发现」登记项目，或手动注册任意文件夹",
   "registeredOk": "已登记",
-  "launchedExternal": "已在外部终端打开"
+  "launchedExternal": "已在外部终端打开",
+  "globalCommands": "全局命令",
+  "globalSaved": "全局命令已保存",
+  "globalName": "名称（如 pi）",
+  "globalLine": "全局命令（如 dsh deploy）",
+  "activeRuns": "运行中"
 }

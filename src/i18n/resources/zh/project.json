@@ -16,5 +16,11 @@
   "commandCwd": "工作目录（默认项目根）",
   "commandSaved": "命令已保存",
   "unnamed": "未命名命令",
-  "launchedExternal": "已在外部终端打开"
+  "launchedExternal": "已在外部终端打开",
+  "openInIde": "在 IDE 中打开",
+  "fileManager": "文件管理器",
+  "inputSuspected": "命令可能在等待输入（MVP 不支持交互式命令）",
+  "tempSavePrompt": "本次命令未保存，是否保存？",
+  "saveTemp": "保存",
+  "discard": "丢弃"
 }

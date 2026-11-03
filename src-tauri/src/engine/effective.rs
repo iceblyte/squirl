@@ -212,7 +212,7 @@ mod tests {
 
     fn setup_db_with_project() -> (Connection, String, std::path::PathBuf) {
         let mut conn = Connection::open_in_memory().unwrap();
-        crate::db::migrate::schema_v1_migrations()
+        crate::db::migrate::schema_migrations()
             .to_latest(&mut conn)
             .unwrap();
         let tmp = tempfile::tempdir().unwrap();

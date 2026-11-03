@@ -196,6 +196,45 @@ export function SettingsPage() {
           </span>
         </div>
       </section>
+
+      {/* DR-21：自定义排除名单（与内置名单并集） */}
+      <section className="space-y-2">
+        <h2 className="text-sm font-medium">
+          {t("customExcludes", { defaultValue: "自定义排除名单" })}
+        </h2>
+        <textarea
+          rows={3}
+          value={(draft.customExcludes ?? []).join("\n")}
+          onChange={(e) =>
+            setDraft({
+              ...draft,
+              customExcludes: e.target.value
+                .split("\n")
+                .map((x) => x.trim())
+                .filter(Boolean),
+            })
+          }
+          placeholder={t("excludesHint", {
+            defaultValue: "每行一个条目名（与内置名单并集生效）",
+          })}
+          className="w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        />
+      </section>
+
+      {/* DR-19：托盘开关（改后重启生效） */}
+      <section className="space-y-2">
+        <h2 className="text-sm font-medium">{t("tray", { defaultValue: "系统托盘" })}</h2>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={draft.trayEnabled}
+            onChange={(e) => setDraft({ ...draft, trayEnabled: e.target.checked })}
+          />
+          {t("trayHint", {
+            defaultValue: "开启后关窗 = 隐藏到托盘（改后需重启应用生效；Linux 初始化失败自动降级）",
+          })}
+        </label>
+      </section>
     </div>
   );
 }

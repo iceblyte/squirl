@@ -144,7 +144,7 @@ mod tests {
 
     fn setup() -> (Connection, Uuid) {
         let mut conn = Connection::open_in_memory().unwrap();
-        crate::db::migrate::schema_v1_migrations()
+        crate::db::migrate::schema_migrations()
             .to_latest(&mut conn)
             .unwrap();
         let pid = insert_project(&conn, Path::new("D:/tmp/p"), "proj").unwrap();
