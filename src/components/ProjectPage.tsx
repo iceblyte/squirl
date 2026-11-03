@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/api/client";
 import { CommandEditor, CommandListItems } from "@/components/CommandsSection";
+import { LogPanel } from "@/components/LogPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useRunStore } from "@/stores/runs";
 import { useNavStore } from "@/stores/scan";
 
 /** ProjectPage（设计 §5.5.1）：备注编辑 + 重新定位（G2）+ 删除危险区（G1）+ 命令列表（S4） */
@@ -85,6 +87,10 @@ export function ProjectPage() {
     onError: (e) => toast.error(String(e)),
   });
 
+  // 日志面板目标：本项目运行中实例优先，否则最近触达的实例
+  const runs = useRunStore((s) => s.runs);
+  const byCommand = useRunStore((s) => s.byCommand);
+
   if (!activeProjectId || detail.isError) {
     return <div className="p-6 text-sm text-muted-foreground">{tc("errorUnexpected")}</div>;
   }
@@ -93,6 +99,9 @@ export function ProjectPage() {
   }
 
   const card = detail.data;
+  const panelRunId =
+    card.commands.map((c) => byCommand[c.id]).find((rid) => rid !== undefined) ??
+    (Object.keys(runs).length > 0 ? Object.keys(runs)[0] : null);
 
   return (
     <div className="mx-auto flex h-full max-w-4xl flex-col gap-4 overflow-auto p-6">
@@ -132,6 +141,9 @@ export function ProjectPage() {
           </Button>
         </div>
       </section>
+
+      {/* 日志面板（F5，内置模式）：本项目运行中的实例，否则最近实例 */}
+      {panelRunId !== null && <LogPanel runId={panelRunId} />}
 
       {/* 命令列表 + 常驻保存编辑器（F3/F4 外部半） */}
       <section className="space-y-1.5">

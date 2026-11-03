@@ -9,11 +9,13 @@ import { toast } from "sonner";
 
 import type {
   DbRestored,
+  RunLogEvent,
   RunStateEvent,
   ScanCompleted,
   ScanPaused,
   ScanProgress,
 } from "@/api/types";
+import { useLogStore } from "@/stores/logs";
 import { useRunStore } from "@/stores/runs";
 import { useScanStore } from "@/stores/scan";
 
@@ -44,6 +46,15 @@ export function useScanEvents() {
     }).then((u) => unlistens.push(u));
 
     // S6：run://state → runStore（状态点/停止按钮数据源；终态移除实例）
+    // S7：run://log 直达 logStore（绕过 Query，30ms 批）
+    void subscribe<RunLogEvent>("run://log", (payload) => {
+      useLogStore.getState().append(payload.runId, {
+        seq: payload.seq,
+        trimmedLines: payload.trimmedLines,
+        lines: payload.lines,
+      });
+    }).then((u) => unlistens.push(u));
+
     void subscribe<RunStateEvent>("run://state", (payload) => {
       const runStore = useRunStore.getState();
       if (["exited", "failed", "killed"].includes(payload.state)) {
