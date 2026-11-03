@@ -2,6 +2,7 @@
 //! 日志管道与环形缓冲 / 内置模式进程监管。
 pub mod adapter;
 pub mod effective;
+pub mod configfill;
 pub mod emulator;
 pub mod fingerprint;
 pub mod logbuf;
