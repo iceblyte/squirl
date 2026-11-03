@@ -113,6 +113,7 @@ pub fn launch_external(
 }
 
 /// 内置模式启动：supervisor state 机 + run 注册表（INV-3）。
+#[allow(clippy::too_many_arguments)]
 fn launch_builtin(
     db: &crate::db::Db,
     supervisor: &Supervisor,
@@ -120,6 +121,7 @@ fn launch_builtin(
     command_line: String,
     cwd_override: Option<&str>,
     project_root: &std::path::Path,
+    fingerprint: bool,
     force_new: bool,
 ) -> Result<crate::engine::supervisor::RunInfo> {
     // 重复启动拦截（设计 §5.3.3）：默认拒绝，force_new = 「再启动一个」
@@ -143,6 +145,8 @@ fn launch_builtin(
                 command_id,
                 command_line,
                 cwd,
+                project_root: Some(project_root.to_path_buf()),
+                fingerprint,
                 shell: shell_spec,
                 with_marker: true,
                 env: vec![],
@@ -176,11 +180,12 @@ pub async fn start_command(
         Uuid::parse_str(&command_id).map_err(|e| IpcError::new("E_INVALID_INPUT", e.to_string()))?;
 
     // 解析命令与模式（阻塞查询）；全局命令（DR-20）mode 取全局设置、root=主目录
-    let (cmd, mode) = {
+    let (cmd, mode, shell_kind) = {
         let conn = db.conn();
         let cmd = repo::get_command(&conn, &command_id)?;
         let eff = crate::engine::effective::resolve(&conn, cmd.project_id())?;
-        (cmd, eff.mode)
+        let kind = crate::engine::effective::build_builtin_parts(&conn, None)?.kind;
+        (cmd, eff.mode, kind)
     };
     let project_root: std::path::PathBuf = match cmd.project_id() {
         Some(pid) => {
@@ -203,15 +208,31 @@ pub async fn start_command(
     };
     let project_uuid = cmd.project_id().and_then(|p| Uuid::parse_str(p).ok());
 
+    // DR-24：指纹感知命令 → 组装三段式流水线命令行（组装失败降级原文）
+    let pipeline_line = if cmd.fingerprint {
+        let conn = db.conn();
+        crate::engine::fingerprint::compose_pipeline(
+            &conn,
+            &command_id,
+            &cmd.command_line,
+            &project_root,
+            shell_kind,
+        )
+        .unwrap_or_else(|_| cmd.command_line.clone())
+    } else {
+        cmd.command_line.clone()
+    };
+
     match mode.as_str() {
         "builtin" => {
             let run = launch_builtin(
                 &db,
                 &supervisor,
                 Some(cmd_id),
-                cmd.command_line.clone(),
+                pipeline_line,
                 cmd.cwd.as_deref(),
                 &project_root,
+                cmd.fingerprint,
                 force_new,
             )
             .map_err(IpcError::from)?;
@@ -219,14 +240,24 @@ pub async fn start_command(
         }
         _ => {
             let pid = tokio::task::spawn_blocking(move || {
-                launch_external(
+                let spawned = launch_external(
                     &db,
                     Some(cmd_id),
                     project_uuid,
-                    cmd.command_line.clone(),
+                    pipeline_line,
                     cmd.cwd.as_deref(),
                     &project_root,
-                )
+                );
+                // DR-24：外部模式指纹 best-effort（启动即记当前哈希）
+                if spawned.is_ok() && cmd.fingerprint {
+                    let conn = db.conn();
+                    let _ = crate::engine::fingerprint::record_fingerprint(
+                        &conn,
+                        &command_id,
+                        &project_root,
+                    );
+                }
+                spawned
             })
             .await
             .map_err(|e| IpcError::new("E_ENGINE", format!("线程失败: {e}")))?
@@ -292,6 +323,7 @@ pub async fn start_temp_command(
                 command_line,
                 cwd.as_deref(),
                 &root,
+                false,
                 false,
             )
             .map_err(IpcError::from)?;

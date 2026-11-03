@@ -42,6 +42,8 @@ async fn ac3_builtin_first_output_within_5s() {
             command_id: Some(Uuid::now_v7()),
             command_line: "Write-Output ac3-builtin-ok".into(),
             cwd: dir.clone(),
+            project_root: Some(dir.clone()),
+            fingerprint: false,
             shell: ShellSpec::new(ShellKind::Pwsh, locate_on_path("pwsh").unwrap()),
             with_marker: true,
             env: vec![],

@@ -19,6 +19,7 @@ export function CommandEditor({ projectId }: { projectId: string }) {
   const [name, setName] = useState("");
   const [commandLine, setCommandLine] = useState("");
   const [cwd, setCwd] = useState("");
+  const [fingerprint, setFingerprint] = useState(false);
 
   // F3：临时命令——不保存直接按当前执行模式跑；内置结束会提示保存一次
   const runTemp = useMutation({
@@ -55,6 +56,7 @@ export function CommandEditor({ projectId }: { projectId: string }) {
         name.trim() || t("unnamed", { defaultValue: "未命名命令" }),
         commandLine,
         cwd || undefined,
+        fingerprint,
       );
     },
     onSuccess: () => {
@@ -62,6 +64,7 @@ export function CommandEditor({ projectId }: { projectId: string }) {
       setName("");
       setCommandLine("");
       setCwd("");
+      setFingerprint(false);
       invalidate();
     },
     onError: (e) => toast.error(String(e)),
@@ -89,6 +92,18 @@ export function CommandEditor({ projectId }: { projectId: string }) {
           className="h-8 w-52"
         />
       </div>
+      {/* DR-24：指纹感知开关（检测到锁文件时显示） */}
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <input
+          type="checkbox"
+          checked={fingerprint}
+          onChange={(e) => setFingerprint(e.target.checked)}
+        />
+        {t("fingerprintHint", {
+          defaultValue: "锁文件指纹感知（变化时自动先执行 install/build）",
+        })}
+      </label>
+
       {/* F3：常驻保存按钮——两种模式通用、填写后随时可存；运行 = 临时命令 */}
       <div className="flex justify-end gap-1.5">
         <Button

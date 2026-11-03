@@ -74,6 +74,8 @@ async fn ac4_exit_reap_zero_residue_10_rounds() {
                 command_id: Some(Uuid::now_v7()),
                 command_line: "npm run dev".into(),
                 cwd: dir.clone(),
+                project_root: Some(dir.clone()),
+                fingerprint: false,
                 shell: ShellSpec::new(ShellKind::Pwsh, locate_on_path("pwsh").unwrap()),
                 with_marker: true,
                 env: vec![],

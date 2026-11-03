@@ -82,9 +82,23 @@ ALTER TABLE commands_v2 RENAME TO commands;
 CREATE INDEX idx_commands_project ON commands(project_id);
 "#;
 
-/// 全量迁移链（生产打开入口使用；含 v2）。
+/// Schema v3（P2-⑦ DR-24）：commands.fingerprint 开关 + fingerprints 指纹表。
+pub const SCHEMA_V3_SQL: &str = r#"
+ALTER TABLE commands ADD COLUMN fingerprint INTEGER NOT NULL DEFAULT 0;
+CREATE TABLE fingerprints (
+  command_id TEXT PRIMARY KEY REFERENCES commands(id) ON DELETE CASCADE,
+  lock_hash TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+"#;
+
+/// 全量迁移链（生产打开入口使用）。
 pub fn schema_migrations() -> Migrations<'static> {
-    Migrations::new(vec![M::up(SCHEMA_V1_SQL), M::up(SCHEMA_V2_SQL)])
+    Migrations::new(vec![
+        M::up(SCHEMA_V1_SQL),
+        M::up(SCHEMA_V2_SQL),
+        M::up(SCHEMA_V3_SQL),
+    ])
 }
 
 pub fn user_version(conn: &Connection) -> u32 {

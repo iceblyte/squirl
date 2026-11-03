@@ -1,7 +1,7 @@
 //! projects 域命令（契约 §5.4.1）：登记 / 台账 / 搜索 / 详情 / 更新 / 重定位 / 删除。
 
 use crate::db::repo;
-use crate::error::IpcError;
+use crate::error::{AppError, IpcError};
 
 /// `register_project` — `(path, note?)` → `Project`
 /// （发现区「登记」与手动注册同入口；E_DUPLICATE_PATH 防重复）。
@@ -119,12 +119,34 @@ pub async fn relocate_project(
     .map_err(IpcError::from)
 }
 
-/// `delete_project` — `id` → void（G1；前端二次确认框明示级联命令数）。
-/// TODO(S6)：任一命令内置模式运行中 → E_PROJECT_RUNNING_NO_DELETE。
+/// `delete_project` — `id` → void（G1；任一命令内置运行中 →
+/// E_PROJECT_RUNNING_NO_DELETE；前端二次确认框明示级联命令数）。
 #[tauri::command]
-pub async fn delete_project(id: String, db: tauri::State<'_, crate::db::Db>) -> Result<(), IpcError> {
+pub async fn delete_project(
+    id: String,
+    db: tauri::State<'_, crate::db::Db>,
+    supervisor: tauri::State<'_, crate::engine::supervisor::Supervisor>,
+) -> Result<(), IpcError> {
     let db = db.inner().clone();
+    let supervisor = supervisor.inner().clone();
     tokio::task::spawn_blocking(move || {
+        {
+            let conn = db.conn();
+            let ids: Vec<String> = conn
+                .prepare("SELECT id FROM commands WHERE project_id=?1")
+                .map_err(AppError::Db)?
+                .query_map(rusqlite::params![id], |r| r.get(0))
+                .map_err(AppError::Db)?
+                .filter_map(std::result::Result::ok)
+                .collect();
+            for cid in ids {
+                if let Ok(u) = uuid::Uuid::parse_str(&cid)
+                    && supervisor.registry.active_for_command(u).is_some()
+                {
+                    return Err(AppError::ProjectRunningNoDelete(id));
+                }
+            }
+        }
         let conn = db.conn();
         repo::projects::delete_project(&conn, &id)
     })

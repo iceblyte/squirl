@@ -47,8 +47,20 @@ export const api = {
   getProjectCommandCount: (id: string) => invoke<number>("get_project_command_count", { id }),
 
   // commands（S4）
-  addCommand: (projectId: string | null, name: string, commandLine: string, cwd?: string) =>
-    invoke<CommandRow>("add_command", { projectId, name, commandLine, cwd }),
+  addCommand: (
+    projectId: string | null,
+    name: string,
+    commandLine: string,
+    cwd?: string,
+    fingerprint?: boolean,
+  ) =>
+    invoke<CommandRow>("add_command", {
+      projectId,
+      name,
+      commandLine,
+      cwd,
+      fingerprint,
+    }),
   listGlobalCommands: () => invoke<CommandRow[]>("list_global_commands"),
   setRootDepth: (id: string, depth: number | null) => invoke<void>("set_root_depth", { id, depth }),
   listAvailableIdes: () => invoke<string[]>("list_available_ides"),

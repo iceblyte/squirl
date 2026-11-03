@@ -58,6 +58,8 @@ fn args(command_line: &str, cwd: &Path, shell: ShellSpec, env: Vec<(String, Stri
         command_id: Some(Uuid::now_v7()),
         command_line: command_line.into(),
         cwd: cwd.into(),
+        project_root: None,
+        fingerprint: false,
         shell,
         with_marker: true,
         env,

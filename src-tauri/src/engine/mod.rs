@@ -3,6 +3,7 @@
 pub mod adapter;
 pub mod effective;
 pub mod emulator;
+pub mod fingerprint;
 pub mod logbuf;
 pub mod pipeline;
 pub mod quoting;

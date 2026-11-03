@@ -107,6 +107,8 @@ export interface CommandRow {
   cwd: string | null;
   lastRunAt: string | null;
   lastExitCode: number | null;
+  /** DR-24：锁文件指纹感知开关 */
+  fingerprint: boolean;
 }
 
 export interface ProjectDetail extends ProjectCard {

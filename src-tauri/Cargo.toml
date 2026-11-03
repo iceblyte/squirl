@@ -51,6 +51,7 @@ uuid = { version = "=1.29.0", features = ["v7"] }
 thiserror = "=2.0.17"
 tracing = "=0.1.41"
 dunce = "=1.0.5"
+sha2 = "=0.10.9"
 jwalk = "=0.9.0"
 
 [target.'cfg(windows)'.dependencies]

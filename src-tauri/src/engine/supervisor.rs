@@ -74,6 +74,10 @@ pub struct StartArgs {
     pub command_id: Option<Uuid>,
     pub command_line: String,
     pub cwd: std::path::PathBuf,
+    /// DR-24：项目根（指纹感知记录用；内置 exited(0) 后写指纹）。
+    pub project_root: Option<std::path::PathBuf>,
+    /// DR-24：锁文件指纹感知开关。
+    pub fingerprint: bool,
     pub shell: ShellSpec,
     pub with_marker: bool,
     /// 附加环境变量（M0 供测试注入 HOME 等；生产暂为空）。
@@ -84,6 +88,10 @@ pub struct RunHandle {
     pub run_id: Uuid,
     pub command_id: Option<Uuid>,
     pub command_line: String,
+    /// DR-24：项目根（指纹记录用）。
+    pub project_root: Option<std::path::PathBuf>,
+    /// DR-24：锁文件指纹感知开关。
+    pub fingerprint: bool,
     pub shell: ShellSpec,
     pub cwd: std::path::PathBuf,
     pub state: Mutex<RunState>,
@@ -270,6 +278,8 @@ impl Supervisor {
             run_id,
             command_id: args.command_id,
             command_line: args.command_line.clone(),
+            project_root: args.project_root.clone(),
+            fingerprint: args.fingerprint,
             shell: args.shell.clone(),
             cwd: args.cwd.clone(),
             state: Mutex::new(RunState::Running),
@@ -344,6 +354,19 @@ impl Supervisor {
                         state.as_str(),
                         code,
                     );
+                    // DR-24：指纹感知命令 exited(0) → 记当前锁文件哈希
+                    if state == RunState::Exited
+                        && code == Some(0)
+                        && h.fingerprint
+                        && let Some(root) = &h.project_root
+                        && let Some(cid) = h.command_id
+                    {
+                        let _ = crate::engine::fingerprint::record_fingerprint(
+                            &conn,
+                            &cid.to_string(),
+                            root,
+                        );
+                    }
                 }
                 // 终发日志管道（读端已关）；guard 不得跨 await
                 let done = h.pipe_done.lock().unwrap().take();

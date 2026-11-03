@@ -59,6 +59,7 @@ fn ac3_external_window_within_2s_and_command_runs() {
         "ac3",
         "Set-Content -LiteralPath 'ac3-result.txt' -Value 'ac3-ok'",
         None,
+        false,
     )
     .unwrap();
 

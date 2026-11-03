@@ -1,23 +1,31 @@
 //! commands 域命令（契约 §5.4.1）：命令 CRUD。
-//!
-//! E_CMD_RUNNING_NO_DELETE 归 S6（run 注册表落地后接查）。
+//! 删除检查：内置模式运行中 → E_CMD_RUNNING_NO_DELETE（S8）。
 
 use crate::db::repo;
-use crate::error::IpcError;
+use crate::engine::supervisor::Supervisor;
+use crate::error::{AppError, IpcError};
 
-/// `add_command` — `(project_id, name, command_line, cwd?)` → `Command`。
+/// `add_command` — `(project_id?, name, command_line, cwd?, fingerprint?)` → `Command`。
 #[tauri::command]
 pub async fn add_command(
-    project_id: String,
+    project_id: Option<String>,
     name: String,
     command_line: String,
     cwd: Option<String>,
+    fingerprint: Option<bool>,
     db: tauri::State<'_, crate::db::Db>,
 ) -> Result<repo::projects::CommandRow, IpcError> {
     let db = db.inner().clone();
     tokio::task::spawn_blocking(move || {
         let conn = db.conn();
-        repo::add_command(&conn, Some(&project_id), &name, &command_line, cwd.as_deref())
+        repo::add_command(
+            &conn,
+            project_id.as_deref(),
+            &name,
+            &command_line,
+            cwd.as_deref(),
+            fingerprint.unwrap_or(false),
+        )
     })
     .await
     .map_err(|e| IpcError::new("E_ENGINE", format!("线程失败: {e}")))?
@@ -49,11 +57,21 @@ pub async fn update_command(
     .map_err(IpcError::from)
 }
 
-/// `delete_command` — `id` → void。
+/// `delete_command` — `id` → void（内置运行中 → E_CMD_RUNNING_NO_DELETE）。
 #[tauri::command]
-pub async fn delete_command(id: String, db: tauri::State<'_, crate::db::Db>) -> Result<(), IpcError> {
+pub async fn delete_command(
+    id: String,
+    db: tauri::State<'_, crate::db::Db>,
+    supervisor: tauri::State<'_, Supervisor>,
+) -> Result<(), IpcError> {
     let db = db.inner().clone();
+    let supervisor = supervisor.inner().clone();
     tokio::task::spawn_blocking(move || {
+        if let Ok(cid) = uuid::Uuid::parse_str(&id)
+            && supervisor.registry.active_for_command(cid).is_some()
+        {
+            return Err(AppError::CmdRunningNoDelete(id));
+        }
         let conn = db.conn();
         repo::delete_command(&conn, &id)
     })
@@ -82,7 +100,7 @@ pub async fn list_commands(
 #[tauri::command]
 pub async fn list_global_commands(
     db: tauri::State<'_, crate::db::Db>,
-) -> std::result::Result<Vec<repo::projects::CommandRow>, IpcError> {
+) -> Result<Vec<repo::projects::CommandRow>, IpcError> {
     let db = db.inner().clone();
     tokio::task::spawn_blocking(move || {
         let conn = db.conn();
@@ -95,7 +113,7 @@ pub async fn list_global_commands(
 
 /// DR-22：可用 IDE 探测（PATH 上 code / cursor）。
 #[tauri::command]
-pub fn list_available_ides() -> std::result::Result<Vec<String>, IpcError> {
+pub fn list_available_ides() -> Result<Vec<String>, IpcError> {
     let mut out = Vec::new();
     for (name, probe) in [("vscode", "code"), ("cursor", "cursor")] {
         if crate::engine::shell::locate_on_path(probe).is_some() {
@@ -107,10 +125,7 @@ pub fn list_available_ides() -> std::result::Result<Vec<String>, IpcError> {
 
 /// DR-22：在 IDE 中打开项目文件夹（fire-and-forget；Windows 经 cmd /c 解析 .cmd shim）。
 #[tauri::command]
-pub fn open_in_ide(
-    path: String,
-    ide: String,
-) -> std::result::Result<(), IpcError> {
+pub fn open_in_ide(path: String, ide: String) -> Result<(), IpcError> {
     use std::os::windows::process::CommandExt;
     let probe = match ide.as_str() {
         "vscode" => "code",
@@ -120,8 +135,7 @@ pub fn open_in_ide(
     let program = crate::engine::shell::locate_on_path(probe)
         .ok_or_else(|| IpcError::new("E_NO_EMULATOR", format!("未找到 {probe}")))?;
     let mut cmd = std::process::Command::new("cmd");
-    cmd.args(["/c", &program, &path])
-        .creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    cmd.args(["/c", &program, &path]).creation_flags(0x0800_0000); // CREATE_NO_WINDOW
     cmd.spawn()
         .map_err(|e| IpcError::new("E_LAUNCH_FAILED", format!("IDE 启动失败: {e}")))?;
     Ok(())
