@@ -429,6 +429,32 @@ impl Supervisor {
         Err(AppError::Engine("无可用的进程组句柄".into()))
     }
 
+    /// 回收全部内置 run 并等待终态（DR-14 第①步；退出钩子调用）。
+    /// 并发 stop（Windows TerminateJobObject 即时；Unix SIGTERM→宽限→SIGKILL），
+    /// 然后轮询注册表至全部到达终态（上限 8s，超时放行——watcher 兜底写回）。
+    pub async fn reap_all(&self) {
+        let runs = self.registry.list();
+        if runs.is_empty() {
+            return;
+        }
+        let ids: Vec<Uuid> = runs.iter().map(|h| h.run_id).collect();
+        for id in &ids {
+            let _ = self.stop(*id).await;
+        }
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(8);
+        loop {
+            let pending = self
+                .registry
+                .list()
+                .into_iter()
+                .any(|h| matches!(h.current_state(), RunState::Starting | RunState::Running));
+            if !pending || tokio::time::Instant::now() > deadline {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+    }
+
     fn emit_state(
         &self,
         run_id: &Uuid,

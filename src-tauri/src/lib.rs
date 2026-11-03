@@ -125,6 +125,39 @@ pub fn run() {
             commands::run::list_active_runs,
             commands::run::get_run_log,
         ])
-        .run(tauri::generate_context!())
-        .expect("Squirl 启动失败");
+        .build(tauri::generate_context!())
+        .expect("Squirl 启动失败")
+        .run(|app, event| {
+            // DR-14 退出四步串行（MVP 无托盘：关窗 = 退出，ExitRequested 即退出请求）：
+            // ① 回收全部内置 run（reap_all：并发 stop + 等终态）
+            // ② 终态写回——watcher 实时路径已在各终态提交（record_builtin_terminal），
+            //    此处无需重复；语义等价性：备份必然包含全部终态（单连接 Mutex 串行）
+            // ③ VACUUM INTO 常规备份（失败仅记日志，不阻断退出）
+            // ④ 回调返回 = 放行退出
+            if let tauri::RunEvent::ExitRequested { .. } = event {
+                let started = std::time::Instant::now();
+                let db = app.state::<crate::db::Db>().inner().clone();
+                let sup = app
+                    .try_state::<crate::engine::supervisor::Supervisor>()
+                    .map(|s| s.inner().clone());
+                tauri::async_runtime::block_on(async move {
+                    if let Some(sup) = sup {
+                        sup.reap_all().await; // ①
+                    }
+                    // ② 已由 watcher 实时完成（见上注）
+                    let backup = crate::db::backup::snapshot_regular(&db.conn()); // ③
+                    match backup {
+                        Ok(()) => {
+                            tracing::info!(target: "db_record",
+                                elapsed_ms = started.elapsed().as_millis() as u64,
+                                "退出四步完成（回收→写回→备份→放行）")
+                        }
+                        Err(e) => {
+                            tracing::warn!(target: "db_record", error = %e,
+                                "退出备份失败（不阻断退出）")
+                        }
+                    }
+                }); // ④
+            }
+        });
 }
