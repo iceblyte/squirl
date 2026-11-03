@@ -80,6 +80,9 @@ pub enum AppError {
 
     #[error("参数错误: {0}")]
     InvalidInput(String),
+
+    #[error("命令已在运行中")]
+    AlreadyRunning { run_id: String, command_id: String },
 }
 
 impl AppError {
@@ -99,6 +102,7 @@ impl AppError {
             AppError::NoEmulator => "E_NO_EMULATOR",
             AppError::ScanInProgress => "E_SCAN_IN_PROGRESS",
             AppError::InvalidInput(_) => "E_INVALID_INPUT",
+            AppError::AlreadyRunning { .. } => "E_ALREADY_RUNNING",
         }
     }
 
@@ -107,6 +111,18 @@ impl AppError {
         match self {
             AppError::LaunchFailed(d) | AppError::MigrationBlocked(d) => Some(d.clone()),
             AppError::DbCorrupted(d) | AppError::Backup(d) => Some(d.clone()),
+            AppError::AlreadyRunning { run_id, .. } => Some(run_id.clone()),
+            _ => None,
+        }
+    }
+
+    /// AlreadyRunning 的 data 负载（契约：E_ALREADY_RUNNING{run_id}，前端「再启动一个」入口）。
+    pub fn data(&self) -> Option<serde_json::Value> {
+        match self {
+            AppError::AlreadyRunning { run_id, command_id } => Some(serde_json::json!({
+                "runId": run_id,
+                "commandId": command_id,
+            })),
             _ => None,
         }
     }
@@ -117,6 +133,9 @@ impl From<AppError> for IpcError {
         let mut ipc = IpcError::new(e.map_code(), e.to_string());
         if let Some(detail) = e.detail() {
             ipc = ipc.with_detail(detail);
+        }
+        if let Some(data) = e.data() {
+            ipc = ipc.with_data(data);
         }
         ipc
     }

@@ -57,6 +57,17 @@ pub struct RunInfo {
     pub command_line: String,
 }
 
+impl RunHandle {
+    pub fn to_info(&self) -> RunInfo {
+        RunInfo {
+            run_id: self.run_id.to_string(),
+            command_id: self.command_id.map(|c| c.to_string()),
+            state: self.current_state().as_str().to_string(),
+            command_line: self.command_line.clone(),
+        }
+    }
+}
+
 /// 启动参数（内置模式）。
 #[derive(Debug, Clone)]
 pub struct StartArgs {
@@ -142,6 +153,12 @@ impl Registry {
 pub struct Supervisor {
     pub registry: Arc<Registry>,
     pub sink: Arc<dyn EventSink>,
+}
+
+impl Clone for Supervisor {
+    fn clone(&self) -> Self {
+        Self { registry: self.registry.clone(), sink: self.sink.clone() }
+    }
 }
 
 impl Supervisor {

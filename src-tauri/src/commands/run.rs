@@ -1,19 +1,21 @@
-//! run 域命令（契约 §5.4.1）：执行模式解析 + 外部一键启动（DR-16 判别联合）。
+//! run 域命令（契约 §5.4.1）：执行模式解析 + 双模式启动（DR-16 判别联合）。
 //!
-//! 内置模式（state 机 / run 注册表）在 Phase 2 S6 落地——当前 mode=builtin
-//! 返回 E_INVALID_INPUT 明示未开放（UI 侧置灰，AGENTS.md Phase 1 约束）。
+//! 内置模式：supervisor state 机 + run 注册表（INV-3，S6 接线）；
+//! 外部模式：M0 定版适配器 + fire-and-forget（INV-2 不入 Job Object）。
 
 use serde::Serialize;
 use uuid::Uuid;
 
 use crate::db::repo;
 use crate::engine::adapter::{
-    build_builtin_launch, ConsoleHostAdapter, GenericExecAdapter, LaunchJob, TerminalAdapter,
-    WindowsTerminalAdapter,
+    ConsoleHostAdapter, GenericExecAdapter, LaunchJob, TerminalAdapter, WindowsTerminalAdapter,
 };
-use crate::engine::effective::{build_external_parts, resolve_cwd, EffectiveExec};
+use crate::engine::effective::{
+    build_builtin_parts, build_external_parts, resolve_cwd, EffectiveExec,
+};
 use crate::engine::emulator::EmulatorKind;
 use crate::engine::spawn::spawn_external;
+use crate::engine::supervisor::{StartArgs, Supervisor};
 use crate::error::{AppError, IpcError, Result};
 
 /// `StartResult`（契约 §5.4 运行域判别联合，DR-16③）。
@@ -52,25 +54,19 @@ pub fn launch_external(
 ) -> Result<u32> {
     let (shell_spec, emu_spec) = {
         let conn = db.conn();
-        build_external_parts(&conn, project_id.as_ref().map(std::string::ToString::to_string).as_deref())?
+        build_external_parts(&conn, project_id.map(|u| u.to_string()).as_deref())?
     };
     let cwd = resolve_cwd(cwd_override, project_root)?;
 
     // 适配器选择（模拟器 × shell；M0 定版表）
     let adapter: &dyn TerminalAdapter = match emu_spec.kind {
         EmulatorKind::WindowsTerminal => &WindowsTerminalAdapter {
-            wt_path: emu_spec
-                .program
-                .clone()
-                .ok_or_else(|| AppError::NoEmulator)?,
+            wt_path: emu_spec.program.clone().ok_or_else(|| AppError::NoEmulator)?,
         },
         EmulatorKind::ConsoleHost => &ConsoleHostAdapter,
         EmulatorKind::GnomeTerminal | EmulatorKind::Konsole => &GenericExecAdapter {
             kind: emu_spec.kind,
-            program: emu_spec
-                .program
-                .clone()
-                .ok_or_else(|| AppError::NoEmulator)?,
+            program: emu_spec.program.clone().ok_or_else(|| AppError::NoEmulator)?,
         },
         EmulatorKind::MacTerminal => &crate::engine::adapter::MacTerminalAdapter,
         EmulatorKind::ITerm2 => &crate::engine::adapter::ITerm2Adapter,
@@ -116,52 +112,123 @@ pub fn launch_external(
     Ok(spawned.pid)
 }
 
+/// 内置模式启动：supervisor state 机 + run 注册表（INV-3）。
+fn launch_builtin(
+    db: &crate::db::Db,
+    supervisor: &Supervisor,
+    command_id: Option<Uuid>,
+    command_line: String,
+    cwd_override: Option<&str>,
+    project_root: &std::path::Path,
+    force_new: bool,
+) -> Result<crate::engine::supervisor::RunInfo> {
+    // 重复启动拦截（设计 §5.3.3）：默认拒绝，force_new = 「再启动一个」
+    if !force_new
+        && let Some(cid) = command_id
+        && let Some(existing) = supervisor.registry.active_for_command(cid)
+    {
+        return Err(AppError::AlreadyRunning {
+            run_id: existing.to_string(),
+            command_id: cid.to_string(),
+        });
+    }
+    let shell_spec = {
+        let conn = db.conn();
+        build_builtin_parts(&conn, None)?
+    };
+    let cwd = resolve_cwd(cwd_override, project_root)?;
+    let run_id = tokio::runtime::Handle::current().block_on(async {
+        supervisor
+            .start(StartArgs {
+                command_id,
+                command_line,
+                cwd,
+                shell: shell_spec,
+                with_marker: true,
+                env: vec![],
+            })
+            .await
+    })?;
+    supervisor
+        .registry
+        .get(run_id)
+        .map(|h| h.to_info())
+        .ok_or_else(|| AppError::Engine("run 注册表缺少刚启动的实例".into()))
+}
+
 /// `start_command` — `(command_id, { force_new? })` → `StartResult`。
 #[tauri::command]
 pub async fn start_command(
     command_id: String,
     force_new: Option<bool>,
     db: tauri::State<'_, crate::db::Db>,
+    supervisor: tauri::State<'_, Supervisor>,
 ) -> std::result::Result<StartResult, IpcError> {
     let db = db.inner().clone();
-    // force_new 语义 = 内置模式重复启动拦截的「再启动一个」（S6）；
-    // 外部模式 fire-and-forget，天然允许重复（记录到 launch record）
-    let _force_new = force_new.unwrap_or(false);
-    tokio::task::spawn_blocking(move || {
-        let cmd = {
-            let conn = db.conn();
-            repo::get_command(&conn, &command_id)?
-        };
-        let project_root = {
-            let conn = db.conn();
-            let path: String = conn
-                .query_row(
-                    "SELECT path FROM projects WHERE id=?1",
-                    rusqlite::params![cmd.project_id()],
-                    |r| r.get(0),
+    let supervisor = supervisor.inner().clone();
+    let force_new = force_new.unwrap_or(false);
+    let cmd_id =
+        Uuid::parse_str(&command_id).map_err(|e| IpcError::new("E_INVALID_INPUT", e.to_string()))?;
+
+    // 解析命令与模式（阻塞查询）
+    let (cmd, mode) = {
+        let conn = db.conn();
+        let cmd = repo::get_command(&conn, &command_id)?;
+        let eff = crate::engine::effective::resolve(&conn, Some(cmd.project_id()))?;
+        (cmd, eff.mode)
+    };
+    let project_root: std::path::PathBuf = {
+        let conn = db.conn();
+        let path: String = conn
+            .query_row(
+                "SELECT path FROM projects WHERE id=?1",
+                rusqlite::params![cmd.project_id()],
+                |r| r.get(0),
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    IpcError::new("E_PATH_NOT_FOUND", format!("项目不存在: {}", cmd.project_id()))
+                }
+                other => IpcError::from(AppError::Db(other)),
+            })?;
+        std::path::PathBuf::from(path)
+    };
+
+    match mode.as_str() {
+        "builtin" => {
+            let run = launch_builtin(
+                &db,
+                &supervisor,
+                Some(cmd_id),
+                cmd.command_line.clone(),
+                cmd.cwd.as_deref(),
+                &project_root,
+                force_new,
+            )
+            .map_err(IpcError::from)?;
+            Ok(StartResult::Builtin { run })
+        }
+        _ => {
+            let pid = tokio::task::spawn_blocking(move || {
+                launch_external(
+                    &db,
+                    Some(cmd_id),
+                    Some(
+                        Uuid::parse_str(cmd.project_id())
+                            .map_err(|e| AppError::InvalidInput(e.to_string()))?,
+                    ),
+                    cmd.command_line.clone(),
+                    cmd.cwd.as_deref(),
+                    &project_root,
                 )
-                .map_err(|e| match e {
-                    rusqlite::Error::QueryReturnedNoRows => {
-                        AppError::InvalidInput(format!("项目不存在: {}", cmd.project_id()))
-                    }
-                    other => AppError::Db(other),
-                })?;
-            std::path::PathBuf::from(path)
-        };
-        let pid = launch_external(
-            &db,
-            Some(Uuid::parse_str(&cmd.id).map_err(|e| AppError::InvalidInput(e.to_string()))?),
-            Some(Uuid::parse_str(cmd.project_id()).map_err(|e| AppError::InvalidInput(e.to_string()))?),
-            cmd.command_line.clone(),
-            cmd.cwd.as_deref(),
-            &project_root,
-        )?;
-        tracing::debug!(target: "launch_record", pid, "external spawned");
-        Ok::<StartResult, AppError>(StartResult::External { launched: true })
-    })
-    .await
-    .map_err(|e| IpcError::new("E_ENGINE", format!("线程失败: {e}")))?
-    .map_err(IpcError::from)
+            })
+            .await
+            .map_err(|e| IpcError::new("E_ENGINE", format!("线程失败: {e}")))?
+            .map_err(IpcError::from)?;
+            tracing::debug!(target: "launch_record", pid, "external spawned");
+            Ok(StartResult::External { launched: true })
+        }
+    }
 }
 
 /// `start_temp_command` — `({ project_id?, command_line, cwd })` → `StartResult`。
@@ -171,55 +238,103 @@ pub async fn start_temp_command(
     command_line: String,
     cwd: Option<String>,
     db: tauri::State<'_, crate::db::Db>,
+    supervisor: tauri::State<'_, Supervisor>,
 ) -> std::result::Result<StartResult, IpcError> {
     let db = db.inner().clone();
-    tokio::task::spawn_blocking(move || {
-        let project_root = match &project_id {
-            Some(pid) => {
-                let conn = db.conn();
-                let path: String = conn
-                    .query_row(
-                        "SELECT path FROM projects WHERE id=?1",
-                        rusqlite::params![pid],
-                        |r| r.get(0),
-                    )
-                    .map_err(|e| match e {
-                        rusqlite::Error::QueryReturnedNoRows => {
-                            AppError::InvalidInput(format!("项目不存在: {pid}"))
-                        }
-                        other => AppError::Db(other),
-                    })?;
-                std::path::PathBuf::from(path)
-            }
-            None => {
-                let cwd = cwd.clone().ok_or_else(|| {
-                    AppError::InvalidInput("临时命令需要 cwd 或 project_id".into())
+    let supervisor = supervisor.inner().clone();
+    let mode = {
+        let conn = db.conn();
+        crate::engine::effective::resolve(&conn, project_id.as_deref())?.mode
+    };
+    let project_root: Option<std::path::PathBuf> = match &project_id {
+        Some(pid) => {
+            let conn = db.conn();
+            let path: String = conn
+                .query_row(
+                    "SELECT path FROM projects WHERE id=?1",
+                    rusqlite::params![pid],
+                    |r| r.get(0),
+                )
+                .map_err(|e| match e {
+                    rusqlite::Error::QueryReturnedNoRows => {
+                        IpcError::new("E_PATH_NOT_FOUND", format!("项目不存在: {pid}"))
+                    }
+                    other => IpcError::from(AppError::Db(other)),
                 })?;
-                std::path::PathBuf::from(cwd)
-            }
-        };
-        // 临时命令没有命令行 cwd 字段：优先用入参 cwd，否则项目根
-        let pid = launch_external(
-            &db,
-            None,
-            project_id
-                .as_ref()
-                .and_then(|p| Uuid::parse_str(p).ok()),
-            command_line,
-            cwd.as_deref(),
-            &project_root,
-        )?;
-        tracing::debug!(target: "launch_record", pid, "external temp spawned");
-        Ok::<StartResult, AppError>(StartResult::External { launched: true })
-    })
-    .await
-    .map_err(|e| IpcError::new("E_ENGINE", format!("线程失败: {e}")))?
-    .map_err(IpcError::from)
+            Some(std::path::PathBuf::from(path))
+        }
+        None => None,
+    };
+
+    match mode.as_str() {
+        "builtin" => {
+            let root = project_root
+                .clone()
+                .ok_or_else(|| IpcError::new("E_INVALID_INPUT", "临时命令需要 cwd 或 project_id"))?;
+            let run = launch_builtin(
+                &db,
+                &supervisor,
+                None, // 临时命令：无 command_id（INV-3 允许 None）
+                command_line,
+                cwd.as_deref(),
+                &root,
+                false,
+            )
+            .map_err(IpcError::from)?;
+            Ok(StartResult::Builtin { run })
+        }
+        _ => {
+            let root = project_root
+                .ok_or_else(|| IpcError::new("E_INVALID_INPUT", "临时命令需要 cwd 或 project_id"))?;
+            let pid = tokio::task::spawn_blocking(move || {
+                launch_external(&db, None, None, command_line, cwd.as_deref(), &root)
+            })
+            .await
+            .map_err(|e| IpcError::new("E_ENGINE", format!("线程失败: {e}")))?
+            .map_err(IpcError::from)?;
+            tracing::debug!(target: "launch_record", pid, "external temp spawned");
+            Ok(StartResult::External { launched: true })
+        }
+    }
 }
 
-// 抑制未使用告警：build_builtin_launch 在 S6 supervisor 接线时使用
-#[allow(dead_code)]
-fn _builtin_not_available() -> Result<StartResult> {
-    let _ = build_builtin_launch;
-    Err(AppError::InvalidInput("内置模式将在 Phase 2 开放".into()))
+/// `stop_run` — `run_id` → void（单命令整组回收，§5.3.5）。
+#[tauri::command]
+pub async fn stop_run(
+    run_id: String,
+    supervisor: tauri::State<'_, Supervisor>,
+) -> std::result::Result<(), IpcError> {
+    let rid = Uuid::parse_str(&run_id).map_err(|e| IpcError::new("E_INVALID_INPUT", e.to_string()))?;
+    supervisor
+        .stop(rid)
+        .await
+        .map_err(IpcError::from)
+}
+
+/// `list_active_runs` — → `RunInfo[]`（重启后为空，会话内存）。
+#[tauri::command]
+pub fn list_active_runs(
+    supervisor: tauri::State<'_, Supervisor>,
+) -> std::result::Result<Vec<crate::engine::supervisor::RunInfo>, IpcError> {
+    Ok(supervisor
+        .registry
+        .list()
+        .iter()
+        .map(|h| h.to_info())
+        .collect())
+}
+
+/// `get_run_log` — `run_id` → `LogLine[]`（面板晚挂载补发环形缓冲快照）。
+#[tauri::command]
+pub fn get_run_log(
+    run_id: String,
+    supervisor: tauri::State<'_, Supervisor>,
+) -> std::result::Result<(Vec<crate::engine::logbuf::LogLineDto>, u64), IpcError> {
+    let rid = Uuid::parse_str(&run_id).map_err(|e| IpcError::new("E_INVALID_INPUT", e.to_string()))?;
+    let h = supervisor
+        .registry
+        .get(rid)
+        .ok_or_else(|| IpcError::new("E_INVALID_INPUT", format!("run 不存在: {run_id}")))?;
+    let (lines, trimmed) = h.log.lock().unwrap().snapshot_dto();
+    Ok((lines, trimmed))
 }

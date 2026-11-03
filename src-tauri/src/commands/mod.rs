@@ -4,6 +4,7 @@
 pub mod command_crud;
 pub mod projects;
 pub mod run;
+pub mod sink;
 pub mod roots;
 pub mod scan;
 pub mod settings;

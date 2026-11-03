@@ -5,9 +5,11 @@ import type {
   CommandRow,
   DiscoveryEntry,
   EffectiveExecConfig,
+  LogLineDto,
   ProjectCard,
   ProjectDetail,
   Root,
+  RunInfo,
   ScanTicket,
   Settings,
   StartResult,
@@ -58,4 +60,7 @@ export const api = {
     invoke<StartResult>("start_temp_command", args),
   getEffectiveExecutionConfig: (projectId?: string) =>
     invoke<EffectiveExecConfig>("get_effective_execution_config", { projectId }),
+  stopRun: (runId: string) => invoke<void>("stop_run", { runId }),
+  listActiveRuns: () => invoke<RunInfo[]>("list_active_runs"),
+  getRunLog: (runId: string) => invoke<{ 0: LogLineDto[]; 1: number }>("get_run_log", { runId }),
 };

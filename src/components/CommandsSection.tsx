@@ -1,13 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Play, Trash2 } from "lucide-react";
+import { Play, Square, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/api/client";
-import type { CommandRow } from "@/api/types";
+import type { CommandRow, IpcErrorShape } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useRunStore } from "@/stores/runs";
 
 /** 命令编辑器（F3：常驻「保存」按钮——随时可存，需名称；失败命令也允许保存） */
 export function CommandEditor({ projectId }: { projectId: string }) {
@@ -76,7 +77,7 @@ export function CommandEditor({ projectId }: { projectId: string }) {
   );
 }
 
-/** 命令行条目：运行（外部）/ 编辑 / 删除（S6 接内置停止） */
+/** 命令行条目：运行（双模式）/ 停止（内置运行中）/ 删除 */
 export function CommandListItems({
   projectId,
   commands,
@@ -87,16 +88,47 @@ export function CommandListItems({
   const { t } = useTranslation("project");
   const { t: tc } = useTranslation("common");
   const queryClient = useQueryClient();
+  const runs = useRunStore((s) => s.runs);
+  const byCommand = useRunStore((s) => s.byCommand);
 
   const run = useMutation({
-    mutationFn: (commandId: string) => api.startCommand(commandId),
+    mutationFn: ({ commandId, forceNew }: { commandId: string; forceNew: boolean }) =>
+      api.startCommand(commandId, forceNew),
     onSuccess: (result) => {
       if (result.mode === "external") {
         toast.success(t("launchedExternal", { defaultValue: "已在外部终端打开" }));
+      } else {
+        // 内置：runStore 由 run://state 维护；这里立即置位（事件到达前的乐观更新）
+        useRunStore.getState().upsert({
+          runId: result.run.runId,
+          commandId: result.run.commandId,
+          state: "running" as const,
+          commandLine: result.run.commandLine,
+        });
       }
       void queryClient.invalidateQueries({ queryKey: ["project", projectId] });
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
+    onError: (e) => {
+      // E_ALREADY_RUNNING{runId}：默认阻止 + 「再启动一个」（契约 §5.4）
+      const err = e as unknown as IpcErrorShape;
+      if (err?.code === "E_ALREADY_RUNNING") {
+        const commandId = (err.data as { commandId?: string })?.commandId ?? "";
+        toast.error(t("alreadyRunning", { defaultValue: "命令已在运行中" }), {
+          description: t("alreadyRunningHint", { defaultValue: "重复点击已阻止" }),
+          action: {
+            label: t("startAnother", { defaultValue: "再启动一个" }),
+            onClick: () => run.mutate({ commandId, forceNew: true }),
+          },
+        });
+        return;
+      }
+      toast.error(String(e));
+    },
+  });
+
+  const stop = useMutation({
+    mutationFn: (runId: string) => api.stopRun(runId),
     onError: (e) => toast.error(String(e)),
   });
 
@@ -111,40 +143,57 @@ export function CommandListItems({
 
   return (
     <ul className="space-y-1">
-      {commands.map((cmd) => (
-        <li
-          key={cmd.id}
-          className="flex items-center justify-between rounded-md border bg-card px-3 py-2 text-sm"
-        >
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="shrink-0 font-medium">{cmd.name}</span>
-            <code className="truncate text-xs text-muted-foreground" title={cmd.commandLine}>
-              {cmd.commandLine}
-            </code>
-            {cmd.lastExitCode !== null && cmd.lastExitCode !== 0 && (
-              <Badge variant="destructive">exit {cmd.lastExitCode}</Badge>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              aria-label={tc("run")}
-              onClick={() => run.mutate(cmd.id)}
-            >
-              <Play className="size-4 text-primary" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              aria-label={tc("delete")}
-              onClick={() => remove.mutate(cmd.id)}
-            >
-              <Trash2 className="size-4 text-destructive" />
-            </Button>
-          </div>
-        </li>
-      ))}
+      {commands.map((cmd) => {
+        const runningRunId = byCommand[cmd.id];
+        const running = runningRunId !== undefined && runs[runningRunId]?.state === "running";
+        return (
+          <li
+            key={cmd.id}
+            className="flex items-center justify-between rounded-md border bg-card px-3 py-2 text-sm"
+          >
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="shrink-0 font-medium">{cmd.name}</span>
+              <code className="truncate text-xs text-muted-foreground" title={cmd.commandLine}>
+                {cmd.commandLine}
+              </code>
+              {running && <Badge variant="default">running</Badge>}
+              {cmd.lastExitCode !== null && cmd.lastExitCode !== 0 && (
+                <Badge variant="destructive">exit {cmd.lastExitCode}</Badge>
+              )}
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              {running ? (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label={tc("stop")}
+                  disabled={stop.isPending}
+                  onClick={() => runningRunId && stop.mutate(runningRunId)}
+                >
+                  <Square className="size-4 text-destructive" />
+                </Button>
+              ) : (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label={tc("run")}
+                  onClick={() => run.mutate({ commandId: cmd.id, forceNew: false })}
+                >
+                  <Play className="size-4 text-primary" />
+                </Button>
+              )}
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label={tc("delete")}
+                onClick={() => remove.mutate(cmd.id)}
+              >
+                <Trash2 className="size-4 text-destructive" />
+              </Button>
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }

@@ -182,6 +182,14 @@ pub fn build_external_parts(
     Ok((shell_spec, emu))
 }
 
+/// 内置模式的 Shell 解析（无模拟器层；AD-13 门禁解除后由 start 分发调用）。
+pub fn build_builtin_parts(conn: &Connection, project_id: Option<&str>) -> Result<ShellSpec> {
+    let eff = resolve(conn, project_id)?;
+    let mut shell_spec = locate_explicit_shell(&eff.shell)?;
+    shell_spec.load_profile = eff.load_profile;
+    Ok(shell_spec)
+}
+
 /// 命令工作目录解析（附录 A #7：cwd 默认项目根、可改，两模式统一）。
 /// 相对 cwd 相对项目根拼接；绝对 cwd 直接 canonical。
 pub fn resolve_cwd(cwd: Option<&str>, project_root: &Path) -> Result<std::path::PathBuf> {

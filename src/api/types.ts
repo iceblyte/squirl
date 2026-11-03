@@ -104,3 +104,34 @@ export interface CommandRow {
 export interface ProjectDetail extends ProjectCard {
   commands: CommandRow[];
 }
+
+export interface RunInfo {
+  runId: string;
+  commandId: string | null;
+  state: "idle" | "starting" | "running" | "exited" | "failed" | "killed";
+  commandLine: string;
+}
+
+/** run://state 事件载荷（§5.4.2） */
+export interface RunStateEvent {
+  runId: string;
+  commandId: string | null;
+  state: string;
+  exitCode?: number | null;
+  ts: string;
+}
+
+/** get_run_log 出参行（§5.4.1 LogLine = {seq, text, stream}） */
+export interface LogLineDto {
+  seq: number;
+  text: string;
+  stream: "stdout" | "stderr";
+}
+
+/** run://log 事件载荷（§5.4.2，DR-7：seq 对齐 + trimmed_lines 裁剪） */
+export interface RunLogEvent {
+  runId: string;
+  seq: number;
+  trimmedLines: number;
+  lines: { text: string; stream: "stdout" | "stderr" }[];
+}

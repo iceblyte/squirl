@@ -90,6 +90,9 @@ pub fn run() {
 
             app.manage(db);
             app.manage(crate::scanner::SharedSession::default());
+            // S6：内置模式进程监管（事件直达前端，ADR-2 生产消费端）
+            let sink = std::sync::Arc::new(crate::commands::sink::TauriEventSink::new(handle.clone()));
+            app.manage(crate::engine::supervisor::Supervisor::new(sink));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -117,6 +120,9 @@ pub fn run() {
             commands::run::get_effective_execution_config,
             commands::run::start_command,
             commands::run::start_temp_command,
+            commands::run::stop_run,
+            commands::run::list_active_runs,
+            commands::run::get_run_log,
         ])
         .run(tauri::generate_context!())
         .expect("Squirl 启动失败");

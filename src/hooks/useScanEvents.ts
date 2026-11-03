@@ -4,12 +4,22 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
-import type { DbRestored, ScanCompleted, ScanPaused, ScanProgress } from "@/api/types";
+import type {
+  DbRestored,
+  RunStateEvent,
+  ScanCompleted,
+  ScanPaused,
+  ScanProgress,
+} from "@/api/types";
+import { useRunStore } from "@/stores/runs";
 import { useScanStore } from "@/stores/scan";
 
 export function useScanEvents() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const { setProgress, setPaused, setCompleted } = useScanStore.getState();
 
   useEffect(() => {
@@ -29,12 +39,30 @@ export function useScanEvents() {
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
     }).then((u) => unlistens.push(u));
     void subscribe<DbRestored>("app://db-restored", (payload) => {
-      // AC9：恢复/重建提示（toast 组件在 S3 引入，先挂占位）
-      console.warn("db-restored:", payload.kind);
+      // AC9：恢复/重建提示 toast
+      toast.success(payload.kind === "rebuilt_empty" ? t("errorDbRebuilt") : t("errorDbRestored"));
+    }).then((u) => unlistens.push(u));
+
+    // S6：run://state → runStore（状态点/停止按钮数据源；终态移除实例）
+    void subscribe<RunStateEvent>("run://state", (payload) => {
+      const runStore = useRunStore.getState();
+      if (["exited", "failed", "killed"].includes(payload.state)) {
+        runStore.remove(payload.runId);
+      } else {
+        runStore.upsert({
+          runId: payload.runId,
+          commandId: payload.commandId,
+          state: "running",
+          commandLine: "",
+        });
+      }
+      void queryClient.invalidateQueries({ queryKey: ["projects"] });
     }).then((u) => unlistens.push(u));
 
     return () => {
       for (const u of unlistens) u();
     };
-  }, [queryClient, setProgress, setPaused, setCompleted]);
+    // t 变化重挂载无意义（文案惰性求值即可）；biome 精确依赖集
+    // eslint-disable-next-line -- biome: t / setX 为稳定引用或惰性使用
+  }, [queryClient, setProgress, setPaused, setCompleted, t]);
 }
