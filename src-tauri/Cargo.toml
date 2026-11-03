@@ -15,6 +15,15 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "squirl-app"
 path = "src/main.rs"
 
+# B5 崩溃兜底模拟宿主：测试专用（ADR-14），不进发布安装包
+[features]
+spike-harness = []
+
+[[bin]]
+name = "job_host"
+path = "src/bin/job_host.rs"
+required-features = ["spike-harness"]
+
 [build-dependencies]
 tauri-build = { version = "=2.7.4", features = [] }
 
