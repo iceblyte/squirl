@@ -19,6 +19,7 @@ function IdeButton({ path, ide, label }: { path: string; ide: string; label: str
   );
 }
 
+import { ConfigFillPanel } from "@/components/ConfigFillPanel";
 import { LogPanel } from "@/components/LogPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -164,6 +165,9 @@ export function ProjectPage() {
         <CommandListItems projectId={card.id} commands={card.commands} />
         <CommandEditor projectId={card.id} />
       </section>
+
+      {/* P2-⑧：配置快填（DR-26 引擎 + 表单） */}
+      <ConfigFillPanel projectPath={card.path} />
 
       {/* DR-22：IDE 一键打开 */}
       <section className="space-y-1.5">

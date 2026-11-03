@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 import type {
   CommandRow,
+  ConfigFilePayload,
   DiscoveryEntry,
   EffectiveExecConfig,
   LogLineDto,
@@ -76,6 +77,10 @@ export const api = {
     invoke<StartResult>("start_temp_command", args),
   getEffectiveExecutionConfig: (projectId?: string) =>
     invoke<EffectiveExecConfig>("get_effective_execution_config", { projectId }),
+  readProjectConfig: (path: string) => invoke<ConfigFilePayload>("read_project_config", { path }),
+  applyProjectConfig: (path: string, values: { key: string; value: string }[]) =>
+    invoke<boolean>("apply_project_config", { path, values }),
+  scanReadmeCommands: (path: string) => invoke<string[]>("scan_readme_commands", { path }),
   stopRun: (runId: string) => invoke<void>("stop_run", { runId }),
   listActiveRuns: () => invoke<RunInfo[]>("list_active_runs"),
   getRunLog: (runId: string) => invoke<{ 0: LogLineDto[]; 1: number }>("get_run_log", { runId }),

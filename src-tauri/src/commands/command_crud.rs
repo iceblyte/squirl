@@ -140,3 +140,91 @@ pub fn open_in_ide(path: String, ide: String) -> Result<(), IpcError> {
         .map_err(|e| IpcError::new("E_LAUNCH_FAILED", format!("IDE 启动失败: {e}")))?;
     Ok(())
 }
+
+/// DR-26：读取项目配置文件（.env*/TOML/YAML）键值表单数据源。
+/// 返回 (dialect 标签, 键值列表, 原文)——纯读。
+#[tauri::command]
+pub fn read_project_config(
+    path: String,
+) -> std::result::Result<ConfigFilePayload, IpcError> {
+    let p = std::path::Path::new(&path);
+    if !p.is_file() {
+        return Err(IpcError::new("E_PATH_NOT_FOUND", format!("配置文件不存在: {path}")));
+    }
+    let Some(dialect) = crate::engine::configfill::dialect_of(p) else {
+        return Err(IpcError::new(
+            "E_INVALID_INPUT",
+            "不支持的配置文件类型（支持 .env*/.toml/.yml/.yaml）",
+        ));
+    };
+    let content = std::fs::read_to_string(p).map_err(|e| {
+        IpcError::new("E_PATH_NOT_FOUND", format!("读取失败: {e}"))
+    })?;
+    let keys = crate::engine::configfill::parse_config(&content, dialect)
+        .into_iter()
+        .map(|k| ConfigKeyDto { key: k.key, value: k.value, line: k.line })
+        .collect();
+    Ok(ConfigFilePayload {
+        dialect: format!("{dialect:?}").to_lowercase(),
+        keys,
+        content,
+    })
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConfigKeyDto {
+    pub key: String,
+    pub value: String,
+    pub line: usize,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConfigFilePayload {
+    pub dialect: String,
+    pub keys: Vec<ConfigKeyDto>,
+    pub content: String,
+}
+
+/// DR-26：保格式应用键值 + 原子写回（含备份）；返回实际是否变更。
+#[tauri::command]
+pub fn apply_project_config(
+    path: String,
+    values: Vec<ConfigKeyValue>,
+) -> std::result::Result<bool, IpcError> {
+    use crate::engine::configfill;
+    let p = std::path::Path::new(&path);
+    if !p.is_file() {
+        return Err(IpcError::new("E_PATH_NOT_FOUND", format!("配置文件不存在: {path}")));
+    }
+    let Some(dialect) = configfill::dialect_of(p) else {
+        return Err(IpcError::new(
+            "E_INVALID_INPUT",
+            "不支持的配置文件类型（支持 .env*/.toml/.yml/.yaml）",
+        ));
+    };
+    let content = std::fs::read_to_string(p)
+        .map_err(|e| IpcError::new("E_PATH_NOT_FOUND", format!("读取失败: {e}")))?;
+    let vals: Vec<(String, String)> =
+        values.into_iter().map(|v| (v.key, v.value)).collect();
+    let (new_content, changed) = configfill::apply_config(&content, dialect, &vals);
+    if changed {
+        configfill::atomic_write(p, &new_content).map_err(IpcError::from)?;
+    }
+    Ok(changed)
+}
+
+#[derive(serde::Deserialize)]
+pub struct ConfigKeyValue {
+    pub key: String,
+    pub value: String,
+}
+
+/// DR-26：README 命令提取（fenced code blocks，bash/sh/无标注）。
+#[tauri::command]
+pub fn scan_readme_commands(path: String) -> std::result::Result<Vec<String>, IpcError> {
+    let content = std::fs::read_to_string(&path)
+        .map_err(|e| IpcError::new("E_PATH_NOT_FOUND", format!("读取失败: {e}")))?;
+    Ok(crate::engine::configfill::scan_readme_commands(&content))
+}

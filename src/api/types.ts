@@ -145,3 +145,10 @@ export interface RunLogEvent {
   trimmedLines: number;
   lines: { text: string; stream: "stdout" | "stderr" }[];
 }
+
+/** DR-26：配置文件读取载荷（read_project_config 出参） */
+export interface ConfigFilePayload {
+  dialect: "env" | "toml" | "yaml";
+  keys: { key: string; value: string; line: number }[];
+  content: string;
+}
