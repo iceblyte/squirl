@@ -27,6 +27,16 @@ impl EventSink for TauriEventSink {
             tracing::warn!(target: "run", error = %e, "发送 run://state 失败");
         }
     }
+
+    fn on_input_suspected(&self, run_id: String) {
+        // DR-8：疑似等待输入（只提示不干预；前端 toast + 强制停止 action）
+        if let Err(e) = self
+            .app
+            .emit("run://input-suspected", serde_json::json!({ "runId": run_id }))
+        {
+            tracing::warn!(target: "run", error = %e, "发送 run://input-suspected 失败");
+        }
+    }
 }
 
 /// 应用退出时回收全部内置 run（DR-14 第①步的钩子挂载点在 S9；

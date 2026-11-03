@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::engine::adapter::{build_builtin_launch, LaunchJob};
 use crate::engine::logbuf::RingBuffer;
-use crate::engine::pipeline::{spawn_pipe, EventSink, RunStateEvent};
+use crate::engine::pipeline::{spawn_pipe_with_clock, EventSink, RunStateEvent};
 use crate::engine::shell::ShellSpec;
 use crate::error::{AppError, Result};
 
@@ -97,6 +97,8 @@ pub struct RunHandle {
     pub log: Arc<Mutex<RingBuffer>>,
     pub pipe_marker: Arc<Mutex<Option<u64>>>,
     pipe_done: Mutex<Option<tokio::task::JoinHandle<()>>>,
+    /// 最后输出时刻（Unix 毫秒，DR-8 启发式时钟；由管道聚合器更新）。
+    pub last_output_ms: Arc<std::sync::atomic::AtomicU64>,
 }
 
 impl RunHandle {
@@ -153,17 +155,23 @@ impl Registry {
 pub struct Supervisor {
     pub registry: Arc<Registry>,
     pub sink: Arc<dyn EventSink>,
+    /// DB 句柄（终态实时写回 DR-16②）；测试可传 None。
+    db: Option<crate::db::Db>,
 }
 
 impl Clone for Supervisor {
     fn clone(&self) -> Self {
-        Self { registry: self.registry.clone(), sink: self.sink.clone() }
+        Self { registry: self.registry.clone(), sink: self.sink.clone(), db: self.db.clone() }
     }
 }
 
 impl Supervisor {
     pub fn new(sink: Arc<dyn EventSink>) -> Self {
-        Self { registry: Arc::new(Registry::new()), sink }
+        Self { registry: Arc::new(Registry::new()), sink, db: None }
+    }
+
+    pub fn with_db(sink: Arc<dyn EventSink>, db: crate::db::Db) -> Self {
+        Self { registry: Arc::new(Registry::new()), sink, db: Some(db) }
     }
 
     /// 启动一个内置模式 run。重复启动拦截由上层按 `E_ALREADY_RUNNING` 处理
@@ -247,12 +255,15 @@ impl Supervisor {
         let pgid = get_pgid(child_pid);
 
         let ring = Arc::new(Mutex::new(RingBuffer::new()));
-        let pipe = spawn_pipe(
+        let output_clock = Arc::new(std::sync::atomic::AtomicU64::new(0));
+        let pipe_clock = output_clock.clone();
+        let pipe = spawn_pipe_with_clock(
             run_id.to_string(),
             child.stdout.take().ok_or_else(|| AppError::Engine("stdout 未接管".into()))?,
             child.stderr.take().ok_or_else(|| AppError::Engine("stderr 未接管".into()))?,
             ring.clone(),
             self.sink.clone(),
+            Some(pipe_clock),
         )?;
 
         let handle = Arc::new(RunHandle {
@@ -271,13 +282,37 @@ impl Supervisor {
             // 聚合任务写入的 marker 槽（spawn_pipe 内部 Arc，两者必须同一实例）
             pipe_marker: pipe.marker,
             pipe_done: Mutex::new(Some(pipe.done)),
+            last_output_ms: output_clock.clone(),
         });
         self.registry.insert(handle.clone());
 
         // watcher：进程退出 → 终态（killed 优先）
         let reg = self.registry.clone();
+        let reg_terminal = self.registry.clone();
         let sink = self.sink.clone();
+        let sup_db = self.db.clone();
+        let sup_sink = self.sink.clone();
+        let watch_run_id = run_id;
+
+        // DR-8：running 且 30s 无输出 → run://input-suspected（只提示一次，不干预）
         tokio::spawn(async move {
+            const THRESHOLD_MS: u64 = 30_000;
+            loop {
+                tokio::time::sleep(Duration::from_secs(5)).await;
+                let Some(h) = reg.get(watch_run_id) else { break };
+                if !matches!(h.current_state(), RunState::Running) {
+                    break;
+                }
+                let last = h.last_output_ms.load(std::sync::atomic::Ordering::SeqCst);
+                let idle = crate::clock::now_unix_millis().saturating_sub(last);
+                if idle >= THRESHOLD_MS {
+                    sup_sink.on_input_suspected(watch_run_id.to_string());
+                    break;
+                }
+            }
+        });
+        tokio::spawn(async move {
+            let reg = reg_terminal;
             let status = child.wait().await;
             let code = status.ok().and_then(|s| s.code());
             if let Some(h) = reg.get(run_id) {
@@ -300,6 +335,16 @@ impl Supervisor {
                     exit_code: if matches!(state, RunState::Killed) { None } else { code },
                     ts: now_ts(),
                 });
+                // 终态实时写回（DR-16②；临时命令无行跳过）
+                if let Some(db) = &sup_db {
+                    let mut conn = db.conn();
+                    let _ = crate::db::repo::record_builtin_terminal(
+                        &mut conn,
+                        h.command_id,
+                        state.as_str(),
+                        code,
+                    );
+                }
                 // 终发日志管道（读端已关）；guard 不得跨 await
                 let done = h.pipe_done.lock().unwrap().take();
                 if let Some(done) = done {

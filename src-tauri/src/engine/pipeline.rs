@@ -50,6 +50,8 @@ pub struct RunStateEvent {
 pub trait EventSink: Send + Sync {
     fn on_log_batch(&self, batch: LogBatch);
     fn on_state(&self, event: RunStateEvent);
+    /// DR-8：疑似等待输入（running 且 30s 无输出；只提示不干预）。
+    fn on_input_suspected(&self, _run_id: String) {}
 }
 
 struct LineMsg {
@@ -73,11 +75,25 @@ pub fn spawn_pipe(
     ring: Arc<std::sync::Mutex<RingBuffer>>,
     sink: Arc<dyn EventSink>,
 ) -> Result<PipeHandle> {
+    spawn_pipe_with_clock(run_id, stdout, stderr, ring, sink, None)
+}
+
+/// 同上，附加 DR-8 输出时钟（聚合器每次 flush 刷新；毫秒自 spawn 起算由调用方解释）。
+pub fn spawn_pipe_with_clock(
+    run_id: String,
+    stdout: impl AsyncRead + Unpin + Send + 'static,
+    stderr: impl AsyncRead + Unpin + Send + 'static,
+    ring: Arc<std::sync::Mutex<RingBuffer>>,
+    sink: Arc<dyn EventSink>,
+    output_clock: Option<Arc<std::sync::atomic::AtomicU64>>,
+) -> Result<PipeHandle> {
     let (tx, rx) = mpsc::channel::<LineMsg>(4096);
     tokio::spawn(reader_task(run_id.clone(), Stream::Stdout, stdout, tx.clone()));
     tokio::spawn(reader_task(run_id.clone(), Stream::Stderr, stderr, tx));
     let marker_slot = Arc::new(std::sync::Mutex::new(None));
-    let done = tokio::spawn(aggregator_task(run_id, rx, ring, sink, marker_slot.clone()));
+    let done = tokio::spawn(aggregator_task(
+        run_id, rx, ring, sink, marker_slot.clone(), output_clock,
+    ));
     Ok(PipeHandle { marker: marker_slot, done })
 }
 
@@ -122,12 +138,21 @@ fn decode_line(raw: &[u8]) -> String {
     normalize_eol(&String::from_utf8_lossy(raw))
 }
 
+/// 刷新最后输出时刻（DR-8 时钟；Unix 毫秒）。
+fn touch_clock(clock: &Option<Arc<std::sync::atomic::AtomicU64>>) {
+    if let Some(c) = clock {
+        c.store(crate::clock::now_unix_millis(), std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 async fn aggregator_task(
     run_id: String,
     mut rx: mpsc::Receiver<LineMsg>,
     ring: Arc<std::sync::Mutex<RingBuffer>>,
     sink: Arc<dyn EventSink>,
     marker_slot: Arc<std::sync::Mutex<Option<u64>>>,
+    output_clock: Option<Arc<std::sync::atomic::AtomicU64>>,
 ) {
     let mut marker_seq: Option<u64> = None;
     let mut pending: Vec<LineMsg> = Vec::new();
@@ -149,6 +174,7 @@ async fn aggregator_task(
                 pending.push(m);
                 if pending_bytes >= FLUSH_BYTES {
                     flush(&run_id, &mut pending, &ring, &sink, &mut marker_seq, &marker_slot);
+                    touch_clock(&output_clock);
                     pending_bytes = 0;
                 }
             }
@@ -159,6 +185,7 @@ async fn aggregator_task(
                     break;
                 }
                 flush(&run_id, &mut pending, &ring, &sink, &mut marker_seq, &marker_slot);
+                touch_clock(&output_clock);
                 pending_bytes = 0;
             }
         }

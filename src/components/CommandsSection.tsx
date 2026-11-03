@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRunStore } from "@/stores/runs";
+import { useTempRunStore } from "@/stores/temps";
 
 /** 命令编辑器（F3：常驻「保存」按钮——随时可存，需名称；失败命令也允许保存） */
 export function CommandEditor({ projectId }: { projectId: string }) {
@@ -18,6 +19,27 @@ export function CommandEditor({ projectId }: { projectId: string }) {
   const [name, setName] = useState("");
   const [commandLine, setCommandLine] = useState("");
   const [cwd, setCwd] = useState("");
+
+  // F3：临时命令——不保存直接按当前执行模式跑；内置结束会提示保存一次
+  const runTemp = useMutation({
+    mutationFn: async () => {
+      const result = await api.startTempCommand({
+        projectId,
+        commandLine,
+        cwd: cwd || undefined,
+      });
+      if (result.mode === "builtin") {
+        useTempRunStore.getState().register(result.run.runId, {
+          projectId,
+          commandLine,
+        });
+      } else {
+        toast.success(t("launchedExternal", { defaultValue: "已在外部终端打开" }));
+      }
+      return result;
+    },
+    onError: (e) => toast.error(String(e)),
+  });
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["project", projectId] });
@@ -67,8 +89,17 @@ export function CommandEditor({ projectId }: { projectId: string }) {
           className="h-8 w-52"
         />
       </div>
-      {/* F3：常驻保存按钮——两种模式通用、填写后随时可存 */}
-      <div className="flex justify-end">
+      {/* F3：常驻保存按钮——两种模式通用、填写后随时可存；运行 = 临时命令 */}
+      <div className="flex justify-end gap-1.5">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!canSave || runTemp.isPending}
+          onClick={() => runTemp.mutate()}
+        >
+          <Play className="size-3.5" />
+          {tc("run")}
+        </Button>
         <Button size="sm" disabled={!canSave || save.isPending} onClick={() => save.mutate()}>
           {tc("save")}
         </Button>

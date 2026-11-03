@@ -1,6 +1,15 @@
 //! 仅依赖 std 的时钟工具：RFC3339(UTC) 时间戳。
 //! （不引入 chrono；UUID v7 自带毫秒时间戳，此处做 civil 转换。）
 
+/// 当前 Unix 毫秒（DR-8 输出时钟用）。
+pub fn now_unix_millis() -> u64 {
+    let ts = uuid::Uuid::now_v7()
+        .get_timestamp()
+        .expect("v7 UUID 必带时间戳");
+    let (secs, nanos) = ts.to_unix();
+    secs * 1000 + u64::from(nanos) / 1_000_000
+}
+
 /// 当前时间的 RFC3339 / UTC 字符串（秒级精度 + Z 后缀）。
 pub fn now_rfc3339() -> String {
     let ts = uuid::Uuid::now_v7()

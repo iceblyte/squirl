@@ -49,6 +49,54 @@ pub fn record_external_launch(
     Ok(())
 }
 
+/// 内置模式启动成功写回（DR-16①：run_count +1，last_run_at 一并刷新）。
+pub fn record_builtin_launch(conn: &mut Connection, command_id: Uuid) -> Result<()> {
+    let now = crate::clock::now_rfc3339();
+    conn.execute(
+        "UPDATE commands SET last_run_at=?1 WHERE id=?2",
+        rusqlite::params![now, command_id.to_string()],
+    )
+    .map_err(AppError::Db)?;
+    conn.execute(
+        "UPDATE projects SET run_count = run_count + 1 WHERE id = (SELECT project_id FROM commands WHERE id=?1)",
+        rusqlite::params![command_id.to_string()],
+    )
+    .map_err(AppError::Db)?;
+    Ok(())
+}
+
+/// 内置终态写回（watcher 实时路径，DR-16②）：exited/failed 写退出码；
+/// killed 保留上次值、仅刷新 last_run_at。
+pub fn record_builtin_terminal(
+    conn: &mut Connection,
+    command_id: Option<Uuid>,
+    state: &str,
+    exit_code: Option<i32>,
+) -> Result<()> {
+    let Some(cid) = command_id else {
+        return Ok(()); // 临时命令无行可写
+    };
+    let now = crate::clock::now_rfc3339();
+    match state {
+        "exited" | "failed" => {
+            conn.execute(
+                "UPDATE commands SET last_run_at=?1, last_exit_code=?2 WHERE id=?3",
+                rusqlite::params![now, exit_code, cid.to_string()],
+            )
+            .map_err(AppError::Db)?;
+        }
+        // killed：不写 last_exit_code（保留上次值，DR-16②）
+        _ => {
+            conn.execute(
+                "UPDATE commands SET last_run_at=?1 WHERE id=?2",
+                rusqlite::params![now, cid.to_string()],
+            )
+            .map_err(AppError::Db)?;
+        }
+    }
+    Ok(())
+}
+
 /// 终态写回（退出四步串行的第②步，DR-14）。
 pub fn write_back_finals(conn: &mut Connection, finals: &[RunFinal]) -> Result<()> {
     let tx = conn.transaction().map_err(AppError::Db)?;

@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import { HomePage } from "@/components/HomePage";
 import { ProjectPage } from "@/components/ProjectPage";
 import { SettingsPage } from "@/components/SettingsPage";
+import { TempSaveDialog } from "@/components/TempSaveDialog";
 import { useDragDropRegister } from "@/hooks/useDragDropRegister";
 import { useNavStore } from "@/stores/scan";
 
@@ -15,6 +16,7 @@ export default function App() {
       {view === "home" && <HomePage />}
       {view === "project" && <ProjectPage />}
       {view === "settings" && <SettingsPage />}
+      <TempSaveDialog />
       <Toaster position="top-center" richColors />
     </main>
   );

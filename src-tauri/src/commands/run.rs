@@ -149,6 +149,11 @@ fn launch_builtin(
             })
             .await
     })?;
+    // DR-16①：内置启动成功即累计 run_count（临时命令无行，repo 跳过）
+    if let Some(cid) = command_id {
+        let mut conn = db.conn();
+        repo::record_builtin_launch(&mut conn, cid)?;
+    }
     supervisor
         .registry
         .get(run_id)

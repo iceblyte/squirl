@@ -6,7 +6,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-
+import { api } from "@/api/client";
 import type {
   DbRestored,
   RunLogEvent,
@@ -18,6 +18,7 @@ import type {
 import { useLogStore } from "@/stores/logs";
 import { useRunStore } from "@/stores/runs";
 import { useScanStore } from "@/stores/scan";
+import { useTempRunStore } from "@/stores/temps";
 
 export function useScanEvents() {
   const queryClient = useQueryClient();
@@ -45,7 +46,6 @@ export function useScanEvents() {
       toast.success(payload.kind === "rebuilt_empty" ? t("errorDbRebuilt") : t("errorDbRestored"));
     }).then((u) => unlistens.push(u));
 
-    // S6：run://state → runStore（状态点/停止按钮数据源；终态移除实例）
     // S7：run://log 直达 logStore（绕过 Query，30ms 批）
     void subscribe<RunLogEvent>("run://log", (payload) => {
       useLogStore.getState().append(payload.runId, {
@@ -55,10 +55,39 @@ export function useScanEvents() {
       });
     }).then((u) => unlistens.push(u));
 
+    // S6/S8：run://state → runStore；终态处理（AC5 / F3 临时保存提示）
     void subscribe<RunStateEvent>("run://state", (payload) => {
       const runStore = useRunStore.getState();
       if (["exited", "failed", "killed"].includes(payload.state)) {
         runStore.remove(payload.runId);
+        // AC5：非零退出 ≤5s 可读错误（事件即时到达）；原始输出保留在 LogPanel
+        if (payload.state === "failed") {
+          toast.error(t("commandFailed", { ns: "common", defaultValue: "命令失败" }), {
+            description: t("exitCode", {
+              ns: "common",
+              defaultValue: `退出码 ${payload.exitCode ?? "?"}（原始输出见日志面板）`,
+            }),
+          });
+        }
+        // F3：内置临时命令结束 → 提示保存一次（不保存则丢弃）
+        if (payload.commandId === null) {
+          const temp = useTempRunStore.getState().take(payload.runId);
+          if (temp) {
+            toast.info(
+              t("tempSavePrompt", { ns: "project", defaultValue: "本次命令未保存，是否保存？" }),
+              {
+                duration: 15_000,
+                action: {
+                  label: t("saveTemp", { ns: "project", defaultValue: "保存" }),
+                  onClick: () =>
+                    useTempRunStore
+                      .getState()
+                      .setPending({ projectId: temp.projectId, commandLine: temp.commandLine }),
+                },
+              },
+            );
+          }
+        }
       } else {
         runStore.upsert({
           runId: payload.runId,
@@ -70,10 +99,26 @@ export function useScanEvents() {
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
     }).then((u) => unlistens.push(u));
 
+    // DR-8：疑似等待输入（只提示 + 可强制停止）
+    void subscribe<{ runId: string }>("run://input-suspected", (payload) => {
+      toast.warning(
+        t("inputSuspected", {
+          ns: "project",
+          defaultValue: "命令可能在等待输入（MVP 不支持交互式命令）",
+        }),
+        {
+          duration: 20_000,
+          action: {
+            label: t("stop", { ns: "common", defaultValue: "停止" }),
+            onClick: () => void api.stopRun(payload.runId),
+          },
+        },
+      );
+    }).then((u) => unlistens.push(u));
+
     return () => {
       for (const u of unlistens) u();
     };
     // t 变化重挂载无意义（文案惰性求值即可）；biome 精确依赖集
-    // eslint-disable-next-line -- biome: t / setX 为稳定引用或惰性使用
   }, [queryClient, setProgress, setPaused, setCompleted, t]);
 }

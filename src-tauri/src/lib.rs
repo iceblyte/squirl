@@ -88,11 +88,12 @@ pub fn run() {
             tracing::info!(target: "db_record", path = %data_dir.display(), "数据库已打开");
             emit_recovery(&handle, event);
 
-            app.manage(db);
+            app.manage(db.clone());
             app.manage(crate::scanner::SharedSession::default());
-            // S6：内置模式进程监管（事件直达前端，ADR-2 生产消费端）
+            // S6：内置模式进程监管（事件直达前端，ADR-2 生产消费端）；
+            // 持 DB 句柄做终态实时写回（DR-16②）
             let sink = std::sync::Arc::new(crate::commands::sink::TauriEventSink::new(handle.clone()));
-            app.manage(crate::engine::supervisor::Supervisor::new(sink));
+            app.manage(crate::engine::supervisor::Supervisor::with_db(sink, db));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

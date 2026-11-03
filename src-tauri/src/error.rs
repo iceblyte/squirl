@@ -83,6 +83,12 @@ pub enum AppError {
 
     #[error("命令已在运行中")]
     AlreadyRunning { run_id: String, command_id: String },
+
+    #[error("命令运行中，禁止删除")]
+    CmdRunningNoDelete(String),
+
+    #[error("项目有运行中的命令，禁止删除")]
+    ProjectRunningNoDelete(String),
 }
 
 impl AppError {
@@ -103,6 +109,8 @@ impl AppError {
             AppError::ScanInProgress => "E_SCAN_IN_PROGRESS",
             AppError::InvalidInput(_) => "E_INVALID_INPUT",
             AppError::AlreadyRunning { .. } => "E_ALREADY_RUNNING",
+            AppError::CmdRunningNoDelete(_) => "E_CMD_RUNNING_NO_DELETE",
+            AppError::ProjectRunningNoDelete(_) => "E_PROJECT_RUNNING_NO_DELETE",
         }
     }
 
