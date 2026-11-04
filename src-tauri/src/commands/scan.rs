@@ -1,17 +1,13 @@
 //! scan 域命令（契约 §5.4.1 + 事件 §5.4.2）：单飞、暂停协议、会话内存发现区。
-
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-
 use serde::Serialize;
 use tauri::Emitter;
-
 use crate::db::repo;
 use crate::error::{AppError, IpcError};
 use crate::scanner::{
     scan, DiscoveryEntry, PauseDecision, SharedSession, DEFAULT_DEPTH, MAX_DEPTH, SCAN_LIMIT,
 };
-
 /// `ScanTicket`（start_scan 出参；结果走事件）。
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,7 +15,6 @@ pub struct ScanTicket {
     pub depth: u32,
     pub limit: usize,
 }
-
 /// `start_scan` — → `ScanTicket`（单飞；E_SCAN_IN_PROGRESS 携带现有进度）。
 #[tauri::command]
 pub async fn start_scan(
@@ -27,38 +22,43 @@ pub async fn start_scan(
     db: tauri::State<'_, crate::db::Db>,
     session: tauri::State<'_, SharedSession>,
 ) -> Result<ScanTicket, IpcError> {
+    spawn_scan_core(app, db.inner().clone(), session.inner().clone())
+        .await
+        .map_err(IpcError::from)
+}
+/// 扫描启动核心（命令层与 DR-31 文件监听共用；单飞检查在此）。
+pub async fn spawn_scan_core(
+    app: tauri::AppHandle,
+    db: crate::db::Db,
+    session: SharedSession,
+) -> std::result::Result<ScanTicket, AppError> {
     // 单飞：已在扫描则拒绝并携带现有进度
     {
         let s = session.lock().unwrap();
         if s.running.is_some() {
-            return Err(IpcError::new("E_SCAN_IN_PROGRESS", "扫描已在进行中")
-                .with_data(serde_json::json!({ "entries": s.last_count })));
+            return Err(AppError::ScanInProgress);
         }
     }
-
     // 读取配置与启用根（阻塞线程）
-    let (depth, roots, custom_excludes) = {
-        let db = db.inner().clone();
-        tokio::task::spawn_blocking(
-            move || -> Result<(u32, Vec<crate::scanner::RootScanInput>, Vec<String>), AppError> {
-                let conn = db.conn();
-                let settings = repo::get_settings(&conn)?;
-                let roots = repo::roots::list_roots(&conn)?
-                    .into_iter()
-                    .filter(|r| r.enabled)
-                    .map(|r| (r.id, std::path::PathBuf::from(r.path), r.scan_depth))
-                    .collect();
-                Ok((
-                    settings.scan_depth,
-                    roots,
-                    settings.custom_excludes.unwrap_or_default(),
-                ))
-            },
-        )
-        .await
-        .map_err(|e| IpcError::new("E_ENGINE", format!("线程失败: {e}")))??
-    };
-
+    let (depth, roots, custom_excludes) = tokio::task::spawn_blocking(
+        move || -> std::result::Result<(u32, Vec<crate::scanner::RootScanInput>, Vec<String>), AppError> {
+            let conn = db.conn();
+            let settings = repo::get_settings(&conn)?;
+            let roots = repo::roots::list_roots(&conn)?
+                .into_iter()
+                .filter(|r| r.enabled)
+                .map(|r| (r.id, std::path::PathBuf::from(r.path), r.scan_depth))
+                .collect();
+            Ok((
+                settings.scan_depth,
+                roots,
+                settings.custom_excludes.unwrap_or_default(),
+            ))
+        },
+    )
+    .await
+    .map_err(|e| AppError::Engine(format!("线程失败: {e}")))
+    .and_then(std::convert::identity)?;
     let (decision_tx, decision_rx) = std::sync::mpsc::channel::<PauseDecision>();
     let token = Arc::new(tokio_util::sync::CancellationToken::new());
     {
@@ -68,15 +68,13 @@ pub async fn start_scan(
         s.entries.clear(); // 瞬时语义：重扫重算
         s.last_count = 0;
     }
-
-    let session2 = session.inner().clone();
+    let session2 = session.clone();
     let app_progress = app.clone();
     let app_pause = app.clone();
     let entry_count = Arc::new(AtomicUsize::new(0));
     let progress_count = entry_count.clone();
     let pause_count = entry_count.clone();
     let scan_token = (*token).clone();
-
     tokio::task::spawn_blocking(move || {
         let result = scan(
             &session2,
@@ -115,10 +113,8 @@ pub async fn start_scan(
             }
         }
     });
-
     Ok(ScanTicket { depth: depth.clamp(DEFAULT_DEPTH, MAX_DEPTH), limit: SCAN_LIMIT })
 }
-
 /// `resolve_scan_pause` — `'continue' | 'reduce_depth' | 'cancel'` → void。
 #[tauri::command]
 pub fn resolve_scan_pause(
@@ -139,7 +135,6 @@ pub fn resolve_scan_pause(
         None => Err(IpcError::new("E_INVALID_INPUT", "当前没有等待裁决的扫描")),
     }
 }
-
 /// `get_discovery` — → `DiscoveryEntry[]`（会话内存；重启为空，G5）。
 #[tauri::command]
 pub fn get_discovery(session: tauri::State<'_, SharedSession>) -> Result<Vec<DiscoveryEntry>, IpcError> {

@@ -2,9 +2,11 @@
 //! 薄封装，禁止业务逻辑；所有命令返回 `Result<T, IpcError>`（INV-5）。
 
 pub mod command_crud;
+pub mod p3tools;
 pub mod projects;
 pub mod run;
 pub mod sink;
 pub mod roots;
 pub mod scan;
 pub mod settings;
+pub mod watcher;

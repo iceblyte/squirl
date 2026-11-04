@@ -59,6 +59,7 @@ fn watch_loop(app: tauri::AppHandle, db: crate::db::Db, roots: Vec<std::path::Pa
     }
     tracing::info!(target: "watch", roots = roots.len(), "文件监听已启动（去抖 2s）");
 
+    let app_handle = app.clone();
     loop {
         // 首事件：阻塞等待
         if rx.recv_timeout(Duration::from_secs(u64::MAX)).is_err() {
@@ -73,10 +74,16 @@ fn watch_loop(app: tauri::AppHandle, db: crate::db::Db, roots: Vec<std::path::Pa
             }
         }
         // 经 tauri 异步运行时触发扫描（单飞拒绝 = 已在扫描，静默）
-        let app2 = app.clone();
         let db2 = db.clone();
-        let _ = tauri::async_runtime::spawn(async move {
-            let _ = spawn_scan_core(app2, db2, app2.state::<crate::scanner::SharedSession>().inner().clone());
+        let app_for_task = app_handle.clone();
+        let session2 = app_handle
+            .state::<crate::scanner::SharedSession>()
+            .inner()
+            .clone();
+        // fire-and-forget：scan 生命周期由单飞令牌管理
+        #[allow(clippy::let_underscore_future)]
+        tauri::async_runtime::spawn(async move {
+            let _ = spawn_scan_core(app_for_task, db2, session2);
         });
     }
 }
