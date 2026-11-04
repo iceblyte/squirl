@@ -5,7 +5,7 @@ use crate::db::repo;
 use crate::engine::supervisor::Supervisor;
 use crate::error::{AppError, IpcError};
 
-/// `add_command` — `(project_id?, name, command_line, cwd?, fingerprint?)` → `Command`。
+/// `add_command` — `(project_id?, name, command_line, cwd?, fingerprint?, note?)` → `Command`。
 #[tauri::command]
 pub async fn add_command(
     project_id: Option<String>,
@@ -13,6 +13,7 @@ pub async fn add_command(
     command_line: String,
     cwd: Option<String>,
     fingerprint: Option<bool>,
+    note: Option<String>,
     db: tauri::State<'_, crate::db::Db>,
 ) -> Result<repo::projects::CommandRow, IpcError> {
     let db = db.inner().clone();
@@ -25,6 +26,7 @@ pub async fn add_command(
             &command_line,
             cwd.as_deref(),
             fingerprint.unwrap_or(false),
+            note.as_deref(),
         )
     })
     .await

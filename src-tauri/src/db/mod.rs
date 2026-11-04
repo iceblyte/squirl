@@ -218,7 +218,7 @@ mod tests {
             .unwrap();
         assert_eq!(mode, "external");
         // user_version 到位
-        assert_eq!(migrate::user_version(&conn), 3, "v3 迁移到位");
+        assert_eq!(migrate::user_version(&conn), 4, "v4 迁移到位");
         // WAL 生效
         let mode: String = conn.query_row("PRAGMA journal_mode", [], |r| r.get(0)).unwrap();
         assert_eq!(mode.to_lowercase(), "wal");

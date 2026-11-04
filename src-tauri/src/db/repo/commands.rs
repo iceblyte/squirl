@@ -14,11 +14,12 @@ pub fn add_command(
     command_line: &str,
     cwd: Option<&str>,
     fingerprint: bool,
+    note: Option<&str>,
 ) -> Result<CommandRow> {
     let id = Uuid::now_v7().to_string();
     conn.execute(
-        "INSERT INTO commands (id, project_id, name, command_line, cwd, fingerprint) VALUES (?1,?2,?3,?4,?5,?6)",
-        rusqlite::params![id, project_id, name, command_line, cwd, fingerprint as i64],
+        "INSERT INTO commands (id, project_id, name, command_line, cwd, fingerprint, note) VALUES (?1,?2,?3,?4,?5,?6,?7)",
+        rusqlite::params![id, project_id, name, command_line, cwd, fingerprint as i64, note.unwrap_or("")],
     )
     .map_err(AppError::Db)?;
     Ok(CommandRow {
@@ -30,6 +31,7 @@ pub fn add_command(
         last_run_at: None,
         last_exit_code: None,
         fingerprint,
+        note: note.unwrap_or("").to_string(),
     })
 }
 
@@ -80,7 +82,7 @@ pub fn delete_command(conn: &Connection, id: &str) -> Result<()> {
 
 pub fn get_command(conn: &Connection, id: &str) -> Result<CommandRow> {
     conn.query_row(
-        "SELECT id, project_id, name, command_line, cwd, last_run_at, last_exit_code, fingerprint FROM commands WHERE id=?1",
+        "SELECT id, project_id, name, command_line, cwd, last_run_at, last_exit_code, fingerprint, note FROM commands WHERE id=?1",
         rusqlite::params![id],
         |r| {
             Ok(CommandRow {
@@ -92,6 +94,7 @@ pub fn get_command(conn: &Connection, id: &str) -> Result<CommandRow> {
                 last_run_at: r.get(5)?,
                 last_exit_code: r.get(6)?,
                 fingerprint: r.get::<_, i64>(7)? != 0,
+                note: r.get(8)?,
             })
         },
     )
@@ -105,7 +108,7 @@ pub fn get_command(conn: &Connection, id: &str) -> Result<CommandRow> {
 
 pub fn list_commands(conn: &Connection, project_id: &str) -> Result<Vec<CommandRow>> {
     let mut stmt = conn
-        .prepare("SELECT id, project_id, name, command_line, cwd, last_run_at, last_exit_code, fingerprint FROM commands WHERE project_id=?1 ORDER BY rowid")
+        .prepare("SELECT id, project_id, name, command_line, cwd, last_run_at, last_exit_code, fingerprint, note FROM commands WHERE project_id=?1 ORDER BY rowid")
         .map_err(AppError::Db)?;
     let rows = stmt
         .query_map(rusqlite::params![project_id], |r| {
@@ -118,6 +121,7 @@ pub fn list_commands(conn: &Connection, project_id: &str) -> Result<Vec<CommandR
                 last_run_at: r.get(5)?,
                 last_exit_code: r.get(6)?,
                 fingerprint: r.get::<_, i64>(7)? != 0,
+                note: r.get(8)?,
             })
         })
         .map_err(AppError::Db)?;
@@ -128,7 +132,7 @@ pub fn list_commands(conn: &Connection, project_id: &str) -> Result<Vec<CommandR
 /// 全局命令列表（DR-20：project_id IS NULL）。
 pub fn list_global_commands(conn: &Connection) -> Result<Vec<CommandRow>> {
     let mut stmt = conn
-        .prepare("SELECT id, project_id, name, command_line, cwd, last_run_at, last_exit_code, fingerprint FROM commands WHERE project_id IS NULL ORDER BY rowid")
+        .prepare("SELECT id, project_id, name, command_line, cwd, last_run_at, last_exit_code, fingerprint, note FROM commands WHERE project_id IS NULL ORDER BY rowid")
         .map_err(AppError::Db)?;
     let rows = stmt
         .query_map([], |r| {
@@ -141,6 +145,7 @@ pub fn list_global_commands(conn: &Connection) -> Result<Vec<CommandRow>> {
                 last_run_at: r.get(5)?,
                 last_exit_code: r.get(6)?,
                 fingerprint: r.get::<_, i64>(7)? != 0,
+                note: r.get(8)?,
             })
         })
         .map_err(AppError::Db)?;
@@ -182,7 +187,7 @@ mod tests {
     #[test]
     fn crud_roundtrip() {
         let (conn, pid) = setup();
-        let c = add_command(&conn, Some(&pid), "dev", "npm run dev", None, false).unwrap();
+        let c = add_command(&conn, Some(&pid), "dev", "npm run dev", None, false, None).unwrap();
         assert_eq!(c.name, "dev");
         assert_eq!(c.cwd, None);
 
@@ -211,8 +216,8 @@ mod tests {
     fn last_used_prefers_recent() {
         let (conn, pid) = setup();
         assert_eq!(last_used_command(&conn, &pid).unwrap(), None);
-        let a = add_command(&conn, Some(&pid), "a", "a", None, false).unwrap();
-        let _b = add_command(&conn, Some(&pid), "b", "b", None, false).unwrap();
+        let a = add_command(&conn, Some(&pid), "a", "a", None, false, None).unwrap();
+        let _b = add_command(&conn, Some(&pid), "b", "b", None, false, None).unwrap();
         conn.execute(
             "UPDATE commands SET last_run_at='2026-11-01T00:00:00Z' WHERE id=?1",
             rusqlite::params![a.id],

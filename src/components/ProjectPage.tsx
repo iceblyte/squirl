@@ -21,6 +21,7 @@ function IdeButton({ path, ide, label }: { path: string; ide: string; label: str
 
 import { ConfigFillPanel } from "@/components/ConfigFillPanel";
 import { LogPanel } from "@/components/LogPanel";
+import { ProjectMetaPanel } from "@/components/ProjectMetaPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -165,6 +166,9 @@ export function ProjectPage() {
         <CommandListItems projectId={card.id} commands={card.commands} />
         <CommandEditor projectId={card.id} />
       </section>
+
+      {/* P2-⑪ Git 元数据 + P2-⑫ 休眠瘦身 */}
+      <ProjectMetaPanel projectId={card.id} />
 
       {/* P2-⑧：配置快填（DR-26 引擎 + 表单） */}
       <ConfigFillPanel projectPath={card.path} />

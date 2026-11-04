@@ -14,6 +14,8 @@ pub struct Settings {
     pub scan_depth: u32,
     /// DR-19：托盘开关（默认关；改后重启生效）
     pub tray_enabled: bool,
+    /// DR-31：文件监听自动刷新（默认关）
+    pub auto_watch: bool,
     /// DR-21：自定义排除名单（JSON 数组列；None = 仅内置名单）
     pub custom_excludes: Option<Vec<String>>,
 }

@@ -107,6 +107,8 @@ pub struct RunHandle {
     pipe_done: Mutex<Option<tokio::task::JoinHandle<()>>>,
     /// 最后输出时刻（Unix 毫秒，DR-8 启发式时钟；由管道聚合器更新）。
     pub last_output_ms: Arc<std::sync::atomic::AtomicU64>,
+    /// DR-32：stdin 管道（None = 已关闭/已取走）。
+    stdin: Mutex<Option<tokio::process::ChildStdin>>,
 }
 
 impl RunHandle {
@@ -116,6 +118,21 @@ impl RunHandle {
 
     pub fn current_state(&self) -> RunState {
         self.state.lock().unwrap().clone()
+    }
+
+    /// DR-32：向 stdin 写入字节（交互式命令；写入失败 = 进程已退出/管道关闭）。
+    pub fn write_stdin(&self, data: &[u8]) -> Result<()> {
+        let mut guard = self.stdin.lock().unwrap();
+        let Some(stdin) = guard.as_mut() else {
+            return Err(AppError::Engine("stdin 已关闭（进程可能已退出）".into()));
+        };
+        use tokio::io::AsyncWriteExt;
+        tokio::runtime::Handle::current().block_on(async {
+            stdin.write_all(data).await?;
+            stdin.flush().await?;
+            Ok::<(), std::io::Error>(())
+        })
+        .map_err(|e| AppError::Engine(format!("stdin 写入失败: {e}")))
     }
 }
 
@@ -224,8 +241,9 @@ impl Supervisor {
         for (k, v) in &args.env {
             cmd.env(k, v);
         }
-        // 无交互（F4）：stdin 直接关闭，交互命令读 EOF 自行报错退出
-        cmd.stdin(std::process::Stdio::null());
+        // DR-32：stdin 接管道（交互式命令可写）；未写入时用户不操作 = 等待，
+        // 由 LogPanel 输入框显式发送。与 F4「无交互」的差异已记入 DR-32。
+        cmd.stdin(std::process::Stdio::piped());
         cmd.stdout(std::process::Stdio::piped());
         cmd.stderr(std::process::Stdio::piped());
 
@@ -273,6 +291,7 @@ impl Supervisor {
             self.sink.clone(),
             Some(pipe_clock),
         )?;
+        let child_stdin = child.stdin.take();
 
         let handle = Arc::new(RunHandle {
             run_id,
@@ -293,6 +312,7 @@ impl Supervisor {
             pipe_marker: pipe.marker,
             pipe_done: Mutex::new(Some(pipe.done)),
             last_output_ms: output_clock.clone(),
+            stdin: Mutex::new(child_stdin),
         });
         self.registry.insert(handle.clone());
 

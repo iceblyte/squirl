@@ -92,12 +92,19 @@ CREATE TABLE fingerprints (
 );
 "#;
 
+/// Schema v4（P2 扩展 DR-27/31）：commands.note 用途备忘 + settings.auto_watch 监听开关。
+pub const SCHEMA_V4_SQL: &str = r#"
+ALTER TABLE commands ADD COLUMN note TEXT NOT NULL DEFAULT '';
+ALTER TABLE settings ADD COLUMN auto_watch INTEGER NOT NULL DEFAULT 0;
+"#;
+
 /// 全量迁移链（生产打开入口使用）。
 pub fn schema_migrations() -> Migrations<'static> {
     Migrations::new(vec![
         M::up(SCHEMA_V1_SQL),
         M::up(SCHEMA_V2_SQL),
         M::up(SCHEMA_V3_SQL),
+        M::up(SCHEMA_V4_SQL),
     ])
 }
 

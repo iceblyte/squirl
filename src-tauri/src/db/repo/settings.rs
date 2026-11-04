@@ -8,7 +8,7 @@ use crate::models::Settings;
 /// 读取单行设置（CHECK(id=1)；迁移时已插入默认行）。
 pub fn get_settings(conn: &Connection) -> Result<Settings> {
     conn.query_row(
-        "SELECT default_mode, default_emulator, default_shell, load_shell_profile, scan_depth, tray_enabled, custom_excludes FROM settings WHERE id=1",
+        "SELECT default_mode, default_emulator, default_shell, load_shell_profile, scan_depth, tray_enabled, custom_excludes, auto_watch FROM settings WHERE id=1",
         [],
         |r| {
             let excludes_json: Option<String> = r.get(6)?;
@@ -21,6 +21,7 @@ pub fn get_settings(conn: &Connection) -> Result<Settings> {
                 tray_enabled: r.get::<_, i64>(5)? != 0,
                 custom_excludes: excludes_json
                     .and_then(|j| serde_json::from_str(&j).ok()),
+                auto_watch: r.get::<_, i64>(7)? != 0,
             })
         },
     )
@@ -34,7 +35,7 @@ pub fn update_settings(conn: &Connection, patch: &Settings) -> Result<Settings> 
         .as_ref()
         .map(|list| serde_json::to_string(list).unwrap_or_else(|_| "null".into()));
     conn.execute(
-        "UPDATE settings SET default_mode=?1, default_emulator=?2, default_shell=?3, load_shell_profile=?4, scan_depth=?5, tray_enabled=?6, custom_excludes=?7 WHERE id=1",
+        "UPDATE settings SET default_mode=?1, default_emulator=?2, default_shell=?3, load_shell_profile=?4, scan_depth=?5, tray_enabled=?6, custom_excludes=?7, auto_watch=?8 WHERE id=1",
         rusqlite::params![
             patch.default_mode,
             patch.default_emulator,
@@ -43,6 +44,7 @@ pub fn update_settings(conn: &Connection, patch: &Settings) -> Result<Settings> 
             patch.scan_depth as i64,
             patch.tray_enabled as i64,
             excludes_json,
+            patch.auto_watch as i64,
         ],
     )
     .map_err(AppError::Db)?;
@@ -77,6 +79,7 @@ mod tests {
             scan_depth: 3,
             tray_enabled: true,
             custom_excludes: Some(vec!["vendor".into(), ".turbo".into()]),
+            auto_watch: true,
         };
         let s2 = update_settings(&conn, &patch).unwrap();
         assert_eq!(s2, patch);

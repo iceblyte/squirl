@@ -96,7 +96,7 @@ fn fetch_all_commands_grouped(
     conn: &Connection,
 ) -> Result<std::collections::HashMap<String, Vec<CommandRow>>> {
     let mut stmt = conn
-        .prepare("SELECT project_id, id, name, command_line, cwd, last_run_at, last_exit_code, fingerprint FROM commands")
+        .prepare("SELECT project_id, id, name, command_line, cwd, last_run_at, last_exit_code, fingerprint, note FROM commands")
         .map_err(AppError::Db)?;
     let rows = stmt
         .query_map([], |r| {
@@ -111,6 +111,7 @@ fn fetch_all_commands_grouped(
                     last_run_at: r.get(5)?,
                     last_exit_code: r.get(6)?,
                     fingerprint: r.get::<_, i64>(7)? != 0,
+                    note: r.get(8)?,
                 },
             ))
         })
@@ -220,6 +221,8 @@ pub struct CommandRow {
     pub last_exit_code: Option<i32>,
     /// DR-24：锁文件指纹感知开关。
     pub fingerprint: bool,
+    /// DR-27：工具用途备忘（全局命令词典 / 项目命令皆可）。
+    pub note: String,
 }
 
 impl CommandRow {
@@ -244,7 +247,7 @@ pub fn get_project(conn: &Connection, id: &str) -> Result<ProjectDetail> {
         .find(|c| c.id == id)
         .ok_or_else(|| AppError::InvalidInput(format!("项目不存在: {id}")))?;
     let mut stmt = conn
-        .prepare("SELECT id, project_id, name, command_line, cwd, last_run_at, last_exit_code, fingerprint FROM commands WHERE project_id=?1 ORDER BY rowid")
+        .prepare("SELECT id, project_id, name, command_line, cwd, last_run_at, last_exit_code, fingerprint, note FROM commands WHERE project_id=?1 ORDER BY rowid")
         .map_err(AppError::Db)?;
     let commands = stmt
         .query_map(rusqlite::params![id], |r| {
@@ -257,6 +260,7 @@ pub fn get_project(conn: &Connection, id: &str) -> Result<ProjectDetail> {
                 last_run_at: r.get(5)?,
                 last_exit_code: r.get(6)?,
                 fingerprint: r.get::<_, i64>(7)? != 0,
+                note: r.get(8)?,
             })
         })
         .map_err(AppError::Db)?

@@ -109,6 +109,8 @@ export interface CommandRow {
   lastExitCode: number | null;
   /** DR-24：锁文件指纹感知开关 */
   fingerprint: boolean;
+  /** DR-27：工具用途备忘 */
+  note: string;
 }
 
 export interface ProjectDetail extends ProjectCard {
@@ -151,4 +153,12 @@ export interface ConfigFilePayload {
   dialect: "env" | "toml" | "yaml";
   keys: { key: string; value: string; line: number }[];
   content: string;
+}
+
+/** DR-29：项目 Git 元数据 */
+export interface GitMeta {
+  branch: string | null;
+  commitHash: string;
+  remoteUrl: string | null;
+  lastCommitTime: string | null;
 }

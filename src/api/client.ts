@@ -6,6 +6,7 @@ import type {
   ConfigFilePayload,
   DiscoveryEntry,
   EffectiveExecConfig,
+  GitMeta,
   LogLineDto,
   ProjectCard,
   ProjectDetail,
@@ -54,6 +55,7 @@ export const api = {
     commandLine: string,
     cwd?: string,
     fingerprint?: boolean,
+    note?: string,
   ) =>
     invoke<CommandRow>("add_command", {
       projectId,
@@ -61,6 +63,7 @@ export const api = {
       commandLine,
       cwd,
       fingerprint,
+      note,
     }),
   listGlobalCommands: () => invoke<CommandRow[]>("list_global_commands"),
   setRootDepth: (id: string, depth: number | null) => invoke<void>("set_root_depth", { id, depth }),
@@ -68,6 +71,9 @@ export const api = {
   openInIde: (path: string, ide: string) => invoke<void>("open_in_ide", { path, ide }),
   updateCommand: (id: string, patch: { name: string; commandLine: string; cwd?: string }) =>
     invoke<CommandRow>("update_command", { id, patch }),
+  writeStdin: (runId: string, data: string) => invoke<void>("write_stdin", { runId, data }),
+  getGitMeta: (id: string) => invoke<GitMeta>("get_git_meta", { id }),
+  hibernateProject: (id: string) => invoke<string[]>("hibernate_project", { id }),
   deleteCommand: (id: string) => invoke<void>("delete_command", { id }),
 
   // run（S4）

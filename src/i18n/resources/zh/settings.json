@@ -11,5 +11,7 @@
   "detected": "探测结果",
   "autoDetect": "自动",
   "loadProfileHint": "启动 shell 时加载 profile（nvm / conda 等依赖它）",
-  "depthHint": "1 = 只列一级子文件夹"
+  "depthHint": "1 = 只列一级子文件夹",
+  "autoWatch": "文件监听自动刷新",
+  "autoWatchHint": "根目录内容变化时自动重新扫描（外部 git pull / 新增项目自动出现）"
 }
