@@ -56,6 +56,7 @@ export const api = {
     cwd?: string,
     fingerprint?: boolean,
     note?: string,
+    envVars?: string,
   ) =>
     invoke<CommandRow>("add_command", {
       projectId,
@@ -64,6 +65,7 @@ export const api = {
       cwd,
       fingerprint,
       note,
+      envVars,
     }),
   listGlobalCommands: () => invoke<CommandRow[]>("list_global_commands"),
   setRootDepth: (id: string, depth: number | null) => invoke<void>("set_root_depth", { id, depth }),
@@ -74,6 +76,9 @@ export const api = {
   writeStdin: (runId: string, data: string) => invoke<void>("write_stdin", { runId, data }),
   getGitMeta: (id: string) => invoke<GitMeta>("get_git_meta", { id }),
   hibernateProject: (id: string) => invoke<string[]>("hibernate_project", { id }),
+  exportData: (path: string) => invoke<void>("export_data", { path }),
+  importData: (path: string) =>
+    invoke<{ imported: number; skipped: number }>("import_data", { path }),
   deleteCommand: (id: string) => invoke<void>("delete_command", { id }),
 
   // run（S4）

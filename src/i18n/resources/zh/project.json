@@ -26,5 +26,7 @@
   "configFill": "配置快填",
   "configSaved": "配置已保存（原文件已备份）",
   "configNoChange": "无变更",
-  "noConfigFile": "项目根未找到 .env / config.toml / config.yml"
+  "noConfigFile": "项目根未找到 .env / config.toml / config.yml",
+  "envVarsPlaceholder": "环境变量（每行 KEY=VALUE，可选）",
+  "commandNote": "用途备注（词典）"
 }

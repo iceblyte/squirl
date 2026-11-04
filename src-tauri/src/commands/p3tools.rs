@@ -191,6 +191,7 @@ mod tests {
             None,
             false,
             None,
+            None,
         )
         .unwrap();
         let report = doctor_check(&conn, &cmd.id, tmp.path()).unwrap();
@@ -211,6 +212,7 @@ mod tests {
             "npm run dev",
             None,
             false,
+            None,
             None,
         )
         .unwrap();

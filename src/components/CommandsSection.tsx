@@ -21,6 +21,7 @@ export function CommandEditor({ projectId }: { projectId: string }) {
   const [commandLine, setCommandLine] = useState("");
   const [cwd, setCwd] = useState("");
   const [note, setNote] = useState("");
+  const [envVars, setEnvVars] = useState("");
   const [fingerprint, setFingerprint] = useState(false);
 
   // F3：临时命令——不保存直接按当前执行模式跑；内置结束会提示保存一次
@@ -55,6 +56,7 @@ export function CommandEditor({ projectId }: { projectId: string }) {
         cwd || undefined,
         fingerprint,
         note || undefined,
+        envVars || undefined,
       );
     },
     onSuccess: () => {
@@ -111,6 +113,14 @@ export function CommandEditor({ projectId }: { projectId: string }) {
           })}
         </label>
       </div>
+      {/* DR-36：命令级环境变量 */}
+      <textarea
+        rows={2}
+        value={envVars}
+        onChange={(e) => setEnvVars(e.target.value)}
+        placeholder={t("envVarsPlaceholder", { defaultValue: "环境变量（每行 KEY=VALUE，可选）" })}
+        className="w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      />
       {/* F3：常驻保存按钮——两种模式通用、填写后随时可存；运行 = 临时命令 */}
       <div className="flex justify-end gap-1.5">
         <Button

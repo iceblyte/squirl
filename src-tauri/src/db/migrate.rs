@@ -98,6 +98,11 @@ ALTER TABLE commands ADD COLUMN note TEXT NOT NULL DEFAULT '';
 ALTER TABLE settings ADD COLUMN auto_watch INTEGER NOT NULL DEFAULT 0;
 "#;
 
+/// Schema v5（P3-⑳ DR-36）：commands.env_vars JSON 列（命令级环境变量）。
+pub const SCHEMA_V5_SQL: &str = r#"
+ALTER TABLE commands ADD COLUMN env_vars TEXT NOT NULL DEFAULT '[]';
+"#;
+
 /// 全量迁移链（生产打开入口使用）。
 pub fn schema_migrations() -> Migrations<'static> {
     Migrations::new(vec![
@@ -105,6 +110,7 @@ pub fn schema_migrations() -> Migrations<'static> {
         M::up(SCHEMA_V2_SQL),
         M::up(SCHEMA_V3_SQL),
         M::up(SCHEMA_V4_SQL),
+        M::up(SCHEMA_V5_SQL),
     ])
 }
 

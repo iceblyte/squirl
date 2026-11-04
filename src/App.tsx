@@ -1,5 +1,5 @@
 import { Toaster } from "sonner";
-
+import { CommandPalette } from "@/components/CommandPalette";
 import { HomePage } from "@/components/HomePage";
 import { ProjectPage } from "@/components/ProjectPage";
 import { SettingsPage } from "@/components/SettingsPage";
@@ -17,6 +17,7 @@ export default function App() {
       {view === "project" && <ProjectPage />}
       {view === "settings" && <SettingsPage />}
       <TempSaveDialog />
+      <CommandPalette />
       <Toaster position="top-center" richColors />
     </main>
   );

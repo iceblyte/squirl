@@ -61,6 +61,7 @@ fn ac3_external_window_within_2s_and_command_runs() {
         None,
         false,
         None,
+        None,
     )
     .unwrap();
 

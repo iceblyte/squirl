@@ -12,5 +12,7 @@
   "errorUnexpected": "发生未知错误",
   "errorDbRestored": "数据库已损坏，已从最近备份恢复",
   "errorDbRebuilt": "数据库无法恢复，已重建空库",
-  "errorStartupBlocked": "启动已阻断：数据已保全，请使用配套旧版本打开或反馈修复"
+  "errorStartupBlocked": "启动已阻断：数据已保全，请使用配套旧版本打开或反馈修复",
+  "palettePlaceholder": "搜索项目或命令…",
+  "paletteHint": "Enter 运行全局命令 / 点击项目进入详情 · Esc 关闭"
 }

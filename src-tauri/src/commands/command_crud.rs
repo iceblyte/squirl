@@ -5,8 +5,9 @@ use crate::db::repo;
 use crate::engine::supervisor::Supervisor;
 use crate::error::{AppError, IpcError};
 
-/// `add_command` — `(project_id?, name, command_line, cwd?, fingerprint?, note?)` → `Command`。
+/// `add_command` — `(project_id?, name, command_line, cwd?, fingerprint?, note?, env_vars?)` → `Command`。
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn add_command(
     project_id: Option<String>,
     name: String,
@@ -14,6 +15,7 @@ pub async fn add_command(
     cwd: Option<String>,
     fingerprint: Option<bool>,
     note: Option<String>,
+    env_vars: Option<String>,
     db: tauri::State<'_, crate::db::Db>,
 ) -> Result<repo::projects::CommandRow, IpcError> {
     let db = db.inner().clone();
@@ -27,6 +29,7 @@ pub async fn add_command(
             cwd.as_deref(),
             fingerprint.unwrap_or(false),
             note.as_deref(),
+            env_vars.as_deref(),
         )
     })
     .await
@@ -51,6 +54,8 @@ pub async fn update_command(
                 name: patch.name,
                 command_line: patch.command_line,
                 cwd: patch.cwd,
+                note: patch.note,
+                env_vars: patch.env_vars,
             },
         )
     })

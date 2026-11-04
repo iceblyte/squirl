@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -219,6 +220,49 @@ export function SettingsPage() {
           })}
           className="w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
+      </section>
+
+      {/* DR-36 ①：导入导出 */}
+      <section className="space-y-2">
+        <h2 className="text-sm font-medium">{t("dataTransfer", { defaultValue: "导入导出" })}</h2>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              const p = await saveDialog({ title: "导出台账" });
+              if (typeof p === "string") {
+                try {
+                  await api.exportData(p);
+                  toast.success(t("exported", { defaultValue: "导出完成" }));
+                } catch (e) {
+                  toast.error(String(e));
+                }
+              }
+            }}
+          >
+            {t("exportLedger", { defaultValue: "导出台账 JSON" })}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              const p = await openDialog({ title: "导入台账" });
+              if (typeof p === "string") {
+                try {
+                  const r = await api.importData(p);
+                  toast.success(
+                    t("imported", { defaultValue: `导入 ${r.imported} 项（跳过 ${r.skipped}）` }),
+                  );
+                } catch (e) {
+                  toast.error(String(e));
+                }
+              }
+            }}
+          >
+            {t("importLedger", { defaultValue: "导入台账 JSON" })}
+          </Button>
+        </div>
       </section>
 
       {/* DR-19：托盘开关（改后重启生效） */}

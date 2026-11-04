@@ -122,6 +122,7 @@ fn launch_builtin(
     cwd_override: Option<&str>,
     project_root: &std::path::Path,
     fingerprint: bool,
+    extra_env: Vec<(String, String)>,
     force_new: bool,
 ) -> Result<crate::engine::supervisor::RunInfo> {
     // 重复启动拦截（设计 §5.3.3）：默认拒绝，force_new = 「再启动一个」
@@ -149,7 +150,7 @@ fn launch_builtin(
                 fingerprint,
                 shell: shell_spec,
                 with_marker: true,
-                env: vec![],
+                env: extra_env,
             })
             .await
     })?;
@@ -208,6 +209,9 @@ pub async fn start_command(
     };
     let project_uuid = cmd.project_id().and_then(|p| Uuid::parse_str(p).ok());
 
+    // DR-36：解析命令级环境变量
+    let extra_env: Vec<(String, String)> = serde_json::from_str(&cmd.env_vars).unwrap_or_default();
+
     // DR-24：指纹感知命令 → 组装三段式流水线命令行（组装失败降级原文）
     let pipeline_line = if cmd.fingerprint {
         let conn = db.conn();
@@ -233,6 +237,7 @@ pub async fn start_command(
                 cmd.cwd.as_deref(),
                 &project_root,
                 cmd.fingerprint,
+                extra_env,
                 force_new,
             )
             .map_err(IpcError::from)?;
@@ -324,6 +329,7 @@ pub async fn start_temp_command(
                 cwd.as_deref(),
                 &root,
                 false,
+                vec![],
                 false,
             )
             .map_err(IpcError::from)?;
