@@ -1,4 +1,5 @@
 // F2 手动注册（拖拽半边）：拖入文件夹 → 登记（Toast 反馈成败）
+// 非 Tauri 环境（浏览器测试）安全降级为 no-op。
 
 import { useQueryClient } from "@tanstack/react-query";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -7,10 +8,16 @@ import { toast } from "sonner";
 
 import { api } from "@/api/client";
 
+/** Tauri 运行时是否可用（浏览器/SSR 场景为 false）。 */
+export function isTauri(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
 export function useDragDropRegister() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    if (!isTauri()) return; // 非 Tauri 环境安全跳过
     const unlisten = getCurrentWebviewWindow().onDragDropEvent(async (event) => {
       if (event.payload.type !== "drop") return;
       let ok = 0;
